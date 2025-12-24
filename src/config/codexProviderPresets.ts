@@ -171,9 +171,22 @@ requires_openai_auth = true`,
     ],
     category: "third_party",
     isPartner: true, // 合作伙伴
-    partnerPromotionKey: "cubence", // 促销信息 i18n key  
+    partnerPromotionKey: "cubence", // 促销信息 i18n key
     icon: "cubence",
     iconColor: "#000000",
+  },
+  {
+    name: "AiGoCode",
+    websiteUrl: "https://aigocode.com",
+    apiKeyUrl: "https://aigocode.com/invite/CC-SWITCH",
+    category: "third_party",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig("aigocode", "https://api.aigocode.com/openai", "gpt-5.2"),
+    endpointCandidates: ["https://api.aigocode.com"],
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "aigocode", // 促销信息 i18n key
+    icon: "aigocode",
+    iconColor: "#5B7FFF",
   },
   {
     name: "OpenRouter",
@@ -188,5 +201,5 @@ requires_openai_auth = true`,
     category: "aggregator",
     icon: "openrouter",
     iconColor: "#6566F1",
-  },  
+  },
 ];
