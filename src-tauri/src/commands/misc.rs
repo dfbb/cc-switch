@@ -410,17 +410,28 @@ fn launch_terminal_with_env(env_vars: Vec<(String, String)>, provider_id: &str) 
 
     #[cfg(target_os = "macos")]
     {
-        // macOS: 使用 Terminal.app 启动 claude
+        // macOS: 使用 Terminal.app 启动 claude，使用包装脚本来处理清理
         let mut terminal_cmd = Command::new("osascript");
         terminal_cmd.arg("-e");
 
-        let config_file_for_cleanup = config_file.clone();
+        // 使用 bash 的 trap 来清理配置文件
+        let config_path_for_script = config_file.to_string_lossy()
+            .replace('\\', "\\\\")
+            .replace('"', "\\\"");
+
+        let shell_script = format!(
+            "bash -c 'trap \"rm -f \\\"{}\\\"\" EXIT; echo \"Using provider-specific claude config:\"; echo \"{}\"; claude --settings \"{}\"; exec bash --norc --noprofile'",
+            config_path_for_script,
+            config_path_escaped,
+            config_path_escaped
+        );
+
         let script = format!(
             r#"tell application "Terminal"
                 activate
-                do script "echo 'Using provider-specific claude config:' && echo '{}' && claude --settings '{}'; exit"
+                do script "{}"
             end tell"#,
-            config_path_escaped, config_path_escaped
+            shell_script.replace('\\', "\\\\").replace('"', "\\\"")
         );
 
         terminal_cmd.arg(&script);
@@ -434,7 +445,7 @@ fn launch_terminal_with_env(env_vars: Vec<(String, String)>, provider_id: &str) 
 
     #[cfg(target_os = "linux")]
     {
-        // Linux: 尝试使用常见终端
+        // Linux: 尝试使用常见终端，使用包装脚本在 shell 退出时清理配置文件
         let terminals = [
             "gnome-terminal", "konsole", "xfce4-terminal",
             "mate-terminal", "lxterminal", "alacritty", "kitty",
@@ -442,21 +453,38 @@ fn launch_terminal_with_env(env_vars: Vec<(String, String)>, provider_id: &str) 
 
         let mut last_error = String::from("未找到可用的终端");
 
+        // 使用 bash 创建包装脚本来处理清理
+        let config_path_for_bash = config_file.to_string_lossy();
+        let shell_cmd = format!(
+            "bash -c 'trap \"rm -f \\\"{}\\\"\" EXIT; echo \"Using provider-specific claude config:\"; echo \"{}\"; claude --settings \"{}\"; exec bash --norc --noprofile'",
+            config_path_for_bash, config_path_escaped, config_path_escaped
+        );
+
         for terminal in terminals {
             // 检查终端是否存在
             if Command::new("which").arg(terminal).output().is_err() {
                 continue;
             }
 
-            let result = Command::new(terminal)
-                .arg("--")
-                .arg("sh")
-                .arg("-c")
-                .arg(&format!(
-                    "echo 'Using provider-specific claude config:' && echo '{}' && claude --settings '{}'; $SHELL",
-                    config_path_escaped, config_path_escaped
-                ))
-                .spawn();
+            // 不同的终端使用不同的参数格式
+            let result = match terminal {
+                "gnome-terminal" | "mate-terminal" => {
+                    Command::new(terminal)
+                        .arg("--")
+                        .arg("bash")
+                        .arg("-c")
+                        .arg(&shell_cmd)
+                        .spawn()
+                }
+                _ => {
+                    Command::new(terminal)
+                        .arg("-e")
+                        .arg("bash")
+                        .arg("-c")
+                        .arg(&shell_cmd)
+                        .spawn()
+                }
+            };
 
             match result {
                 Ok(_) => {
@@ -478,13 +506,24 @@ fn launch_terminal_with_env(env_vars: Vec<(String, String)>, provider_id: &str) 
     {
         use std::io::Write;
 
-        // Windows: 创建临时批处理文件
+        // Windows: 创建临时批处理文件，并在执行完毕后清理配置文件
         let bat_file = temp_dir.join(format!("cc_switch_claude_{}.bat", std::process::id()));
+
+        // 转义配置文件路径用于批处理
+        let config_path_for_batch = config_file.to_string_lossy()
+            .to_string()
+            .replace('&', "^&");
 
         let mut content = String::from("@echo off\n");
         content.push_str(&format!("echo Using provider-specific claude config:\n"));
-        content.push_str(&format!("echo {}\n", config_file.to_string_lossy().to_string().replace('&', "^&")));
-        content.push_str(&format!("claude --settings \"{}\"\n", config_file.to_string_lossy().to_string().replace('&', "^&")));
+        content.push_str(&format!("echo {}\n", config_path_for_batch));
+        content.push_str(&format!("claude --settings \"{}\"\n", config_path_for_batch));
+
+        // 在 claude 执行完毕后（无论成功与否），删除临时配置文件和批处理文件本身
+        content.push_str(&format!("del \"{}\" >nul 2>&1\n", config_path_for_batch));
+        content.push_str(&format!("del \"%%~f0\" >nul 2>&1\n")); // %%~f0 表示批处理文件自身
+
+        // 如果 claude 出错，暂停以便用户查看错误信息
         content.push_str("if errorlevel 1 (\n");
         content.push_str("    echo.\n");
         content.push_str("    echo Press any key to close...\n");
