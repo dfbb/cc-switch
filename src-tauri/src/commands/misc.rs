@@ -348,7 +348,7 @@ fn extract_env_vars_from_config(
         if let Some(api_key) = obj.get("api_key").and_then(|v| v.as_str()) {
             match app_type {
                 AppType::Gemini => {
-                    env_vars.push(("GOOGLE_API_KEY".to_string(), api_key.to_string()));
+                    env_vars.push(("GEMINI_API_KEY".to_string(), api_key.to_string()));
                 }
                 _ => {}
             }
