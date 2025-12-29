@@ -43,9 +43,17 @@ import PromptPanel from "@/components/prompts/PromptPanel";
 import { SkillsPage } from "@/components/skills/SkillsPage";
 import { DeepLinkImportDialog } from "@/components/DeepLinkImportDialog";
 import { AgentsPanel } from "@/components/agents/AgentsPanel";
+import { UniversalProviderPanel } from "@/components/universal";
 import { Button } from "@/components/ui/button";
 
-type View = "providers" | "settings" | "prompts" | "skills" | "mcp" | "agents";
+type View =
+  | "providers"
+  | "settings"
+  | "prompts"
+  | "skills"
+  | "mcp"
+  | "agents"
+  | "universal";
 
 const DRAG_BAR_HEIGHT = 28; // px
 const HEADER_HEIGHT = 64; // px
@@ -64,6 +72,22 @@ function App() {
   const [confirmDelete, setConfirmDelete] = useState<Provider | null>(null);
   const [envConflicts, setEnvConflicts] = useState<EnvConflict[]>([]);
   const [showEnvBanner, setShowEnvBanner] = useState(false);
+
+  // 保存最后一个有效的 provider，用于动画退出期间显示内容
+  const lastUsageProviderRef = useRef<Provider | null>(null);
+  const lastEditingProviderRef = useRef<Provider | null>(null);
+
+  useEffect(() => {
+    if (usageProvider) {
+      lastUsageProviderRef.current = usageProvider;
+    }
+  }, [usageProvider]);
+
+  useEffect(() => {
+    if (editingProvider) {
+      lastEditingProviderRef.current = editingProvider;
+    }
+  }, [editingProvider]);
 
   const promptPanelRef = useRef<any>(null);
   const mcpPanelRef = useRef<any>(null);
@@ -128,6 +152,38 @@ function App() {
       unsubscribe?.();
     };
   }, [activeApp, refetch]);
+
+  // 监听统一供应商同步事件，刷新所有应用的供应商列表
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+
+    const setupListener = async () => {
+      try {
+        const { listen } = await import("@tauri-apps/api/event");
+        unsubscribe = await listen("universal-provider-synced", async () => {
+          // 统一供应商同步后刷新所有应用的供应商列表
+          // 使用 invalidateQueries 使所有 providers 查询失效
+          await queryClient.invalidateQueries({ queryKey: ["providers"] });
+          // 同时更新托盘菜单
+          try {
+            await providersApi.updateTrayMenu();
+          } catch (error) {
+            console.error("[App] Failed to update tray menu", error);
+          }
+        });
+      } catch (error) {
+        console.error(
+          "[App] Failed to subscribe universal-provider-synced event",
+          error,
+        );
+      }
+    };
+
+    setupListener();
+    return () => {
+      unsubscribe?.();
+    };
+  }, [queryClient]);
 
   // 应用启动时检测所有应用的环境变量冲突
   useEffect(() => {
@@ -205,6 +261,21 @@ function App() {
 
     checkEnvOnSwitch();
   }, [activeApp]);
+
+  useEffect(() => {
+    const handleGlobalShortcut = (event: KeyboardEvent) => {
+      if (event.key !== "," || !(event.metaKey || event.ctrlKey)) {
+        return;
+      }
+      event.preventDefault();
+      setCurrentView("settings");
+    };
+
+    window.addEventListener("keydown", handleGlobalShortcut);
+    return () => {
+      window.removeEventListener("keydown", handleGlobalShortcut);
+    };
+  }, []);
 
   // 打开网站链接
   const handleOpenWebsite = async (url: string) => {
@@ -368,6 +439,12 @@ function App() {
           return (
             <AgentsPanel onOpenChange={() => setCurrentView("providers")} />
           );
+        case "universal":
+          return (
+            <div className="mx-auto max-w-[56rem] px-5 pt-4">
+              <UniversalProviderPanel />
+            </div>
+          );
         default:
           return (
             <div className="mx-auto max-w-[56rem] px-5 flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
@@ -499,6 +576,10 @@ function App() {
                   {currentView === "skills" && t("skills.title")}
                   {currentView === "mcp" && t("mcp.unifiedPanel.title")}
                   {currentView === "agents" && t("agents.title")}
+                  {currentView === "universal" &&
+                    t("universalProvider.title", {
+                      defaultValue: "统一供应商",
+                    })}
                 </h1>
               </div>
             ) : (
@@ -533,7 +614,7 @@ function App() {
           </div>
 
           <div
-            className="flex items-center gap-2 min-h-[40px]"
+            className="flex items-center gap-2 h-[32px]"
             style={{ WebkitAppRegion: "no-drag" } as any}
           >
             {currentView === "prompts" && (
@@ -646,11 +727,7 @@ function App() {
       </header>
 
       <main className="flex-1 pb-12 animate-fade-in ">
-        <div
-          className={cn("pb-12", currentView === "providers" ? "pt-6" : "pt-4")}
-        >
-          {renderContent()}
-        </div>
+        <div className="pb-12">{renderContent()}</div>
       </main>
 
       <AddProviderDialog
@@ -662,7 +739,7 @@ function App() {
 
       <EditProviderDialog
         open={Boolean(editingProvider)}
-        provider={editingProvider}
+        provider={lastEditingProviderRef.current}
         onOpenChange={(open) => {
           if (!open) {
             setEditingProvider(null);
@@ -673,14 +750,16 @@ function App() {
         isProxyTakeover={isProxyRunning && isCurrentAppTakeoverActive}
       />
 
-      {usageProvider && (
+      {lastUsageProviderRef.current && (
         <UsageScriptModal
-          provider={usageProvider}
+          provider={lastUsageProviderRef.current}
           appId={activeApp}
           isOpen={Boolean(usageProvider)}
           onClose={() => setUsageProvider(null)}
           onSave={(script) => {
-            void saveUsageScript(usageProvider, script);
+            if (usageProvider) {
+              void saveUsageScript(usageProvider, script);
+            }
           }}
         />
       )}
