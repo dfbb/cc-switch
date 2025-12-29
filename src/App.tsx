@@ -26,6 +26,7 @@ import {
 import { checkAllEnvConflicts, checkEnvConflicts } from "@/lib/api/env";
 import { useProviderActions } from "@/hooks/useProviderActions";
 import { useProxyStatus } from "@/hooks/useProxyStatus";
+import { useLastValidValue } from "@/hooks/useLastValidValue";
 import { extractErrorMessage } from "@/utils/errorUtils";
 import { cn } from "@/lib/utils";
 import { AppSwitcher } from "@/components/AppSwitcher";
@@ -73,21 +74,9 @@ function App() {
   const [envConflicts, setEnvConflicts] = useState<EnvConflict[]>([]);
   const [showEnvBanner, setShowEnvBanner] = useState(false);
 
-  // 保存最后一个有效的 provider，用于动画退出期间显示内容
-  const lastUsageProviderRef = useRef<Provider | null>(null);
-  const lastEditingProviderRef = useRef<Provider | null>(null);
-
-  useEffect(() => {
-    if (usageProvider) {
-      lastUsageProviderRef.current = usageProvider;
-    }
-  }, [usageProvider]);
-
-  useEffect(() => {
-    if (editingProvider) {
-      lastEditingProviderRef.current = editingProvider;
-    }
-  }, [editingProvider]);
+  // 使用 Hook 保存最后有效值，用于动画退出期间保持内容显示
+  const effectiveEditingProvider = useLastValidValue(editingProvider);
+  const effectiveUsageProvider = useLastValidValue(usageProvider);
 
   const promptPanelRef = useRef<any>(null);
   const mcpPanelRef = useRef<any>(null);
@@ -718,7 +707,7 @@ function App() {
 
       <EditProviderDialog
         open={Boolean(editingProvider)}
-        provider={lastEditingProviderRef.current}
+        provider={effectiveEditingProvider}
         onOpenChange={(open) => {
           if (!open) {
             setEditingProvider(null);
@@ -729,9 +718,9 @@ function App() {
         isProxyTakeover={isProxyRunning && isCurrentAppTakeoverActive}
       />
 
-      {lastUsageProviderRef.current && (
+      {effectiveUsageProvider && (
         <UsageScriptModal
-          provider={lastUsageProviderRef.current}
+          provider={effectiveUsageProvider}
           appId={activeApp}
           isOpen={Boolean(usageProvider)}
           onClose={() => setUsageProvider(null)}
