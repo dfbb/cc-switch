@@ -233,6 +233,24 @@ impl Database {
             [],
         );
 
+        // 尝试添加基础配置列到 proxy_config 表（兼容 v3.9.0-2 升级）
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN proxy_enabled INTEGER NOT NULL DEFAULT 0",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN listen_address TEXT NOT NULL DEFAULT '127.0.0.1'",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN listen_port INTEGER NOT NULL DEFAULT 5000",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN enable_logging INTEGER NOT NULL DEFAULT 1",
+            [],
+        );
+
         // 尝试添加超时配置列到 proxy_config 表
         let _ = conn.execute(
             "ALTER TABLE proxy_config ADD COLUMN streaming_first_byte_timeout INTEGER NOT NULL DEFAULT 30",
@@ -246,6 +264,14 @@ impl Database {
             "ALTER TABLE proxy_config ADD COLUMN non_streaming_timeout INTEGER NOT NULL DEFAULT 300",
             [],
         );
+
+        // 兼容：若旧版 proxy_config 仍为单例结构（无 app_type），则在启动时直接转换为三行结构
+        // 说明：user_version=2 时不会再触发 v1->v2 迁移，但新代码查询依赖 app_type 列。
+        if Self::table_exists(conn, "proxy_config")?
+            && !Self::has_column(conn, "proxy_config", "app_type")?
+        {
+            Self::migrate_proxy_config_to_per_app(conn)?;
+        }
 
         // 确保 in_failover_queue 列存在（对于已存在的 v2 数据库）
         Self::add_column_if_missing(
@@ -411,6 +437,32 @@ impl Database {
 
         // 添加代理超时配置字段
         if Self::table_exists(conn, "proxy_config")? {
+            // 兼容旧版本缺失的基础字段
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "proxy_enabled",
+                "INTEGER NOT NULL DEFAULT 0",
+            )?;
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "listen_address",
+                "TEXT NOT NULL DEFAULT '127.0.0.1'",
+            )?;
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "listen_port",
+                "INTEGER NOT NULL DEFAULT 5000",
+            )?;
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "enable_logging",
+                "INTEGER NOT NULL DEFAULT 1",
+            )?;
+
             Self::add_column_if_missing(
                 conn,
                 "proxy_config",
