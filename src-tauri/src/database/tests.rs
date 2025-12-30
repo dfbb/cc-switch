@@ -53,7 +53,6 @@ const LEGACY_SCHEMA_SQL: &str = r#"
 
 #[derive(Debug)]
 struct ColumnInfo {
-    name: String,
     r#type: String,
     notnull: i64,
     default: Option<String>,
@@ -65,10 +64,9 @@ fn get_column_info(conn: &Connection, table: &str, column: &str) -> ColumnInfo {
         .expect("prepare pragma");
     let mut rows = stmt.query([]).expect("query pragma");
     while let Some(row) = rows.next().expect("read row") {
-        let name: String = row.get(1).expect("name");
-        if name.eq_ignore_ascii_case(column) {
+        let column_name: String = row.get(1).expect("name");
+        if column_name.eq_ignore_ascii_case(column) {
             return ColumnInfo {
-                name,
                 r#type: row.get::<_, String>(2).expect("type"),
                 notnull: row.get::<_, i64>(3).expect("notnull"),
                 default: row.get::<_, Option<String>>(4).ok().flatten(),
@@ -296,9 +294,10 @@ fn dry_run_validates_schema_compatibility() {
         },
     );
 
-    let mut manager = ProviderManager::default();
-    manager.providers = providers;
-    manager.current = "test-provider".to_string();
+    let manager = ProviderManager {
+        providers,
+        current: "test-provider".to_string(),
+    };
 
     let mut apps = HashMap::new();
     apps.insert("claude".to_string(), manager);

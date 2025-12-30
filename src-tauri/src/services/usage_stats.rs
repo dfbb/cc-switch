@@ -255,8 +255,7 @@ impl Database {
             Ok(stats)
         } else {
             let today = Local::now().date_naive();
-            let start_day =
-                today - Duration::days((days.saturating_sub(1)) as i64);
+            let start_day = today - Duration::days((days.saturating_sub(1)) as i64);
             let start_of_window = start_day.and_hms_opt(0, 0, 0).unwrap();
             // 使用 earliest() 处理 DST 切换时的歧义时间，fallback 到当前时间减 days 天
             let start_ts = Local
