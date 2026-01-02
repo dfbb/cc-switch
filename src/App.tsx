@@ -111,15 +111,6 @@ function App() {
   const currentProviderId = data?.currentProviderId ?? "";
   const hasSkillsSupport = true;
 
-  const refreshSkillsData = async () => {
-    try {
-      await queryClient.invalidateQueries({ queryKey: ["skills"] });
-      await queryClient.refetchQueries({ queryKey: ["skills"], type: "active" });
-    } catch (error) {
-      console.error("[App] Failed to refresh skills data", error);
-    }
-  };
-
   // 🎯 使用 useProviderActions Hook 统一管理所有 Provider 操作
   const {
     addProvider,
@@ -656,26 +647,15 @@ function App() {
               </Button>
             )}
             {currentView === "skills" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={refreshSkillsData}
-                  className="hover:bg-black/5 dark:hover:bg-white/5"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  {t("skills.refresh")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setCurrentView("skillsDiscovery")}
-                  className="hover:bg-black/5 dark:hover:bg-white/5"
-                >
-                  <Search className="w-4 h-4 mr-2" />
-                  {t("skills.discover")}
-                </Button>
-              </>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentView("skillsDiscovery")}
+                className="hover:bg-black/5 dark:hover:bg-white/5"
+              >
+                <Search className="w-4 h-4 mr-2" />
+                {t("skills.discover")}
+              </Button>
             )}
             {currentView === "skillsDiscovery" && (
               <>
