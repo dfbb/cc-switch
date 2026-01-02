@@ -13,6 +13,7 @@ import {
   Wrench,
   Server,
   RefreshCw,
+  Search,
 } from "lucide-react";
 import type { Provider } from "@/types";
 import type { EnvConflict } from "@/types/env";
@@ -42,6 +43,7 @@ import UsageScriptModal from "@/components/UsageScriptModal";
 import UnifiedMcpPanel from "@/components/mcp/UnifiedMcpPanel";
 import PromptPanel from "@/components/prompts/PromptPanel";
 import { SkillsPage } from "@/components/skills/SkillsPage";
+import UnifiedSkillsPanel from "@/components/skills/UnifiedSkillsPanel";
 import { DeepLinkImportDialog } from "@/components/DeepLinkImportDialog";
 import { AgentsPanel } from "@/components/agents/AgentsPanel";
 import { UniversalProviderPanel } from "@/components/universal";
@@ -52,6 +54,7 @@ type View =
   | "settings"
   | "prompts"
   | "skills"
+  | "skillsDiscovery"
   | "mcp"
   | "agents"
   | "universal";
@@ -81,6 +84,8 @@ function App() {
   const promptPanelRef = useRef<any>(null);
   const mcpPanelRef = useRef<any>(null);
   const skillsPageRef = useRef<any>(null);
+  const [openRepoManagerOnDiscovery, setOpenRepoManagerOnDiscovery] =
+    useState(false);
   const addActionButtonClass =
     "bg-orange-500 hover:bg-orange-600 dark:bg-orange-500 dark:hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 dark:shadow-orange-500/40 rounded-full w-8 h-8";
 
@@ -106,8 +111,23 @@ function App() {
   });
   const providers = useMemo(() => data?.providers ?? {}, [data]);
   const currentProviderId = data?.currentProviderId ?? "";
-  // Skills 功能仅支持 Claude 和 Codex
-  const hasSkillsSupport = activeApp === "claude" || activeApp === "codex";
+  const hasSkillsSupport = true;
+
+  const refreshSkillsData = async () => {
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["skills"] });
+      await queryClient.refetchQueries({ queryKey: ["skills"], type: "active" });
+    } catch (error) {
+      console.error("[App] Failed to refresh skills data", error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentView === "skillsDiscovery" && openRepoManagerOnDiscovery) {
+      skillsPageRef.current?.openRepoManager?.();
+      setOpenRepoManagerOnDiscovery(false);
+    }
+  }, [currentView, openRepoManagerOnDiscovery]);
 
   // 🎯 使用 useProviderActions Hook 统一管理所有 Provider 操作
   const {
@@ -217,6 +237,35 @@ function App() {
 
     checkMigration();
   }, [t]);
+
+  // 应用启动时检查是否刚完成了 Skills 自动导入（统一管理 SSOT）
+  useEffect(() => {
+    const checkSkillsMigration = async () => {
+      try {
+        const result = await invoke<{ count: number; error?: string } | null>(
+          "get_skills_migration_result",
+        );
+        if (result?.error) {
+          toast.error(t("migration.skillsFailed"), {
+            description: t("migration.skillsFailedDescription"),
+            closeButton: true,
+          });
+          console.error("[App] Skills SSOT migration failed:", result.error);
+          return;
+        }
+        if (result && result.count > 0) {
+          toast.success(t("migration.skillsSuccess", { count: result.count }), {
+            closeButton: true,
+          });
+          await queryClient.invalidateQueries({ queryKey: ["skills"] });
+        }
+      } catch (error) {
+        console.error("[App] Failed to check skills migration result:", error);
+      }
+    };
+
+    checkSkillsMigration();
+  }, [t, queryClient]);
 
   // 切换应用时检测当前应用的环境变量冲突
   useEffect(() => {
@@ -391,9 +440,15 @@ function App() {
           );
         case "skills":
           return (
+            <UnifiedSkillsPanel
+              onOpenDiscovery={() => setCurrentView("skillsDiscovery")}
+            />
+          );
+        case "skillsDiscovery":
+          return (
             <SkillsPage
               ref={skillsPageRef}
-              onClose={() => setCurrentView("providers")}
+              onClose={() => setCurrentView("skills")}
               initialApp={activeApp}
             />
           );
@@ -532,7 +587,11 @@ function App() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setCurrentView("providers")}
+                  onClick={() =>
+                    setCurrentView(
+                      currentView === "skillsDiscovery" ? "skills" : "providers",
+                    )
+                  }
                   className="mr-2 rounded-lg"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -542,6 +601,7 @@ function App() {
                   {currentView === "prompts" &&
                     t("prompts.title", { appName: t(`apps.${activeApp}`) })}
                   {currentView === "skills" && t("skills.title")}
+                  {currentView === "skillsDiscovery" && t("skills.title")}
                   {currentView === "mcp" && t("mcp.unifiedPanel.title")}
                   {currentView === "agents" && t("agents.title")}
                   {currentView === "universal" &&
@@ -606,6 +666,40 @@ function App() {
               </Button>
             )}
             {currentView === "skills" && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={refreshSkillsData}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  {t("skills.refresh")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentView("skillsDiscovery")}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  {t("skills.discover")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setOpenRepoManagerOnDiscovery(true);
+                    setCurrentView("skillsDiscovery");
+                  }}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  {t("skills.repoManager")}
+                </Button>
+              </>
+            )}
+            {currentView === "skillsDiscovery" && (
               <>
                 <Button
                   variant="ghost"

@@ -870,7 +870,25 @@
       "installed": "インストール済み",
       "uninstalled": "未インストール"
     },
-    "noResults": "一致するスキルが見つかりませんでした"
+    "noResults": "一致するスキルが見つかりませんでした",
+    "noInstalled": "インストールされたスキルがありません",
+    "noInstalledDescription": "リポジトリからスキルを発見してインストールするか、既存のスキルをインポートしてください",
+    "discover": "スキルを発見",
+    "import": "既存をインポート",
+    "importDescription": "CC Switch 統合管理にインポートするスキルを選択してください",
+    "importSuccess": "{{count}} 件のスキルをインポートしました",
+    "importSelected": "選択をインポート ({{count}})",
+    "noUnmanagedFound": "インポートするスキルが見つかりませんでした。すべてのスキルは CC Switch で管理されています。",
+    "foundIn": "発見場所",
+    "local": "ローカル",
+    "uninstallConfirm": "「{{name}}」をアンインストールしますか？すべてのアプリからこのスキルが削除されます。",
+    "uninstallInMainPanel": "メインパネルからスキルをアンインストールしてください",
+    "notFound": "スキルが見つかりません",
+    "apps": {
+      "claude": "Claude",
+      "codex": "Codex",
+      "gemini": "Gemini"
+    }
   },
   "deeplink": {
     "confirmImport": "プロバイダーのインポートを確認",
@@ -958,7 +976,10 @@
     "clickToSelect": "クリックでアイコンを選択"
   },
   "migration": {
-    "success": "設定の移行が完了しました"
+    "success": "設定の移行が完了しました",
+    "skillsSuccess": "スキルを {{count}} 件、自動的に統合管理へインポートしました",
+    "skillsFailed": "スキルの自動インポートに失敗しました",
+    "skillsFailedDescription": "Skills 画面で「既存をインポート」をクリックして手動でインポートしてください（または再起動して再試行）。"
   },
   "agents": {
     "title": "エージェント"

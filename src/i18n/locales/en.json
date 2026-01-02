@@ -870,7 +870,25 @@
       "installed": "Installed",
       "uninstalled": "Not installed"
     },
-    "noResults": "No matching skills found"
+    "noResults": "No matching skills found",
+    "noInstalled": "No skills installed",
+    "noInstalledDescription": "Discover and install skills from repositories, or import existing skills",
+    "discover": "Discover Skills",
+    "import": "Import Existing",
+    "importDescription": "Select skills to import into CC Switch unified management",
+    "importSuccess": "Successfully imported {{count}} skills",
+    "importSelected": "Import Selected ({{count}})",
+    "noUnmanagedFound": "No skills to import found. All skills are already managed by CC Switch.",
+    "foundIn": "Found in",
+    "local": "Local",
+    "uninstallConfirm": "Are you sure you want to uninstall \"{{name}}\"? This will remove the skill from all apps.",
+    "uninstallInMainPanel": "Please uninstall skills from the main panel",
+    "notFound": "Skill not found",
+    "apps": {
+      "claude": "Claude",
+      "codex": "Codex",
+      "gemini": "Gemini"
+    }
   },
   "deeplink": {
     "confirmImport": "Confirm Import Provider",
@@ -958,7 +976,10 @@
     "clickToSelect": "Click to select icon"
   },
   "migration": {
-    "success": "Configuration migrated successfully"
+    "success": "Configuration migrated successfully",
+    "skillsSuccess": "Automatically imported {{count}} skill(s) into unified management",
+    "skillsFailed": "Failed to auto import skills",
+    "skillsFailedDescription": "Open the Skills page and click \"Import Existing\" to import manually (or restart and try again)."
   },
   "agents": {
     "title": "Agents"

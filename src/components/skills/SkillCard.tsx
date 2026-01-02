@@ -12,10 +12,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Download, Trash2, Loader2 } from "lucide-react";
 import { settingsApi } from "@/lib/api";
-import type { Skill } from "@/lib/api/skills";
+import type { DiscoverableSkill } from "@/lib/api/skills";
+
+type SkillCardSkill = DiscoverableSkill & { installed: boolean };
 
 interface SkillCardProps {
-  skill: Skill;
+  skill: SkillCardSkill;
   onInstall: (directory: string) => Promise<void>;
   onUninstall: (directory: string) => Promise<void>;
 }

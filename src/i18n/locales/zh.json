@@ -870,7 +870,25 @@
       "installed": "已安装",
       "uninstalled": "未安装"
     },
-    "noResults": "未找到匹配的技能"
+    "noResults": "未找到匹配的技能",
+    "noInstalled": "暂无已安装的技能",
+    "noInstalledDescription": "从仓库发现并安装技能，或导入已有的技能",
+    "discover": "发现技能",
+    "import": "导入已有",
+    "importDescription": "选择要导入到 CC Switch 统一管理的技能",
+    "importSuccess": "成功导入 {{count}} 个技能",
+    "importSelected": "导入已选 ({{count}})",
+    "noUnmanagedFound": "未发现需要导入的技能。所有技能已在 CC Switch 统一管理中。",
+    "foundIn": "发现于",
+    "local": "本地",
+    "uninstallConfirm": "确定要卸载技能 \"{{name}}\" 吗？这将从所有应用中移除该技能。",
+    "uninstallInMainPanel": "请在主面板中卸载技能",
+    "notFound": "未找到技能",
+    "apps": {
+      "claude": "Claude",
+      "codex": "Codex",
+      "gemini": "Gemini"
+    }
   },
   "deeplink": {
     "confirmImport": "确认导入供应商配置",
@@ -958,7 +976,10 @@
     "clickToSelect": "点击选择图标"
   },
   "migration": {
-    "success": "配置迁移成功"
+    "success": "配置迁移成功",
+    "skillsSuccess": "已自动导入 {{count}} 个技能到统一管理",
+    "skillsFailed": "自动导入技能失败",
+    "skillsFailedDescription": "请打开 Skills 页面点击“导入已有”手动导入（或重启后再试）。"
   },
   "agents": {
     "title": "智能体"
