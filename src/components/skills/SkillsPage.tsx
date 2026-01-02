@@ -54,6 +54,7 @@ export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
     const {
       data: discoverableSkills,
       isLoading: loadingDiscoverable,
+      isFetching: fetchingDiscoverable,
       refetch: refetchDiscoverable,
     } = useDiscoverableSkills();
     const { data: installedSkills } = useInstalledSkills();
@@ -86,7 +87,7 @@ export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
       });
     }, [discoverableSkills, installedDirs]);
 
-    const loading = loadingDiscoverable;
+    const loading = loadingDiscoverable || fetchingDiscoverable;
 
     useImperativeHandle(ref, () => ({
       refresh: () => {
