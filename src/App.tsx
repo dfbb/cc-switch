@@ -84,8 +84,6 @@ function App() {
   const promptPanelRef = useRef<any>(null);
   const mcpPanelRef = useRef<any>(null);
   const skillsPageRef = useRef<any>(null);
-  const [openRepoManagerOnDiscovery, setOpenRepoManagerOnDiscovery] =
-    useState(false);
   const addActionButtonClass =
     "bg-orange-500 hover:bg-orange-600 dark:bg-orange-500 dark:hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 dark:shadow-orange-500/40 rounded-full w-8 h-8";
 
@@ -121,13 +119,6 @@ function App() {
       console.error("[App] Failed to refresh skills data", error);
     }
   };
-
-  useEffect(() => {
-    if (currentView === "skillsDiscovery" && openRepoManagerOnDiscovery) {
-      skillsPageRef.current?.openRepoManager?.();
-      setOpenRepoManagerOnDiscovery(false);
-    }
-  }, [currentView, openRepoManagerOnDiscovery]);
 
   // 🎯 使用 useProviderActions Hook 统一管理所有 Provider 操作
   const {
@@ -448,7 +439,6 @@ function App() {
           return (
             <SkillsPage
               ref={skillsPageRef}
-              onClose={() => setCurrentView("skills")}
               initialApp={activeApp}
             />
           );
@@ -684,18 +674,6 @@ function App() {
                 >
                   <Search className="w-4 h-4 mr-2" />
                   {t("skills.discover")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setOpenRepoManagerOnDiscovery(true);
-                    setCurrentView("skillsDiscovery");
-                  }}
-                  className="hover:bg-black/5 dark:hover:bg-white/5"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  {t("skills.repoManager")}
                 </Button>
               </>
             )}

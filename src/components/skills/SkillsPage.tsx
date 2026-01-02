@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RefreshCw, Search, ArrowLeft } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { SkillCard } from "./SkillCard";
 import { RepoManagerPanel } from "./RepoManagerPanel";
@@ -26,7 +26,6 @@ import type { DiscoverableSkill, SkillRepo } from "@/lib/api/skills";
 import { formatSkillError } from "@/lib/errors/skillErrorParser";
 
 interface SkillsPageProps {
-  onClose?: () => void;
   initialApp?: AppType;
 }
 
@@ -40,7 +39,7 @@ export interface SkillsPageHandle {
  * 用于浏览和安装来自仓库的 Skills
  */
 export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
-  ({ onClose, initialApp = "claude" }, ref) => {
+  ({ initialApp = "claude" }, ref) => {
     const { t } = useTranslation();
     const [repoManagerOpen, setRepoManagerOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
@@ -194,21 +193,6 @@ export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
 
     return (
       <div className="mx-auto max-w-[56rem] px-6 flex flex-col h-[calc(100vh-8rem)] overflow-hidden bg-background/50">
-        {/* 返回按钮 */}
-        {onClose && (
-          <div className="flex-shrink-0 py-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="gap-2"
-            >
-              <ArrowLeft size={16} />
-              {t("common.back")}
-            </Button>
-          </div>
-        )}
-
         {/* 技能网格（可滚动详情区域） */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden animate-fade-in">
           <div className="py-4">
