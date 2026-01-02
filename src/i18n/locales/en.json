@@ -793,8 +793,8 @@
   },
   "skills": {
     "manage": "Skills",
-    "title": "Claude Skills Management",
-    "description": "Discover and install Claude skills from popular repositories to extend Claude Code/Codex capabilities",
+    "title": "Skills Management",
+    "description": "Discover and install skills from popular repositories to extend Claude Code/Codex/Gemini capabilities",
     "refresh": "Refresh",
     "refreshing": "Refreshing...",
     "repoManager": "Repository Management",

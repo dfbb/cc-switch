@@ -793,8 +793,8 @@
   },
   "skills": {
     "manage": "Skills",
-    "title": "Claude スキル管理",
-    "description": "人気リポジトリから Claude Skills を探してインストールし、Claude Code/Codex を拡張",
+    "title": "Skills 管理",
+    "description": "人気リポジトリからスキルを探してインストールし、Claude Code/Codex/Gemini を拡張",
     "refresh": "更新",
     "refreshing": "更新中...",
     "repoManager": "リポジトリ管理",

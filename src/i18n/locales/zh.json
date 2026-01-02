@@ -793,8 +793,8 @@
   },
   "skills": {
     "manage": "Skills",
-    "title": "Claude Skills 管理",
-    "description": "从流行的仓库发现并安装 Claude 技能，扩展 Claude Code/Codex 的能力",
+    "title": "Skills 管理",
+    "description": "从流行的仓库发现并安装技能，扩展 Claude Code/Codex/Gemini 的能力",
     "refresh": "刷新",
     "refreshing": "刷新中...",
     "repoManager": "仓库管理",
