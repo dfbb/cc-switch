@@ -23,7 +23,7 @@ export function useDiscoverableSkills() {
   return useQuery({
     queryKey: ["skills", "discoverable"],
     queryFn: () => skillsApi.discoverAvailable(),
-    staleTime: 5 * 60 * 1000, // 5 分钟内不重新获取
+    staleTime: Infinity, // 无限缓存，直到仓库变化时 invalidate
   });
 }
 
