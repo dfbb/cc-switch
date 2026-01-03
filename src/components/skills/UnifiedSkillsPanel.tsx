@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Trash2, ExternalLink, Download } from "lucide-react";
+import { Sparkles, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -26,6 +26,7 @@ interface UnifiedSkillsPanelProps {
  */
 export interface UnifiedSkillsPanelHandle {
   openDiscovery: () => void;
+  openImport: () => void;
 }
 
 const UnifiedSkillsPanel = React.forwardRef<
@@ -98,7 +99,11 @@ const UnifiedSkillsPanel = React.forwardRef<
 
   const handleOpenImport = async () => {
     try {
-      await scanUnmanaged();
+      const result = await scanUnmanaged();
+      if (!result.data || result.data.length === 0) {
+        toast.success(t("skills.noUnmanagedFound"), { closeButton: true });
+        return;
+      }
       setImportDialogOpen(true);
     } catch (error) {
       toast.error(t("common.error"), {
@@ -124,6 +129,7 @@ const UnifiedSkillsPanel = React.forwardRef<
 
   React.useImperativeHandle(ref, () => ({
     openDiscovery: onOpenDiscovery,
+    openImport: handleOpenImport,
   }));
 
   return (
@@ -152,18 +158,9 @@ const UnifiedSkillsPanel = React.forwardRef<
             <h3 className="text-lg font-medium text-foreground mb-2">
               {t("skills.noInstalled")}
             </h3>
-            <p className="text-muted-foreground text-sm mb-4">
+            <p className="text-muted-foreground text-sm">
               {t("skills.noInstalledDescription")}
             </p>
-            <div className="flex gap-3 justify-center">
-              <Button onClick={onOpenDiscovery} variant="default">
-                {t("skills.discover")}
-              </Button>
-              <Button onClick={handleOpenImport} variant="outline">
-                <Download size={16} className="mr-2" />
-                {t("skills.import")}
-              </Button>
-            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -368,22 +365,6 @@ const ImportSkillsDialog: React.FC<ImportSkillsDialogProps> = ({
   const handleImport = () => {
     onImport(Array.from(selected));
   };
-
-  if (skills.length === 0) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-background rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
-          <h2 className="text-lg font-semibold mb-4">{t("skills.import")}</h2>
-          <p className="text-muted-foreground mb-6">
-            {t("skills.noUnmanagedFound")}
-          </p>
-          <div className="flex justify-end">
-            <Button onClick={onClose}>{t("common.close")}</Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

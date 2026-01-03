@@ -14,6 +14,7 @@ import {
   Server,
   RefreshCw,
   Search,
+  Download,
 } from "lucide-react";
 import type { Provider } from "@/types";
 import type { EnvConflict } from "@/types/env";
@@ -84,6 +85,7 @@ function App() {
   const promptPanelRef = useRef<any>(null);
   const mcpPanelRef = useRef<any>(null);
   const skillsPageRef = useRef<any>(null);
+  const unifiedSkillsPanelRef = useRef<any>(null);
   const addActionButtonClass =
     "bg-orange-500 hover:bg-orange-600 dark:bg-orange-500 dark:hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 dark:shadow-orange-500/40 rounded-full w-8 h-8";
 
@@ -423,6 +425,7 @@ function App() {
         case "skills":
           return (
             <UnifiedSkillsPanel
+              ref={unifiedSkillsPanelRef}
               onOpenDiscovery={() => setCurrentView("skillsDiscovery")}
             />
           );
@@ -647,15 +650,26 @@ function App() {
               </Button>
             )}
             {currentView === "skills" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setCurrentView("skillsDiscovery")}
-                className="hover:bg-black/5 dark:hover:bg-white/5"
-              >
-                <Search className="w-4 h-4 mr-2" />
-                {t("skills.discover")}
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => unifiedSkillsPanelRef.current?.openImport()}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {t("skills.import")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCurrentView("skillsDiscovery")}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <Search className="w-4 h-4 mr-2" />
+                  {t("skills.discover")}
+                </Button>
+              </>
             )}
             {currentView === "skillsDiscovery" && (
               <>
