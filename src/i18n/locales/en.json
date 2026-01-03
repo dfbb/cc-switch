@@ -566,6 +566,8 @@
   "mcp": {
     "title": "MCP Management",
     "import": "Import",
+    "importExisting": "Import Existing",
+    "addMcp": "Add MCP",
     "claudeTitle": "Claude Code MCP Management",
     "codexTitle": "Codex MCP Management",
     "geminiTitle": "Gemini MCP Management",

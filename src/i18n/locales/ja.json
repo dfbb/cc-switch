@@ -566,6 +566,8 @@
   "mcp": {
     "title": "MCP 管理",
     "import": "インポート",
+    "importExisting": "既存をインポート",
+    "addMcp": "MCPを追加",
     "claudeTitle": "Claude Code MCP 管理",
     "codexTitle": "Codex MCP 管理",
     "geminiTitle": "Gemini MCP 管理",

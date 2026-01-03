@@ -648,15 +648,16 @@ function App() {
                   className="hover:bg-black/5 dark:hover:bg-white/5"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  {t("mcp.import")}
+                  {t("mcp.importExisting")}
                 </Button>
                 <Button
-                  size="icon"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => mcpPanelRef.current?.openAdd()}
-                  className={`ml-auto ${addActionButtonClass}`}
-                  title={t("mcp.unifiedPanel.addServer")}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-4 h-4 mr-2" />
+                  {t("mcp.addMcp")}
                 </Button>
               </>
             )}

@@ -566,6 +566,8 @@
   "mcp": {
     "title": "MCP 管理",
     "import": "导入",
+    "importExisting": "导入已有",
+    "addMcp": "添加MCP",
     "claudeTitle": "Claude Code MCP 管理",
     "codexTitle": "Codex MCP 管理",
     "geminiTitle": "Gemini MCP 管理",
