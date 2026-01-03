@@ -71,6 +71,47 @@ mod tests {
         assert_eq!(api_key, "token");
         assert_eq!(base_url, "https://claude.example");
     }
+
+    #[test]
+    fn extract_codex_common_config_preserves_mcp_servers_base_url() {
+        let config_toml = r#"model_provider = "azure"
+model = "gpt-4"
+disable_response_storage = true
+
+[model_providers.azure]
+name = "Azure OpenAI"
+base_url = "https://azure.example/v1"
+wire_api = "responses"
+
+[mcp_servers.my_server]
+base_url = "http://localhost:8080"
+"#;
+
+        let settings = json!({ "config": config_toml });
+        let extracted = ProviderService::extract_codex_common_config(&settings)
+            .expect("extract_codex_common_config should succeed");
+
+        assert!(
+            !extracted
+                .lines()
+                .any(|line| line.trim_start().starts_with("model_provider")),
+            "should remove top-level model_provider"
+        );
+        assert!(
+            !extracted
+                .lines()
+                .any(|line| line.trim_start().starts_with("model =")),
+            "should remove top-level model"
+        );
+        assert!(
+            !extracted.contains("https://azure.example"),
+            "should remove model_providers.* base_url"
+        );
+        assert!(
+            extracted.contains("http://localhost:8080"),
+            "should keep mcp_servers.* base_url"
+        );
+    }
 }
 
 impl ProviderService {
@@ -399,26 +440,45 @@ impl ProviderService {
             return Ok(String::new());
         }
 
-        // Lines to exclude (regex patterns for TOML)
-        let exclude_patterns = [
-            Regex::new(r"(?m)^\s*model\s*=.*$").unwrap(),
-            Regex::new(r"(?m)^\s*model_provider\s*=.*$").unwrap(),
-            Regex::new(r"(?m)^\s*base_url\s*=.*$").unwrap(),
-        ];
+        let mut doc = config_toml
+            .parse::<toml_edit::DocumentMut>()
+            .map_err(|e| AppError::Message(format!("TOML parse error: {e}")))?;
 
-        let mut result = config_toml.to_string();
-        for pattern in &exclude_patterns {
-            result = pattern.replace_all(&result, "").to_string();
+        // Remove provider-specific fields.
+        let root = doc.as_table_mut();
+        root.remove("model");
+        root.remove("model_provider");
+        // Legacy/alt formats might use a top-level base_url.
+        root.remove("base_url");
+
+        // Remove `base_url` only from `[model_providers.*]` tables (do not touch MCP servers).
+        if let Some(model_providers) = root.get_mut("model_providers") {
+            if let Some(model_providers_table) = model_providers.as_table_mut() {
+                for (_, provider_item) in model_providers_table.iter_mut() {
+                    if let Some(provider_table) = provider_item.as_table_mut() {
+                        provider_table.remove("base_url");
+                    }
+                }
+            }
         }
 
-        // Clean up multiple empty lines
-        let result = Regex::new(r"\n{3,}")
-            .unwrap()
-            .replace_all(&result, "\n\n")
-            .trim()
-            .to_string();
+        // Clean up multiple empty lines (keep at most one blank line).
+        let mut cleaned = String::new();
+        let mut blank_run = 0usize;
+        for line in doc.to_string().lines() {
+            if line.trim().is_empty() {
+                blank_run += 1;
+                if blank_run <= 1 {
+                    cleaned.push('\n');
+                }
+                continue;
+            }
+            blank_run = 0;
+            cleaned.push_str(line);
+            cleaned.push('\n');
+        }
 
-        Ok(result)
+        Ok(cleaned.trim().to_string())
     }
 
     /// Extract common config for Gemini (JSON format)
