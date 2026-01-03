@@ -377,6 +377,27 @@ pub fn run() {
                 ) {
                     Ok(true) => {
                         log::info!("✓ Imported default provider for {}", app.as_str());
+
+                        // 首次运行：自动提取通用配置片段（仅当通用配置为空时）
+                        if app_state
+                            .db
+                            .get_config_snippet(app.as_str())
+                            .ok()
+                            .flatten()
+                            .is_none()
+                        {
+                            match crate::services::provider::ProviderService::extract_common_config_snippet(&app_state, app.clone()) {
+                                Ok(snippet) if !snippet.is_empty() && snippet != "{}" => {
+                                    if let Err(e) = app_state.db.set_config_snippet(app.as_str(), Some(snippet)) {
+                                        log::warn!("✗ Failed to save common config snippet for {}: {e}", app.as_str());
+                                    } else {
+                                        log::info!("✓ Extracted common config snippet for {}", app.as_str());
+                                    }
+                                }
+                                Ok(_) => log::debug!("○ No common config to extract for {}", app.as_str()),
+                                Err(e) => log::debug!("○ Failed to extract common config for {}: {e}", app.as_str()),
+                            }
+                        }
                     }
                     Ok(false) => {} // 已有供应商，静默跳过
                     Err(e) => {
@@ -606,6 +627,7 @@ pub fn run() {
             commands::set_claude_common_config_snippet,
             commands::get_common_config_snippet,
             commands::set_common_config_snippet,
+            commands::extract_common_config_snippet,
             commands::read_live_provider_settings,
             commands::get_settings,
             commands::save_settings,

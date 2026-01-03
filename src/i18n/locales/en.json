@@ -53,7 +53,11 @@
     "editCommonConfig": "Edit Common Config",
     "editCommonConfigTitle": "Edit Common Config Snippet",
     "commonConfigHint": "This snippet will be merged into settings.json when 'Write Common Config' is checked",
-    "fullSettingsHint": "Full Claude Code settings.json content"
+    "fullSettingsHint": "Full Claude Code settings.json content",
+    "extractFromCurrent": "Extract from Current Provider",
+    "extractNoCommonConfig": "No common config available to extract from current provider",
+    "extractFailed": "Extract failed: {{error}}",
+    "saveFailed": "Save failed: {{error}}"
   },
   "header": {
     "viewOnGithub": "View on GitHub",
@@ -393,7 +397,11 @@
     "editCommonConfig": "Edit Common Config",
     "editCommonConfigTitle": "Edit Codex Common Config Snippet",
     "commonConfigHint": "This snippet will be appended to the end of config.toml when 'Write Common Config' is checked",
-    "apiUrlLabel": "API Request URL"
+    "apiUrlLabel": "API Request URL",
+    "extractFromCurrent": "Extract from Current Provider",
+    "extractNoCommonConfig": "No common config available to extract from current provider",
+    "extractFailed": "Extract failed: {{error}}",
+    "saveFailed": "Save failed: {{error}}"
   },
   "geminiConfig": {
     "envFile": "Environment Variables (.env)",
@@ -403,7 +411,18 @@
     "writeCommonConfig": "Write Common Config",
     "editCommonConfig": "Edit Common Config",
     "editCommonConfigTitle": "Edit Gemini Common Config Snippet",
-    "commonConfigHint": "Common config snippet will be merged into all Gemini providers with it enabled"
+    "commonConfigHint": "This snippet writes to Gemini .env (GOOGLE_GEMINI_BASE_URL and GEMINI_API_KEY are not allowed)",
+    "extractFromCurrent": "Extract from Current Provider",
+    "extractNoCommonConfig": "No common config available to extract from current provider",
+    "extractFailed": "Extract failed: {{error}}",
+    "saveFailed": "Save failed: {{error}}",
+    "extractedConfigInvalid": "Extracted config format is invalid",
+    "invalidJsonFormat": "Common config snippet format error (must be valid JSON)",
+    "commonConfigInvalidKeys": "Common config snippet must not include GOOGLE_GEMINI_BASE_URL or GEMINI_API_KEY (found: {{keys}})",
+    "commonConfigInvalidValues": "Common config snippet values must be strings",
+    "noCommonConfigToApply": "Common config snippet is empty or has no applicable entries",
+    "configMergeFailed": "Config merge failed: {{error}}",
+    "configReplaceFailed": "Config replace failed: {{error}}"
   },
   "providerPreset": {
     "label": "Provider Preset",

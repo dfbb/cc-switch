@@ -308,6 +308,151 @@ impl ProviderService {
         sync_current_to_live(state)
     }
 
+    /// Extract common config snippet from current provider
+    ///
+    /// Extracts the current provider's configuration and removes provider-specific fields
+    /// (API keys, model settings, endpoints) to create a reusable common config snippet.
+    pub fn extract_common_config_snippet(
+        state: &AppState,
+        app_type: AppType,
+    ) -> Result<String, AppError> {
+        // Get current provider
+        let current_id = Self::current(state, app_type.clone())?;
+        if current_id.is_empty() {
+            return Err(AppError::Message("No current provider".to_string()));
+        }
+
+        let providers = state.db.get_all_providers(app_type.as_str())?;
+        let provider = providers
+            .get(&current_id)
+            .ok_or_else(|| AppError::Message(format!("Provider {} not found", current_id)))?;
+
+        match app_type {
+            AppType::Claude => Self::extract_claude_common_config(&provider.settings_config),
+            AppType::Codex => Self::extract_codex_common_config(&provider.settings_config),
+            AppType::Gemini => Self::extract_gemini_common_config(&provider.settings_config),
+        }
+    }
+
+    /// Extract common config for Claude (JSON format)
+    fn extract_claude_common_config(settings: &Value) -> Result<String, AppError> {
+        let mut config = settings.clone();
+
+        // Fields to exclude from common config
+        const ENV_EXCLUDES: &[&str] = &[
+            // Auth
+            "ANTHROPIC_API_KEY",
+            "ANTHROPIC_AUTH_TOKEN",
+            // Models (5 fields)
+            "ANTHROPIC_MODEL",
+            "ANTHROPIC_REASONING_MODEL",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+            "ANTHROPIC_DEFAULT_OPUS_MODEL",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL",
+            // Endpoint
+            "ANTHROPIC_BASE_URL",
+        ];
+
+        const TOP_LEVEL_EXCLUDES: &[&str] = &[
+            "apiBaseUrl",
+            // Legacy model fields
+            "primaryModel",
+            "smallFastModel",
+        ];
+
+        // Remove env fields
+        if let Some(env) = config.get_mut("env").and_then(|v| v.as_object_mut()) {
+            for key in ENV_EXCLUDES {
+                env.remove(*key);
+            }
+            // If env is empty after removal, remove the env object itself
+            if env.is_empty() {
+                config.as_object_mut().map(|obj| obj.remove("env"));
+            }
+        }
+
+        // Remove top-level fields
+        if let Some(obj) = config.as_object_mut() {
+            for key in TOP_LEVEL_EXCLUDES {
+                obj.remove(*key);
+            }
+        }
+
+        // Check if result is empty
+        if config.as_object().is_none_or(|obj| obj.is_empty()) {
+            return Ok("{}".to_string());
+        }
+
+        serde_json::to_string_pretty(&config)
+            .map_err(|e| AppError::Message(format!("Serialization failed: {e}")))
+    }
+
+    /// Extract common config for Codex (TOML format)
+    fn extract_codex_common_config(settings: &Value) -> Result<String, AppError> {
+        // Codex config is stored as { "auth": {...}, "config": "toml string" }
+        let config_toml = settings
+            .get("config")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        if config_toml.is_empty() {
+            return Ok(String::new());
+        }
+
+        // Lines to exclude (regex patterns for TOML)
+        let exclude_patterns = [
+            Regex::new(r"(?m)^\s*model\s*=.*$").unwrap(),
+            Regex::new(r"(?m)^\s*model_provider\s*=.*$").unwrap(),
+            Regex::new(r"(?m)^\s*base_url\s*=.*$").unwrap(),
+        ];
+
+        let mut result = config_toml.to_string();
+        for pattern in &exclude_patterns {
+            result = pattern.replace_all(&result, "").to_string();
+        }
+
+        // Clean up multiple empty lines
+        let result = Regex::new(r"\n{3,}")
+            .unwrap()
+            .replace_all(&result, "\n\n")
+            .trim()
+            .to_string();
+
+        Ok(result)
+    }
+
+    /// Extract common config for Gemini (JSON format)
+    ///
+    /// Extracts `.env` values while excluding provider-specific credentials:
+    /// - GOOGLE_GEMINI_BASE_URL
+    /// - GEMINI_API_KEY
+    fn extract_gemini_common_config(settings: &Value) -> Result<String, AppError> {
+        let env = settings.get("env").and_then(|v| v.as_object());
+
+        let mut snippet = serde_json::Map::new();
+        if let Some(env) = env {
+            for (key, value) in env {
+                if key == "GOOGLE_GEMINI_BASE_URL" || key == "GEMINI_API_KEY" {
+                    continue;
+                }
+                let Value::String(v) = value else {
+                    continue;
+                };
+                let trimmed = v.trim();
+                if !trimmed.is_empty() {
+                    snippet.insert(key.to_string(), Value::String(trimmed.to_string()));
+                }
+            }
+        }
+
+        if snippet.is_empty() {
+            return Ok("{}".to_string());
+        }
+
+        serde_json::to_string_pretty(&Value::Object(snippet))
+            .map_err(|e| AppError::Message(format!("Serialization failed: {e}")))
+    }
+
     /// Import default configuration from live files (re-export)
     ///
     /// Returns `Ok(true)` if imported, `Ok(false)` if skipped.

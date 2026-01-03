@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import {
   updateTomlCommonConfigSnippet,
   hasTomlCommonConfigSnippet,
@@ -26,15 +27,19 @@ export function useCodexCommonConfig({
   onConfigChange,
   initialData,
 }: UseCodexCommonConfigProps) {
+  const { t } = useTranslation();
   const [useCommonConfig, setUseCommonConfig] = useState(false);
   const [commonConfigSnippet, setCommonConfigSnippetState] = useState<string>(
     DEFAULT_CODEX_COMMON_CONFIG_SNIPPET,
   );
   const [commonConfigError, setCommonConfigError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   // 用于跟踪是否正在通过通用配置更新
   const isUpdatingFromCommonConfig = useRef(false);
+  // 用于跟踪新建模式是否已初始化默认勾选
+  const hasInitializedNewMode = useRef(false);
 
   // 初始化：从 config.json 加载，支持从 localStorage 迁移
   useEffect(() => {
@@ -100,6 +105,38 @@ export function useCodexCommonConfig({
     }
   }, [initialData, commonConfigSnippet, isLoading]);
 
+  // 新建模式：如果通用配置片段存在且有效，默认启用
+  useEffect(() => {
+    // 仅新建模式、加载完成、尚未初始化过
+    if (!initialData && !isLoading && !hasInitializedNewMode.current) {
+      hasInitializedNewMode.current = true;
+
+      // 检查 TOML 片段是否有实质内容（不只是注释和空行）
+      const lines = commonConfigSnippet.split("\n");
+      const hasContent = lines.some((line) => {
+        const trimmed = line.trim();
+        return trimmed && !trimmed.startsWith("#");
+      });
+
+      if (hasContent) {
+        setUseCommonConfig(true);
+        // 合并通用配置到当前配置
+        const { updatedConfig, error } = updateTomlCommonConfigSnippet(
+          codexConfig,
+          commonConfigSnippet,
+          true,
+        );
+        if (!error) {
+          isUpdatingFromCommonConfig.current = true;
+          onConfigChange(updatedConfig);
+          setTimeout(() => {
+            isUpdatingFromCommonConfig.current = false;
+          }, 0);
+        }
+      }
+    }
+  }, [initialData, commonConfigSnippet, isLoading, codexConfig, onConfigChange]);
+
   // 处理通用配置开关
   const handleCommonConfigToggle = useCallback(
     (checked: boolean) => {
@@ -140,7 +177,7 @@ export function useCodexCommonConfig({
         // 保存到 config.json（清空）
         configApi.setCommonConfigSnippet("codex", "").catch((error) => {
           console.error("保存 Codex 通用配置失败:", error);
-          setCommonConfigError(`保存失败: ${error}`);
+          setCommonConfigError(t("codexConfig.saveFailed", { error: String(error) }));
         });
 
         if (useCommonConfig) {
@@ -160,7 +197,7 @@ export function useCodexCommonConfig({
       // 保存到 config.json
       configApi.setCommonConfigSnippet("codex", value).catch((error) => {
         console.error("保存 Codex 通用配置失败:", error);
-        setCommonConfigError(`保存失败: ${error}`);
+        setCommonConfigError(t("codexConfig.saveFailed", { error: String(error) }));
       });
 
       // 若当前启用通用配置，需要替换为最新片段
@@ -209,12 +246,40 @@ export function useCodexCommonConfig({
     setUseCommonConfig(hasCommon);
   }, [codexConfig, commonConfigSnippet, isLoading]);
 
+  // 从当前供应商提取通用配置片段
+  const handleExtract = useCallback(async () => {
+    setIsExtracting(true);
+    setCommonConfigError("");
+
+    try {
+      const extracted = await configApi.extractCommonConfigSnippet("codex");
+
+      if (!extracted || !extracted.trim()) {
+        setCommonConfigError(t("codexConfig.extractNoCommonConfig"));
+        return;
+      }
+
+      // 更新片段状态
+      setCommonConfigSnippetState(extracted);
+
+      // 保存到后端
+      await configApi.setCommonConfigSnippet("codex", extracted);
+    } catch (error) {
+      console.error("提取 Codex 通用配置失败:", error);
+      setCommonConfigError(t("codexConfig.extractFailed", { error: String(error) }));
+    } finally {
+      setIsExtracting(false);
+    }
+  }, []);
+
   return {
     useCommonConfig,
     commonConfigSnippet,
     commonConfigError,
     isLoading,
+    isExtracting,
     handleCommonConfigToggle,
     handleCommonConfigSnippetChange,
+    handleExtract,
   };
 }

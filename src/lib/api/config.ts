@@ -47,3 +47,18 @@ export async function setCommonConfigSnippet(
 ): Promise<void> {
   return invoke("set_common_config_snippet", { appType, snippet });
 }
+
+/**
+ * 从当前供应商提取通用配置片段
+ *
+ * 读取当前激活供应商的配置，自动排除差异化字段（API Key、模型配置、端点等），
+ * 返回可复用的通用配置片段。
+ *
+ * @param appType - 应用类型（claude/codex/gemini）
+ * @returns 提取的通用配置片段（JSON/TOML 字符串）
+ */
+export async function extractCommonConfigSnippet(
+  appType: AppType,
+): Promise<string> {
+  return invoke<string>("extract_common_config_snippet", { appType });
+}

@@ -352,6 +352,8 @@ export function ProviderForm({
     commonConfigError,
     handleCommonConfigToggle,
     handleCommonConfigSnippetChange,
+    isExtracting: isClaudeExtracting,
+    handleExtract: handleClaudeExtract,
   } = useCommonConfigSnippet({
     settingsConfig: form.watch("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
@@ -365,6 +367,8 @@ export function ProviderForm({
     commonConfigError: codexCommonConfigError,
     handleCommonConfigToggle: handleCodexCommonConfigToggle,
     handleCommonConfigSnippetChange: handleCodexCommonConfigSnippetChange,
+    isExtracting: isCodexExtracting,
+    handleExtract: handleCodexExtract,
   } = useCodexCommonConfig({
     codexConfig,
     onConfigChange: handleCodexConfigChange,
@@ -387,6 +391,7 @@ export function ProviderForm({
     handleGeminiConfigChange,
     resetGeminiConfig,
     envStringToObj,
+    envObjToString,
   } = useGeminiConfigState({
     initialData: appId === "gemini" ? initialData : undefined,
   });
@@ -447,9 +452,13 @@ export function ProviderForm({
     commonConfigError: geminiCommonConfigError,
     handleCommonConfigToggle: handleGeminiCommonConfigToggle,
     handleCommonConfigSnippetChange: handleGeminiCommonConfigSnippetChange,
+    isExtracting: isGeminiExtracting,
+    handleExtract: handleGeminiExtract,
   } = useGeminiCommonConfig({
-    configValue: geminiConfig,
-    onConfigChange: handleGeminiConfigChange,
+    envValue: geminiEnv,
+    onEnvChange: handleGeminiEnvChange,
+    envStringToObj,
+    envObjToString,
     initialData: appId === "gemini" ? initialData : undefined,
   });
 
@@ -927,6 +936,8 @@ export function ProviderForm({
               commonConfigError={codexCommonConfigError}
               authError={codexAuthError}
               configError={codexConfigError}
+              onExtract={handleCodexExtract}
+              isExtracting={isCodexExtracting}
             />
             {/* 配置验证错误显示 */}
             <FormField
@@ -955,6 +966,8 @@ export function ProviderForm({
               commonConfigError={geminiCommonConfigError}
               envError={envError}
               configError={geminiConfigError}
+              onExtract={handleGeminiExtract}
+              isExtracting={isGeminiExtracting}
             />
             {/* 配置验证错误显示 */}
             <FormField
@@ -980,6 +993,8 @@ export function ProviderForm({
               onEditClick={() => setIsCommonConfigModalOpen(true)}
               isModalOpen={isCommonConfigModalOpen}
               onModalClose={() => setIsCommonConfigModalOpen(false)}
+              onExtract={handleClaudeExtract}
+              isExtracting={isClaudeExtracting}
             />
             {/* 配置验证错误显示 */}
             <FormField

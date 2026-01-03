@@ -219,3 +219,18 @@ pub async fn set_common_config_snippet(
         .map_err(|e| e.to_string())?;
     Ok(())
 }
+
+/// 从当前供应商提取通用配置片段
+///
+/// 读取当前激活供应商的配置，自动排除差异化字段（API Key、模型配置、端点等），
+/// 返回可复用的通用配置片段。
+#[tauri::command]
+pub async fn extract_common_config_snippet(
+    app_type: String,
+    state: tauri::State<'_, crate::store::AppState>,
+) -> Result<String, String> {
+    let app = AppType::from_str(&app_type).map_err(|e| e.to_string())?;
+
+    crate::services::provider::ProviderService::extract_common_config_snippet(&state, app)
+        .map_err(|e| e.to_string())
+}
