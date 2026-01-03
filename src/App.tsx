@@ -640,14 +640,25 @@ function App() {
               </Button>
             )}
             {currentView === "mcp" && (
-              <Button
-                size="icon"
-                onClick={() => mcpPanelRef.current?.openAdd()}
-                className={`ml-auto ${addActionButtonClass}`}
-                title={t("mcp.unifiedPanel.addServer")}
-              >
-                <Plus className="w-5 h-5" />
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => mcpPanelRef.current?.openImport()}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {t("mcp.import")}
+                </Button>
+                <Button
+                  size="icon"
+                  onClick={() => mcpPanelRef.current?.openAdd()}
+                  className={`ml-auto ${addActionButtonClass}`}
+                  title={t("mcp.unifiedPanel.addServer")}
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
+              </>
             )}
             {currentView === "skills" && (
               <>

@@ -565,6 +565,7 @@
   },
   "mcp": {
     "title": "MCP Management",
+    "import": "Import",
     "claudeTitle": "Claude Code MCP Management",
     "codexTitle": "Codex MCP Management",
     "geminiTitle": "Gemini MCP Management",
@@ -576,6 +577,8 @@
       "deleteConfirm": "Are you sure you want to delete server \"{{id}}\"? This action cannot be undone.",
       "noServers": "No servers yet",
       "enabledApps": "Enabled Apps",
+      "noImportFound": "No MCP servers to import found. All servers are already managed by CC Switch.",
+      "importSuccess": "Successfully imported {{count}} MCP servers",
       "apps": {
         "claude": "Claude",
         "codex": "Codex",
