@@ -405,6 +405,11 @@ impl SkillService {
 
                 let dir_name = entry.file_name().to_string_lossy().to_string();
 
+                // 跳过隐藏目录（以 . 开头，如 .system）
+                if dir_name.starts_with('.') {
+                    continue;
+                }
+
                 // 跳过已管理的
                 if managed_dirs.contains(&dir_name) {
                     continue;
@@ -998,6 +1003,11 @@ pub fn migrate_skills_to_ssot(db: &Arc<Database>) -> Result<usize> {
             }
 
             let dir_name = entry.file_name().to_string_lossy().to_string();
+
+            // 跳过隐藏目录（以 . 开头，如 .system）
+            if dir_name.starts_with('.') {
+                continue;
+            }
 
             // 复制到 SSOT（如果不存在）
             let ssot_path = ssot_dir.join(&dir_name);
