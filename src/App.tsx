@@ -631,12 +631,13 @@ function App() {
           >
             {currentView === "prompts" && (
               <Button
-                size="icon"
+                variant="ghost"
+                size="sm"
                 onClick={() => promptPanelRef.current?.openAdd()}
-                className={`ml-auto ${addActionButtonClass}`}
-                title={t("prompts.add")}
+                className="hover:bg-black/5 dark:hover:bg-white/5"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 mr-2" />
+                {t("prompts.add")}
               </Button>
             )}
             {currentView === "mcp" && (
