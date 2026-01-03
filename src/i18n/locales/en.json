@@ -343,7 +343,6 @@
     "anthropicModel": "Main Model",
     "anthropicSmallFastModel": "Fast Model",
     "anthropicReasoningModel": "Reasoning Model (Thinking)",
-    "reasoningModelPlaceholder": "e.g. claude-sonnet-4-20250514",
     "openrouterCompatMode": "OpenRouter Compatibility Mode",
     "openrouterCompatModeHint": "Use OpenAI Chat Completions interface and convert to Anthropic SSE.",
     "anthropicDefaultHaikuModel": "Default Haiku Model",
