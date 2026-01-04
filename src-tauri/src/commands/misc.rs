@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use crate::app_config::AppType;
-use crate::init_status::InitErrorPayload;
+use crate::init_status::{InitErrorPayload, SkillsMigrationPayload};
 use crate::services::ProviderService;
 use std::str::FromStr;
 use tauri::AppHandle;
@@ -67,6 +67,13 @@ pub async fn get_init_error() -> Result<Option<InitErrorPayload>, String> {
 #[tauri::command]
 pub async fn get_migration_result() -> Result<bool, String> {
     Ok(crate::init_status::take_migration_success())
+}
+
+/// 获取 Skills 自动导入（SSOT）迁移结果（若有）。
+/// 只返回一次 Some({count})，之后返回 None，用于前端显示一次性 Toast 通知。
+#[tauri::command]
+pub async fn get_skills_migration_result() -> Result<Option<SkillsMigrationPayload>, String> {
+    Ok(crate::init_status::take_skills_migration_result())
 }
 
 #[derive(serde::Serialize)]
@@ -252,12 +259,18 @@ fn scan_cli_version(tool: &str) -> (Option<String>, Option<String>) {
         if tool_path.exists() {
             // 构建 PATH 环境变量，确保 node 可被找到
             let current_path = std::env::var("PATH").unwrap_or_default();
+
+            #[cfg(target_os = "windows")]
+            let new_path = format!("{};{}", path.display(), current_path);
+
+            #[cfg(not(target_os = "windows"))]
             let new_path = format!("{}:{}", path.display(), current_path);
 
             #[cfg(target_os = "windows")]
             let output = {
-                Command::new(&tool_path)
-                    .arg("--version")
+                // 使用 cmd /C 包装执行，确保子进程也在隐藏的控制台中运行
+                Command::new("cmd")
+                    .args(["/C", &format!("\"{}\" --version", tool_path.display())])
                     .env("PATH", &new_path)
                     .creation_flags(CREATE_NO_WINDOW)
                     .output()

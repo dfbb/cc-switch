@@ -343,7 +343,6 @@
     "anthropicModel": "主模型",
     "anthropicSmallFastModel": "快速模型",
     "anthropicReasoningModel": "推理模型 (Thinking)",
-    "reasoningModelPlaceholder": "如 claude-sonnet-4-20250514",
     "openrouterCompatMode": "OpenRouter 兼容模式",
     "openrouterCompatModeHint": "使用 OpenAI Chat Completions 接口并转换为 Anthropic SSE。",
     "anthropicDefaultHaikuModel": "Haiku 默认模型",
@@ -423,7 +422,7 @@
     "cost": "成本",
     "perMillion": "(每百万)",
     "trends": "使用趋势",
-    "rangeToday": "今天 (按小时)",
+    "rangeToday": "过去 24 小时 (按小时)",
     "rangeLast7Days": "过去 7 天",
     "rangeLast30Days": "过去 30 天",
     "totalTokens": "总 Token 数",
@@ -436,8 +435,8 @@
     "billingModel": "计费模型",
     "inputTokens": "输入",
     "outputTokens": "输出",
-    "cacheReadTokens": "缓存读取",
-    "cacheCreationTokens": "缓存写入",
+    "cacheReadTokens": "缓存命中",
+    "cacheCreationTokens": "缓存创建",
     "timingInfo": "用时/首字",
     "status": "状态",
     "noData": "暂无数据",
@@ -453,8 +452,8 @@
     "displayName": "显示名称",
     "inputCost": "输入成本",
     "outputCost": "输出成本",
-    "cacheReadCost": "缓存读取",
-    "cacheWriteCost": "缓存写入",
+    "cacheReadCost": "缓存命中",
+    "cacheWriteCost": "缓存创建",
     "deleteConfirmTitle": "确认删除",
     "deleteConfirmDesc": "确定要删除此模型定价配置吗？此操作无法撤销。",
     "queryFailed": "查询失败",
@@ -481,8 +480,8 @@
     "timeRange": "时间范围",
     "input": "Input",
     "output": "Output",
-    "cacheWrite": "Write",
-    "cacheRead": "Read"
+    "cacheWrite": "创建",
+    "cacheRead": "命中"
   },
   "usageScript": {
     "title": "配置用量查询",
@@ -565,6 +564,9 @@
   },
   "mcp": {
     "title": "MCP 管理",
+    "import": "导入",
+    "importExisting": "导入已有",
+    "addMcp": "添加MCP",
     "claudeTitle": "Claude Code MCP 管理",
     "codexTitle": "Codex MCP 管理",
     "geminiTitle": "Gemini MCP 管理",
@@ -576,6 +578,8 @@
       "deleteConfirm": "确定要删除服务器 \"{{id}}\" 吗？此操作无法撤销。",
       "noServers": "暂无服务器",
       "enabledApps": "启用的应用",
+      "noImportFound": "未发现需要导入的 MCP 服务器。所有服务器已在 CC Switch 统一管理中。",
+      "importSuccess": "成功导入 {{count}} 个 MCP 服务器",
       "apps": {
         "claude": "Claude",
         "codex": "Codex",
@@ -793,8 +797,8 @@
   },
   "skills": {
     "manage": "Skills",
-    "title": "Claude Skills 管理",
-    "description": "从流行的仓库发现并安装 Claude 技能，扩展 Claude Code/Codex 的能力",
+    "title": "Skills 管理",
+    "description": "从流行的仓库发现并安装技能，扩展 Claude Code/Codex/Gemini 的能力",
     "refresh": "刷新",
     "refreshing": "刷新中...",
     "repoManager": "仓库管理",
@@ -870,7 +874,25 @@
       "installed": "已安装",
       "uninstalled": "未安装"
     },
-    "noResults": "未找到匹配的技能"
+    "noResults": "未找到匹配的技能",
+    "noInstalled": "暂无已安装的技能",
+    "noInstalledDescription": "从仓库发现并安装技能，或导入已有的技能",
+    "discover": "发现技能",
+    "import": "导入已有",
+    "importDescription": "选择要导入到 CC Switch 统一管理的技能",
+    "importSuccess": "成功导入 {{count}} 个技能",
+    "importSelected": "导入已选 ({{count}})",
+    "noUnmanagedFound": "未发现需要导入的技能。所有技能已在 CC Switch 统一管理中。",
+    "foundIn": "发现于",
+    "local": "本地",
+    "uninstallConfirm": "确定要卸载技能 \"{{name}}\" 吗？这将从所有应用中移除该技能。",
+    "uninstallInMainPanel": "请在主面板中卸载技能",
+    "notFound": "未找到技能",
+    "apps": {
+      "claude": "Claude",
+      "codex": "Codex",
+      "gemini": "Gemini"
+    }
   },
   "deeplink": {
     "confirmImport": "确认导入供应商配置",
@@ -958,7 +980,10 @@
     "clickToSelect": "点击选择图标"
   },
   "migration": {
-    "success": "配置迁移成功"
+    "success": "配置迁移成功",
+    "skillsSuccess": "已自动导入 {{count}} 个技能到统一管理",
+    "skillsFailed": "自动导入技能失败",
+    "skillsFailedDescription": "请打开 Skills 页面点击“导入已有”手动导入（或重启后再试）。"
   },
   "agents": {
     "title": "智能体"

@@ -343,7 +343,6 @@
     "anthropicModel": "メインモデル",
     "anthropicSmallFastModel": "高速モデル",
     "anthropicReasoningModel": "推論モデル（Thinking）",
-    "reasoningModelPlaceholder": "例: claude-sonnet-4-20250514",
     "openrouterCompatMode": "OpenRouter 互換モード",
     "openrouterCompatModeHint": "OpenAI Chat Completions インターフェースを使用し、Anthropic SSE に変換します。",
     "anthropicDefaultHaikuModel": "既定 Haiku モデル",
@@ -423,7 +422,7 @@
     "cost": "コスト",
     "perMillion": "(100万あたり)",
     "trends": "利用トレンド",
-    "rangeToday": "今日 (時間別)",
+    "rangeToday": "直近24時間 (時間別)",
     "rangeLast7Days": "過去7日間",
     "rangeLast30Days": "過去30日間",
     "totalTokens": "総トークン数",
@@ -436,8 +435,8 @@
     "billingModel": "課金モデル",
     "inputTokens": "入力",
     "outputTokens": "出力",
-    "cacheReadTokens": "キャッシュ読取",
-    "cacheCreationTokens": "キャッシュ書込",
+    "cacheReadTokens": "キャッシュヒット",
+    "cacheCreationTokens": "キャッシュ作成",
     "timingInfo": "応答時間/TTFT",
     "status": "ステータス",
     "noData": "データなし",
@@ -453,8 +452,8 @@
     "displayName": "表示名",
     "inputCost": "入力コスト",
     "outputCost": "出力コスト",
-    "cacheReadCost": "キャッシュ読取",
-    "cacheWriteCost": "キャッシュ書込",
+    "cacheReadCost": "キャッシュヒット",
+    "cacheWriteCost": "キャッシュ作成",
     "deleteConfirmTitle": "削除の確認",
     "deleteConfirmDesc": "このモデル料金を削除しますか？この操作は元に戻せません。",
     "queryFailed": "照会に失敗しました",
@@ -481,8 +480,8 @@
     "timeRange": "期間",
     "input": "Input",
     "output": "Output",
-    "cacheWrite": "Write",
-    "cacheRead": "Read"
+    "cacheWrite": "作成",
+    "cacheRead": "ヒット"
   },
   "usageScript": {
     "title": "利用状況を設定",
@@ -565,6 +564,9 @@
   },
   "mcp": {
     "title": "MCP 管理",
+    "import": "インポート",
+    "importExisting": "既存をインポート",
+    "addMcp": "MCPを追加",
     "claudeTitle": "Claude Code MCP 管理",
     "codexTitle": "Codex MCP 管理",
     "geminiTitle": "Gemini MCP 管理",
@@ -576,6 +578,8 @@
       "deleteConfirm": "サーバー「{{id}}」を削除しますか？この操作は元に戻せません。",
       "noServers": "まだサーバーがありません",
       "enabledApps": "有効なアプリ",
+      "noImportFound": "インポートする MCP サーバーが見つかりませんでした。すべてのサーバーは CC Switch で管理されています。",
+      "importSuccess": "{{count}} 個の MCP サーバーをインポートしました",
       "apps": {
         "claude": "Claude",
         "codex": "Codex",
@@ -793,8 +797,8 @@
   },
   "skills": {
     "manage": "Skills",
-    "title": "Claude スキル管理",
-    "description": "人気リポジトリから Claude Skills を探してインストールし、Claude Code/Codex を拡張",
+    "title": "Skills 管理",
+    "description": "人気リポジトリからスキルを探してインストールし、Claude Code/Codex/Gemini を拡張",
     "refresh": "更新",
     "refreshing": "更新中...",
     "repoManager": "リポジトリ管理",
@@ -870,7 +874,25 @@
       "installed": "インストール済み",
       "uninstalled": "未インストール"
     },
-    "noResults": "一致するスキルが見つかりませんでした"
+    "noResults": "一致するスキルが見つかりませんでした",
+    "noInstalled": "インストールされたスキルがありません",
+    "noInstalledDescription": "リポジトリからスキルを発見してインストールするか、既存のスキルをインポートしてください",
+    "discover": "スキルを発見",
+    "import": "既存をインポート",
+    "importDescription": "CC Switch 統合管理にインポートするスキルを選択してください",
+    "importSuccess": "{{count}} 件のスキルをインポートしました",
+    "importSelected": "選択をインポート ({{count}})",
+    "noUnmanagedFound": "インポートするスキルが見つかりませんでした。すべてのスキルは CC Switch で管理されています。",
+    "foundIn": "発見場所",
+    "local": "ローカル",
+    "uninstallConfirm": "「{{name}}」をアンインストールしますか？すべてのアプリからこのスキルが削除されます。",
+    "uninstallInMainPanel": "メインパネルからスキルをアンインストールしてください",
+    "notFound": "スキルが見つかりません",
+    "apps": {
+      "claude": "Claude",
+      "codex": "Codex",
+      "gemini": "Gemini"
+    }
   },
   "deeplink": {
     "confirmImport": "プロバイダーのインポートを確認",
@@ -958,7 +980,10 @@
     "clickToSelect": "クリックでアイコンを選択"
   },
   "migration": {
-    "success": "設定の移行が完了しました"
+    "success": "設定の移行が完了しました",
+    "skillsSuccess": "スキルを {{count}} 件、自動的に統合管理へインポートしました",
+    "skillsFailed": "スキルの自動インポートに失敗しました",
+    "skillsFailedDescription": "Skills 画面で「既存をインポート」をクリックして手動でインポートしてください（または再起動して再試行）。"
   },
   "agents": {
     "title": "エージェント"

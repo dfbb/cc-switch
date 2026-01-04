@@ -2,6 +2,7 @@
 //!
 //! 提供本地HTTP代理服务，支持多Provider故障转移和请求透传
 
+pub mod body_filter;
 pub mod circuit_breaker;
 pub mod error;
 pub mod error_mapper;
@@ -33,7 +34,9 @@ pub use provider_router::ProviderRouter;
 #[allow(unused_imports)]
 pub use response_handler::{NonStreamHandler, ResponseType, StreamHandler};
 #[allow(unused_imports)]
-pub use session::{ClientFormat, ProxySession};
+pub use session::{
+    extract_session_id, ClientFormat, ProxySession, SessionIdResult, SessionIdSource,
+};
 #[allow(unused_imports)]
 pub use types::{ProxyConfig, ProxyServerInfo, ProxyStatus};
 

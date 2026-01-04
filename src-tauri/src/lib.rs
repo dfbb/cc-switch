@@ -325,6 +325,47 @@ pub fn run() {
                 Err(e) => log::warn!("✗ Failed to initialize default skill repos: {e}"),
             }
 
+            // 1.1. Skills 统一管理迁移：当数据库迁移到 v3 结构后，自动从各应用目录导入到 SSOT
+            // 触发条件由 schema 迁移设置 settings.skills_ssot_migration_pending = true 控制。
+            match app_state.db.get_setting("skills_ssot_migration_pending") {
+                Ok(Some(flag)) if flag == "true" || flag == "1" => {
+                    // 安全保护：如果用户已经有 v3 结构的 Skills 数据，就不要自动清空重建。
+                    let has_existing = app_state
+                        .db
+                        .get_all_installed_skills()
+                        .map(|skills| !skills.is_empty())
+                        .unwrap_or(false);
+
+                    if has_existing {
+                        log::info!(
+                            "Detected skills_ssot_migration_pending but skills table not empty; skipping auto import."
+                        );
+                        let _ = app_state
+                            .db
+                            .set_setting("skills_ssot_migration_pending", "false");
+                    } else {
+                        match crate::services::skill::migrate_skills_to_ssot(&app_state.db) {
+                            Ok(count) => {
+                                log::info!("✓ Auto imported {count} skill(s) into SSOT");
+                                if count > 0 {
+                                    crate::init_status::set_skills_migration_result(count);
+                                }
+                                let _ = app_state
+                                    .db
+                                    .set_setting("skills_ssot_migration_pending", "false");
+                            }
+                            Err(e) => {
+                                log::warn!("✗ Failed to auto import legacy skills to SSOT: {e}");
+                                crate::init_status::set_skills_migration_error(e.to_string());
+                                // 保留 pending 标志，方便下次启动重试
+                            }
+                        }
+                    }
+                }
+                Ok(_) => {} // 未开启迁移标志，静默跳过
+                Err(e) => log::warn!("✗ Failed to read skills migration flag: {e}"),
+            }
+
             // 2. 导入供应商配置（已有内置检查：该应用已有供应商则跳过）
             for app in [
                 crate::app_config::AppType::Claude,
@@ -508,14 +549,8 @@ pub fn run() {
             app.manage(app_state);
 
             // 初始化 SkillService
-            match SkillService::new() {
-                Ok(skill_service) => {
-                    app.manage(commands::skill::SkillServiceState(Arc::new(skill_service)));
-                }
-                Err(e) => {
-                    log::warn!("初始化 SkillService 失败: {e}");
-                }
-            }
+            let skill_service = SkillService::new();
+            app.manage(commands::skill::SkillServiceState(Arc::new(skill_service)));
 
             // 异常退出恢复 + 代理状态自动恢复
             let app_handle = app.handle().clone();
@@ -565,6 +600,7 @@ pub fn run() {
             commands::open_external,
             commands::get_init_error,
             commands::get_migration_result,
+            commands::get_skills_migration_result,
             commands::get_app_config_path,
             commands::open_app_config_folder,
             commands::get_claude_common_config_snippet,
@@ -602,6 +638,7 @@ pub fn run() {
             commands::upsert_mcp_server,
             commands::delete_mcp_server,
             commands::toggle_mcp_app,
+            commands::import_mcp_from_apps,
             // Prompt management
             commands::get_prompts,
             commands::upsert_prompt,
@@ -636,7 +673,15 @@ pub fn run() {
             commands::check_env_conflicts,
             commands::delete_env_vars,
             commands::restore_env_backup,
-            // Skill management
+            // Skill management (v3.10.0+ unified)
+            commands::get_installed_skills,
+            commands::install_skill_unified,
+            commands::uninstall_skill_unified,
+            commands::toggle_skill_app,
+            commands::scan_unmanaged_skills,
+            commands::import_skills_from_apps,
+            commands::discover_available_skills,
+            // Skill management (legacy API compatibility)
             commands::get_skills,
             commands::get_skills_for_app,
             commands::install_skill,

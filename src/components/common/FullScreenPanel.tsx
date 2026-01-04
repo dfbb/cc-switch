@@ -12,6 +12,9 @@ interface FullScreenPanelProps {
   footer?: React.ReactNode;
 }
 
+const DRAG_BAR_HEIGHT = 28; // px - match App.tsx
+const HEADER_HEIGHT = 64; // px - match App.tsx
+
 /**
  * Reusable full-screen panel component
  * Handles portal rendering, header with back button, and footer
@@ -44,18 +47,30 @@ export const FullScreenPanel: React.FC<FullScreenPanelProps> = ({
           className="fixed inset-0 z-[60] flex flex-col"
           style={{ backgroundColor: "hsl(var(--background))" }}
         >
-          {/* Header */}
+          {/* Drag region - match App.tsx */}
           <div
-            className="flex-shrink-0 py-3 border-b border-border-default"
-            style={{ backgroundColor: "hsl(var(--background))" }}
+            data-tauri-drag-region
+            style={{
+              WebkitAppRegion: "drag",
+              height: DRAG_BAR_HEIGHT,
+            } as React.CSSProperties}
+          />
+
+          {/* Header - match App.tsx */}
+          <div
+            className="flex-shrink-0 flex items-center"
+            style={{
+              backgroundColor: "hsl(var(--background))",
+              height: HEADER_HEIGHT,
+            }}
           >
-            <div className="h-4 w-full" data-tauri-drag-region />
-            <div className="mx-auto max-w-[56rem] px-6 flex items-center gap-4">
+            <div className="mx-auto max-w-[56rem] px-6 w-full flex items-center gap-4">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 onClick={onClose}
+                className="rounded-lg"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>

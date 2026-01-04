@@ -71,11 +71,21 @@ impl Database {
             PRIMARY KEY (id, app_type)
         )", []).map_err(|e| AppError::Database(e.to_string()))?;
 
-        // 5. Skills 表
+        // 5. Skills 表（v3.10.0+ 统一结构）
         conn.execute(
             "CREATE TABLE IF NOT EXISTS skills (
-            directory TEXT NOT NULL, app_type TEXT NOT NULL, installed BOOLEAN NOT NULL DEFAULT 0,
-            installed_at INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (directory, app_type)
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            directory TEXT NOT NULL,
+            repo_owner TEXT,
+            repo_name TEXT,
+            repo_branch TEXT DEFAULT 'main',
+            readme_url TEXT,
+            enabled_claude BOOLEAN NOT NULL DEFAULT 0,
+            enabled_codex BOOLEAN NOT NULL DEFAULT 0,
+            enabled_gemini BOOLEAN NOT NULL DEFAULT 0,
+            installed_at INTEGER NOT NULL DEFAULT 0
         )",
             [],
         )
@@ -233,6 +243,24 @@ impl Database {
             [],
         );
 
+        // 尝试添加基础配置列到 proxy_config 表（兼容 v3.9.0-2 升级）
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN proxy_enabled INTEGER NOT NULL DEFAULT 0",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN listen_address TEXT NOT NULL DEFAULT '127.0.0.1'",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN listen_port INTEGER NOT NULL DEFAULT 5000",
+            [],
+        );
+        let _ = conn.execute(
+            "ALTER TABLE proxy_config ADD COLUMN enable_logging INTEGER NOT NULL DEFAULT 1",
+            [],
+        );
+
         // 尝试添加超时配置列到 proxy_config 表
         let _ = conn.execute(
             "ALTER TABLE proxy_config ADD COLUMN streaming_first_byte_timeout INTEGER NOT NULL DEFAULT 30",
@@ -246,6 +274,14 @@ impl Database {
             "ALTER TABLE proxy_config ADD COLUMN non_streaming_timeout INTEGER NOT NULL DEFAULT 300",
             [],
         );
+
+        // 兼容：若旧版 proxy_config 仍为单例结构（无 app_type），则在启动时直接转换为三行结构
+        // 说明：user_version=2 时不会再触发 v1->v2 迁移，但新代码查询依赖 app_type 列。
+        if Self::table_exists(conn, "proxy_config")?
+            && !Self::has_column(conn, "proxy_config", "app_type")?
+        {
+            Self::migrate_proxy_config_to_per_app(conn)?;
+        }
 
         // 确保 in_failover_queue 列存在（对于已存在的 v2 数据库）
         Self::add_column_if_missing(
@@ -304,6 +340,11 @@ impl Database {
                         );
                         Self::migrate_v1_to_v2(conn)?;
                         Self::set_user_version(conn, 2)?;
+                    }
+                    2 => {
+                        log::info!("迁移数据库从 v2 到 v3（Skills 统一管理架构）");
+                        Self::migrate_v2_to_v3(conn)?;
+                        Self::set_user_version(conn, 3)?;
                     }
                     _ => {
                         return Err(AppError::Database(format!(
@@ -411,6 +452,32 @@ impl Database {
 
         // 添加代理超时配置字段
         if Self::table_exists(conn, "proxy_config")? {
+            // 兼容旧版本缺失的基础字段
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "proxy_enabled",
+                "INTEGER NOT NULL DEFAULT 0",
+            )?;
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "listen_address",
+                "TEXT NOT NULL DEFAULT '127.0.0.1'",
+            )?;
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "listen_port",
+                "INTEGER NOT NULL DEFAULT 5000",
+            )?;
+            Self::add_column_if_missing(
+                conn,
+                "proxy_config",
+                "enable_logging",
+                "INTEGER NOT NULL DEFAULT 1",
+            )?;
+
             Self::add_column_if_missing(
                 conn,
                 "proxy_config",
@@ -637,6 +704,17 @@ impl Database {
 
     /// 迁移 skills 表：从单 key 主键改为 (directory, app_type) 复合主键
     fn migrate_skills_table(conn: &Connection) -> Result<(), AppError> {
+        // v3 结构（统一管理架构）已经是更高版本的 skills 表：
+        // - 主键为 id
+        // - 包含 enabled_claude / enabled_codex / enabled_gemini 等列
+        // 在这种情况下，不应再执行 v1 -> v2 的迁移逻辑，否则会因列不匹配而失败。
+        if Self::has_column(conn, "skills", "enabled_claude")?
+            || Self::has_column(conn, "skills", "id")?
+        {
+            log::info!("skills 表已经是 v3 结构，跳过 v1 -> v2 迁移");
+            return Ok(());
+        }
+
         // 检查是否已经是新表结构
         if Self::has_column(conn, "skills", "app_type")? {
             log::info!("skills 表已经包含 app_type 字段，跳过迁移");
@@ -708,14 +786,77 @@ impl Database {
         Ok(())
     }
 
+    /// v2 -> v3 迁移：Skills 统一管理架构
+    ///
+    /// 将 skills 表从 (directory, app_type) 复合主键结构迁移到统一的 id 主键结构，
+    /// 支持三应用启用标志（enabled_claude, enabled_codex, enabled_gemini）。
+    ///
+    /// 迁移策略：
+    /// 1. 旧数据库只存储安装记录，真正的 skill 文件在文件系统
+    /// 2. 直接重建新表结构，后续由 SkillService 在首次启动时扫描文件系统重建数据
+    fn migrate_v2_to_v3(conn: &Connection) -> Result<(), AppError> {
+        // 检查是否已经是新结构（通过检查是否有 enabled_claude 列）
+        if Self::has_column(conn, "skills", "enabled_claude")? {
+            log::info!("skills 表已经是 v3 结构，跳过迁移");
+            return Ok(());
+        }
+
+        log::info!("开始迁移 skills 表到 v3 结构（统一管理架构）...");
+
+        // 1. 备份旧数据（用于日志）
+        let old_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM skills", [], |row| row.get(0))
+            .unwrap_or(0);
+        log::info!("旧 skills 表有 {old_count} 条记录");
+
+        // 标记：需要在启动后从文件系统扫描并重建 Skills 数据
+        // 说明：v3 结构将 Skills 的 SSOT 迁移到 ~/.cc-switch/skills/，
+        // 旧表只存“安装记录”，无法直接无损迁移到新结构，因此改为启动后扫描 app 目录导入。
+        let _ = conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('skills_ssot_migration_pending', 'true')",
+            [],
+        );
+
+        // 2. 删除旧表
+        conn.execute("DROP TABLE IF EXISTS skills", [])
+            .map_err(|e| AppError::Database(format!("删除旧 skills 表失败: {e}")))?;
+
+        // 3. 创建新表
+        conn.execute(
+            "CREATE TABLE skills (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                directory TEXT NOT NULL,
+                repo_owner TEXT,
+                repo_name TEXT,
+                repo_branch TEXT DEFAULT 'main',
+                readme_url TEXT,
+                enabled_claude BOOLEAN NOT NULL DEFAULT 0,
+                enabled_codex BOOLEAN NOT NULL DEFAULT 0,
+                enabled_gemini BOOLEAN NOT NULL DEFAULT 0,
+                installed_at INTEGER NOT NULL DEFAULT 0
+            )",
+            [],
+        )
+        .map_err(|e| AppError::Database(format!("创建新 skills 表失败: {e}")))?;
+
+        log::info!(
+            "skills 表已迁移到 v3 结构。\n\
+             注意：旧的安装记录已清除，首次启动时将自动扫描文件系统重建数据。"
+        );
+
+        Ok(())
+    }
+
     /// 插入默认模型定价数据
     /// 格式: (model_id, display_name, input, output, cache_read, cache_creation)
     /// 注意: model_id 使用短横线格式（如 claude-haiku-4-5），与 API 返回的模型名称标准化后一致
     fn seed_model_pricing(conn: &Connection) -> Result<(), AppError> {
         let pricing_data = [
-            // Claude 4.5 系列
+            // Claude 4.5 系列 (Latest Models)
             (
-                "claude-opus-4-5",
+                "claude-opus-4-5-20251101",
                 "Claude Opus 4.5",
                 "5",
                 "25",
@@ -723,7 +864,7 @@ impl Database {
                 "6.25",
             ),
             (
-                "claude-sonnet-4-5",
+                "claude-sonnet-4-5-20250929",
                 "Claude Sonnet 4.5",
                 "3",
                 "15",
@@ -731,16 +872,24 @@ impl Database {
                 "3.75",
             ),
             (
-                "claude-haiku-4-5",
+                "claude-haiku-4-5-20251001",
                 "Claude Haiku 4.5",
                 "1",
                 "5",
                 "0.10",
                 "1.25",
             ),
-            // Claude 4.1 系列
+            // Claude 4 系列 (Legacy Models)
             (
-                "claude-opus-4-1",
+                "claude-opus-4-20250514",
+                "Claude Opus 4",
+                "15",
+                "75",
+                "1.50",
+                "18.75",
+            ),
+            (
+                "claude-opus-4-1-20250805",
                 "Claude Opus 4.1",
                 "15",
                 "75",
@@ -748,17 +897,8 @@ impl Database {
                 "18.75",
             ),
             (
-                "claude-sonnet-4-1",
-                "Claude Sonnet 4.1",
-                "3",
-                "15",
-                "0.30",
-                "3.75",
-            ),
-            // Claude 3.7 系列
-            (
-                "claude-sonnet-3-7",
-                "Claude Sonnet 3.7",
+                "claude-sonnet-4-20250514",
+                "Claude Sonnet 4",
                 "3",
                 "15",
                 "0.30",
@@ -766,38 +906,167 @@ impl Database {
             ),
             // Claude 3.5 系列
             (
-                "claude-sonnet-3-5",
-                "Claude Sonnet 3.5",
-                "3",
-                "15",
-                "0.30",
-                "3.75",
-            ),
-            (
-                "claude-haiku-3-5",
-                "Claude Haiku 3.5",
+                "claude-3-5-haiku-20241022",
+                "Claude 3.5 Haiku",
                 "0.80",
                 "4",
                 "0.08",
                 "1",
             ),
-            // GPT-5 系列（model_id 使用短横线格式）
+            (
+                "claude-3-5-sonnet-20241022",
+                "Claude 3.5 Sonnet",
+                "3",
+                "15",
+                "0.30",
+                "3.75",
+            ),
+            // GPT-5.2 系列
+            ("gpt-5.2", "GPT-5.2", "1.75", "14", "0.175", "0"),
+            ("gpt-5.2-low", "GPT-5.2", "1.75", "14", "0.175", "0"),
+            ("gpt-5.2-medium", "GPT-5.2", "1.75", "14", "0.175", "0"),
+            ("gpt-5.2-high", "GPT-5.2", "1.75", "14", "0.175", "0"),
+            ("gpt-5.2-xhigh", "GPT-5.2", "1.75", "14", "0.175", "0"),
+            ("gpt-5.2-codex", "GPT-5.2 Codex", "1.75", "14", "0.175", "0"),
+            (
+                "gpt-5.2-codex-low",
+                "GPT-5.2 Codex",
+                "1.75",
+                "14",
+                "0.175",
+                "0",
+            ),
+            (
+                "gpt-5.2-codex-medium",
+                "GPT-5.2 Codex",
+                "1.75",
+                "14",
+                "0.175",
+                "0",
+            ),
+            (
+                "gpt-5.2-codex-high",
+                "GPT-5.2 Codex",
+                "1.75",
+                "14",
+                "0.175",
+                "0",
+            ),
+            (
+                "gpt-5.2-codex-xhigh",
+                "GPT-5.2 Codex",
+                "1.75",
+                "14",
+                "0.175",
+                "0",
+            ),
+            // GPT-5.1 系列
+            ("gpt-5.1", "GPT-5.1", "1.25", "10", "0.125", "0"),
+            ("gpt-5.1-low", "GPT-5.1", "1.25", "10", "0.125", "0"),
+            ("gpt-5.1-medium", "GPT-5.1", "1.25", "10", "0.125", "0"),
+            ("gpt-5.1-high", "GPT-5.1", "1.25", "10", "0.125", "0"),
+            ("gpt-5.1-minimal", "GPT-5.1", "1.25", "10", "0.125", "0"),
+            ("gpt-5.1-codex", "GPT-5.1 Codex", "1.25", "10", "0.125", "0"),
+            (
+                "gpt-5.1-codex-mini",
+                "GPT-5.1 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            (
+                "gpt-5.1-codex-max",
+                "GPT-5.1 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            (
+                "gpt-5.1-codex-max-high",
+                "GPT-5.1 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            (
+                "gpt-5.1-codex-max-xhigh",
+                "GPT-5.1 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            // GPT-5 系列
             ("gpt-5", "GPT-5", "1.25", "10", "0.125", "0"),
-            ("gpt-5-1", "GPT-5.1", "1.25", "10", "0.125", "0"),
+            ("gpt-5-low", "GPT-5", "1.25", "10", "0.125", "0"),
+            ("gpt-5-medium", "GPT-5", "1.25", "10", "0.125", "0"),
+            ("gpt-5-high", "GPT-5", "1.25", "10", "0.125", "0"),
+            ("gpt-5-minimal", "GPT-5", "1.25", "10", "0.125", "0"),
             ("gpt-5-codex", "GPT-5 Codex", "1.25", "10", "0.125", "0"),
-            ("gpt-5-1-codex", "GPT-5.1 Codex", "1.25", "10", "0.125", "0"),
+            ("gpt-5-codex-low", "GPT-5 Codex", "1.25", "10", "0.125", "0"),
+            (
+                "gpt-5-codex-medium",
+                "GPT-5 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            (
+                "gpt-5-codex-high",
+                "GPT-5 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            (
+                "gpt-5-codex-mini",
+                "GPT-5 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            (
+                "gpt-5-codex-mini-medium",
+                "GPT-5 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
+            (
+                "gpt-5-codex-mini-high",
+                "GPT-5 Codex",
+                "1.25",
+                "10",
+                "0.125",
+                "0",
+            ),
             // Gemini 3 系列
             (
                 "gemini-3-pro-preview",
                 "Gemini 3 Pro Preview",
                 "2",
                 "12",
-                "0",
+                "0.2",
                 "0",
             ),
-            // Gemini 2.5 系列（model_id 使用短横线格式）
             (
-                "gemini-2-5-pro",
+                "gemini-3-flash-preview",
+                "Gemini 3 Flash Preview",
+                "0.5",
+                "3",
+                "0.05",
+                "0",
+            ),
+            // Gemini 2.5 系列
+            (
+                "gemini-2.5-pro",
                 "Gemini 2.5 Pro",
                 "1.25",
                 "10",
@@ -805,13 +1074,75 @@ impl Database {
                 "0",
             ),
             (
-                "gemini-2-5-flash",
+                "gemini-2.5-flash",
                 "Gemini 2.5 Flash",
                 "0.3",
                 "2.5",
                 "0.03",
                 "0",
             ),
+            // ====== 国产模型 (CNY/1M tokens) ======
+            // Doubao (字节跳动)
+            (
+                "doubao-seed-code",
+                "Doubao Seed Code",
+                "1.20",
+                "8.00",
+                "0.24",
+                "0",
+            ),
+            // DeepSeek 系列
+            (
+                "deepseek-v3.2",
+                "DeepSeek V3.2",
+                "2.00",
+                "3.00",
+                "0.40",
+                "0",
+            ),
+            (
+                "deepseek-v3.1",
+                "DeepSeek V3.1",
+                "4.00",
+                "12.00",
+                "0.80",
+                "0",
+            ),
+            ("deepseek-v3", "DeepSeek V3", "2.00", "8.00", "0.40", "0"),
+            // Kimi (月之暗面)
+            (
+                "kimi-k2-thinking",
+                "Kimi K2 Thinking",
+                "4.00",
+                "16.00",
+                "1.00",
+                "0",
+            ),
+            ("kimi-k2-0905", "Kimi K2", "4.00", "16.00", "1.00", "0"),
+            (
+                "kimi-k2-turbo",
+                "Kimi K2 Turbo",
+                "8.00",
+                "58.00",
+                "1.00",
+                "0",
+            ),
+            // MiniMax 系列
+            ("minimax-m2.1", "MiniMax M2.1", "2.10", "8.40", "0.21", "0"),
+            (
+                "minimax-m2.1-lightning",
+                "MiniMax M2.1 Lightning",
+                "2.10",
+                "16.80",
+                "0.21",
+                "0",
+            ),
+            ("minimax-m2", "MiniMax M2", "2.10", "8.40", "0.21", "0"),
+            // GLM (智谱)
+            ("glm-4.7", "GLM-4.7", "2.00", "8.00", "0.40", "0"),
+            ("glm-4.6", "GLM-4.6", "2.00", "8.00", "0.40", "0"),
+            // Mimo (小米)
+            ("mimo-v2-flash", "Mimo V2 Flash", "0", "0", "0", "0"),
         ];
 
         for (model_id, display_name, input, output, cache_read, cache_creation) in pricing_data {

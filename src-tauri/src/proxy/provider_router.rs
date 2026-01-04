@@ -34,6 +34,8 @@ impl ProviderRouter {
     /// - 故障转移开启时：完全按照故障转移队列顺序返回，忽略当前供应商设置
     pub async fn select_providers(&self, app_type: &str) -> Result<Vec<Provider>, AppError> {
         let mut result = Vec::new();
+        let mut total_providers = 0usize;
+        let mut circuit_open_count = 0usize;
 
         // 检查该应用的自动故障转移开关是否开启（从 proxy_config 表读取）
         let auto_failover_enabled = match self.db.get_proxy_config_for_app(app_type).await {
@@ -53,18 +55,26 @@ impl ProviderRouter {
         if auto_failover_enabled {
             // 故障转移开启：使用 in_failover_queue 标记的供应商，按 sort_index 排序
             let failover_providers = self.db.get_failover_providers(app_type)?;
+            total_providers = failover_providers.len();
+            log::debug!("[{app_type}] Found {total_providers} failover queue provider(s)");
             log::info!(
-                "[{}] Failover enabled, using queue order ({} items)",
-                app_type,
-                failover_providers.len()
+                "[{app_type}] Failover enabled, using queue order ({total_providers} items)"
             );
 
             for provider in failover_providers {
                 // 检查熔断器状态
                 let circuit_key = format!("{}:{}", app_type, provider.id);
                 let breaker = self.get_or_create_circuit_breaker(&circuit_key).await;
+                let state = breaker.get_state().await;
 
                 if breaker.is_available().await {
+                    log::debug!(
+                        "[{}] Queue provider available: {} ({}) (state: {:?})",
+                        app_type,
+                        provider.name,
+                        provider.id,
+                        state
+                    );
                     log::info!(
                         "[{}] Queue provider available: {} ({}) at sort_index {:?}",
                         app_type,
@@ -74,10 +84,12 @@ impl ProviderRouter {
                     );
                     result.push(provider);
                 } else {
+                    circuit_open_count += 1;
                     log::debug!(
-                        "[{}] Queue provider {} circuit breaker open, skipping",
+                        "[{}] Queue provider {} circuit breaker open (state: {:?}), skipping",
                         app_type,
-                        provider.name
+                        provider.name,
+                        state
                     );
                 }
             }
@@ -94,15 +106,27 @@ impl ProviderRouter {
                         current.name,
                         current.id
                     );
+                    total_providers = 1;
                     result.push(current);
+                } else {
+                    log::debug!(
+                        "[{app_type}] Current provider id {current_id} not found in database"
+                    );
                 }
+            } else {
+                log::debug!("[{app_type}] No current provider configured");
             }
         }
 
         if result.is_empty() {
-            return Err(AppError::Config(format!(
-                "No available provider for {app_type} (all circuit breakers open or no providers configured)"
-            )));
+            // 区分两种情况：全部熔断 vs 未配置供应商
+            if total_providers > 0 && circuit_open_count == total_providers {
+                log::warn!("[{app_type}] 所有 {total_providers} 个供应商均已熔断，无可用渠道");
+                return Err(AppError::AllProvidersCircuitOpen);
+            } else {
+                log::warn!("[{app_type}] 未配置供应商或故障转移队列为空");
+                return Err(AppError::NoProvidersConfigured);
+            }
         }
 
         log::info!(
