@@ -358,6 +358,7 @@ export function ProviderForm({
     settingsConfig: form.watch("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
     initialData: appId === "claude" ? initialData : undefined,
+    selectedPresetId: selectedPresetId ?? undefined,
   });
 
   // 使用 Codex 通用配置片段 hook (仅 Codex 模式)
@@ -373,6 +374,7 @@ export function ProviderForm({
     codexConfig,
     onConfigChange: handleCodexConfigChange,
     initialData: appId === "codex" ? initialData : undefined,
+    selectedPresetId: selectedPresetId ?? undefined,
   });
 
   // 使用 Gemini 配置 hook (仅 Gemini 模式)
@@ -460,6 +462,7 @@ export function ProviderForm({
     envStringToObj,
     envObjToString,
     initialData: appId === "gemini" ? initialData : undefined,
+    selectedPresetId: selectedPresetId ?? undefined,
   });
 
   const [isCommonConfigModalOpen, setIsCommonConfigModalOpen] = useState(false);

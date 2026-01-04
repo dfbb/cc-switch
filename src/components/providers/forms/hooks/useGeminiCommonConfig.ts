@@ -19,6 +19,7 @@ interface UseGeminiCommonConfigProps {
   initialData?: {
     settingsConfig?: Record<string, unknown>;
   };
+  selectedPresetId?: string;
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -42,6 +43,7 @@ export function useGeminiCommonConfig({
   envStringToObj,
   envObjToString,
   initialData,
+  selectedPresetId,
 }: UseGeminiCommonConfigProps) {
   const { t } = useTranslation();
   const [useCommonConfig, setUseCommonConfig] = useState(false);
@@ -56,6 +58,11 @@ export function useGeminiCommonConfig({
   const isUpdatingFromCommonConfig = useRef(false);
   // 用于跟踪新建模式是否已初始化默认勾选
   const hasInitializedNewMode = useRef(false);
+
+  // 当预设变化时，重置初始化标记，使新预设能够重新触发初始化逻辑
+  useEffect(() => {
+    hasInitializedNewMode.current = false;
+  }, [selectedPresetId]);
 
   const parseSnippetEnv = useCallback(
     (
