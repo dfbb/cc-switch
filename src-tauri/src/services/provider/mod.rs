@@ -104,8 +104,8 @@ base_url = "http://localhost:8080"
             "should remove top-level model"
         );
         assert!(
-            !extracted.contains("https://azure.example"),
-            "should remove model_providers.* base_url"
+            !extracted.contains("[model_providers"),
+            "should remove entire model_providers table"
         );
         assert!(
             extracted.contains("http://localhost:8080"),
@@ -463,16 +463,8 @@ impl ProviderService {
         // Legacy/alt formats might use a top-level base_url.
         root.remove("base_url");
 
-        // Remove `base_url` only from `[model_providers.*]` tables (do not touch MCP servers).
-        if let Some(model_providers) = root.get_mut("model_providers") {
-            if let Some(model_providers_table) = model_providers.as_table_mut() {
-                for (_, provider_item) in model_providers_table.iter_mut() {
-                    if let Some(provider_table) = provider_item.as_table_mut() {
-                        provider_table.remove("base_url");
-                    }
-                }
-            }
-        }
+        // Remove entire model_providers table (provider-specific configuration)
+        root.remove("model_providers");
 
         // Clean up multiple empty lines (keep at most one blank line).
         let mut cleaned = String::new();
