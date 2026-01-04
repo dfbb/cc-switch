@@ -252,13 +252,15 @@ export function useCommonConfigSnippet({
     setUseCommonConfig(hasCommon);
   }, [settingsConfig, commonConfigSnippet, isLoading]);
 
-  // 从当前供应商提取通用配置片段
+  // 从编辑器当前内容提取通用配置片段
   const handleExtract = useCallback(async () => {
     setIsExtracting(true);
     setCommonConfigError("");
 
     try {
-      const extracted = await configApi.extractCommonConfigSnippet("claude");
+      const extracted = await configApi.extractCommonConfigSnippet("claude", {
+        settingsConfig,
+      });
 
       if (!extracted || extracted === "{}") {
         setCommonConfigError(t("claudeConfig.extractNoCommonConfig"));
@@ -283,7 +285,7 @@ export function useCommonConfigSnippet({
     } finally {
       setIsExtracting(false);
     }
-  }, []);
+  }, [settingsConfig, t]);
 
   return {
     useCommonConfig,

@@ -375,6 +375,18 @@ impl ProviderService {
         }
     }
 
+    /// Extract common config snippet from a config value (e.g. editor content).
+    pub fn extract_common_config_snippet_from_settings(
+        app_type: AppType,
+        settings_config: &Value,
+    ) -> Result<String, AppError> {
+        match app_type {
+            AppType::Claude => Self::extract_claude_common_config(settings_config),
+            AppType::Codex => Self::extract_codex_common_config(settings_config),
+            AppType::Gemini => Self::extract_gemini_common_config(settings_config),
+        }
+    }
+
     /// Extract common config for Claude (JSON format)
     fn extract_claude_common_config(settings: &Value) -> Result<String, AppError> {
         let mut config = settings.clone();

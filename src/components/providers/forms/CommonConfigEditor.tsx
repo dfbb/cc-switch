@@ -129,7 +129,7 @@ export function CommonConfigEditor({
                   <Download className="w-4 h-4" />
                 )}
                 {t("claudeConfig.extractFromCurrent", {
-                  defaultValue: "从当前供应商提取",
+                  defaultValue: "从编辑内容提取",
                 })}
               </Button>
             )}

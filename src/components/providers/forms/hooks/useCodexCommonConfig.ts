@@ -246,13 +246,17 @@ export function useCodexCommonConfig({
     setUseCommonConfig(hasCommon);
   }, [codexConfig, commonConfigSnippet, isLoading]);
 
-  // 从当前供应商提取通用配置片段
+  // 从编辑器当前内容提取通用配置片段
   const handleExtract = useCallback(async () => {
     setIsExtracting(true);
     setCommonConfigError("");
 
     try {
-      const extracted = await configApi.extractCommonConfigSnippet("codex");
+      const extracted = await configApi.extractCommonConfigSnippet("codex", {
+        settingsConfig: JSON.stringify({
+          config: codexConfig ?? "",
+        }),
+      });
 
       if (!extracted || !extracted.trim()) {
         setCommonConfigError(t("codexConfig.extractNoCommonConfig"));
@@ -270,7 +274,7 @@ export function useCodexCommonConfig({
     } finally {
       setIsExtracting(false);
     }
-  }, []);
+  }, [codexConfig, t]);
 
   return {
     useCommonConfig,

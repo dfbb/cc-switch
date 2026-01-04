@@ -402,13 +402,20 @@ export function useGeminiCommonConfig({
     parseSnippetEnv,
   ]);
 
-  // 从当前供应商提取通用配置片段
+  // 从编辑器当前内容提取通用配置片段
   const handleExtract = useCallback(async () => {
     setIsExtracting(true);
     setCommonConfigError("");
 
     try {
-      const extracted = await configApi.extractCommonConfigSnippet("gemini");
+      const extracted = await configApi.extractCommonConfigSnippet(
+        "gemini",
+        {
+          settingsConfig: JSON.stringify({
+            env: envStringToObj(envValue),
+          }),
+        },
+      );
 
       if (!extracted || extracted === "{}") {
         setCommonConfigError(t("geminiConfig.extractNoCommonConfig"));
@@ -433,7 +440,7 @@ export function useGeminiCommonConfig({
     } finally {
       setIsExtracting(false);
     }
-  }, [parseSnippetEnv, t]);
+  }, [envStringToObj, envValue, parseSnippetEnv, t]);
 
   return {
     useCommonConfig,
