@@ -292,6 +292,14 @@ impl ProviderService {
             )
             .map_err(|e| AppError::Message(format!("更新 Live 备份失败: {e}")))?;
 
+            // 关键修复：接管模式下切换供应商不会写回 Live 配置，
+            // 需要主动清理 Claude Live 中的“模型覆盖”字段，避免仍以旧模型名发起请求。
+            if matches!(app_type, AppType::Claude) {
+                if let Err(e) = state.proxy_service.cleanup_claude_model_overrides_in_live() {
+                    log::warn!("清理 Claude Live 模型字段失败（不影响切换结果）: {e}");
+                }
+            }
+
             // Note: No Live config write, no MCP sync
             // The proxy server will route requests to the new provider via is_current
             return Ok(());
