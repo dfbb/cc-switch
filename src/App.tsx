@@ -430,12 +430,7 @@ function App() {
             />
           );
         case "skillsDiscovery":
-          return (
-            <SkillsPage
-              ref={skillsPageRef}
-              initialApp={activeApp}
-            />
-          );
+          return <SkillsPage ref={skillsPageRef} initialApp={activeApp} />;
         case "mcp":
           return (
             <UnifiedMcpPanel
@@ -573,7 +568,9 @@ function App() {
                   size="icon"
                   onClick={() =>
                     setCurrentView(
-                      currentView === "skillsDiscovery" ? "skills" : "providers",
+                      currentView === "skillsDiscovery"
+                        ? "skills"
+                        : "providers",
                     )
                   }
                   className="mr-2 rounded-lg"

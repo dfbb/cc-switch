@@ -324,7 +324,9 @@ export function useGeminiCommonConfig({
         // 保存到 config.json（清空）
         configApi.setCommonConfigSnippet("gemini", "").catch((error) => {
           console.error("保存 Gemini 通用配置失败:", error);
-          setCommonConfigError(t("geminiConfig.saveFailed", { error: String(error) }));
+          setCommonConfigError(
+            t("geminiConfig.saveFailed", { error: String(error) }),
+          );
         });
 
         if (useCommonConfig) {
@@ -349,7 +351,9 @@ export function useGeminiCommonConfig({
       setCommonConfigError("");
       configApi.setCommonConfigSnippet("gemini", value).catch((error) => {
         console.error("保存 Gemini 通用配置失败:", error);
-        setCommonConfigError(t("geminiConfig.saveFailed", { error: String(error) }));
+        setCommonConfigError(
+          t("geminiConfig.saveFailed", { error: String(error) }),
+        );
       });
 
       // 若当前启用通用配置，需要替换为最新片段
@@ -415,14 +419,11 @@ export function useGeminiCommonConfig({
     setCommonConfigError("");
 
     try {
-      const extracted = await configApi.extractCommonConfigSnippet(
-        "gemini",
-        {
-          settingsConfig: JSON.stringify({
-            env: envStringToObj(envValue),
-          }),
-        },
-      );
+      const extracted = await configApi.extractCommonConfigSnippet("gemini", {
+        settingsConfig: JSON.stringify({
+          env: envStringToObj(envValue),
+        }),
+      });
 
       if (!extracted || extracted === "{}") {
         setCommonConfigError(t("geminiConfig.extractNoCommonConfig"));
@@ -443,7 +444,9 @@ export function useGeminiCommonConfig({
       await configApi.setCommonConfigSnippet("gemini", extracted);
     } catch (error) {
       console.error("提取 Gemini 通用配置失败:", error);
-      setCommonConfigError(t("geminiConfig.extractFailed", { error: String(error) }));
+      setCommonConfigError(
+        t("geminiConfig.extractFailed", { error: String(error) }),
+      );
     } finally {
       setIsExtracting(false);
     }

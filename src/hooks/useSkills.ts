@@ -99,7 +99,8 @@ export function useScanUnmanagedSkills() {
 export function useImportSkillsFromApps() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (directories: string[]) => skillsApi.importFromApps(directories),
+    mutationFn: (directories: string[]) =>
+      skillsApi.importFromApps(directories),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["skills", "installed"] });
       queryClient.invalidateQueries({ queryKey: ["skills", "unmanaged"] });

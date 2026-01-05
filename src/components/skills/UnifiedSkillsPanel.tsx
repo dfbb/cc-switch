@@ -116,10 +116,9 @@ const UnifiedSkillsPanel = React.forwardRef<
     try {
       const imported = await importMutation.mutateAsync(directories);
       setImportDialogOpen(false);
-      toast.success(
-        t("skills.importSuccess", { count: imported.length }),
-        { closeButton: true },
-      );
+      toast.success(t("skills.importSuccess", { count: imported.length }), {
+        closeButton: true,
+      });
     } catch (error) {
       toast.error(t("common.error"), {
         description: String(error),

@@ -142,7 +142,13 @@ export function useCodexCommonConfig({
         }
       }
     }
-  }, [initialData, commonConfigSnippet, isLoading, codexConfig, onConfigChange]);
+  }, [
+    initialData,
+    commonConfigSnippet,
+    isLoading,
+    codexConfig,
+    onConfigChange,
+  ]);
 
   // 处理通用配置开关
   const handleCommonConfigToggle = useCallback(
@@ -184,7 +190,9 @@ export function useCodexCommonConfig({
         // 保存到 config.json（清空）
         configApi.setCommonConfigSnippet("codex", "").catch((error) => {
           console.error("保存 Codex 通用配置失败:", error);
-          setCommonConfigError(t("codexConfig.saveFailed", { error: String(error) }));
+          setCommonConfigError(
+            t("codexConfig.saveFailed", { error: String(error) }),
+          );
         });
 
         if (useCommonConfig) {
@@ -204,7 +212,9 @@ export function useCodexCommonConfig({
       // 保存到 config.json
       configApi.setCommonConfigSnippet("codex", value).catch((error) => {
         console.error("保存 Codex 通用配置失败:", error);
-        setCommonConfigError(t("codexConfig.saveFailed", { error: String(error) }));
+        setCommonConfigError(
+          t("codexConfig.saveFailed", { error: String(error) }),
+        );
       });
 
       // 若当前启用通用配置，需要替换为最新片段
@@ -277,7 +287,9 @@ export function useCodexCommonConfig({
       await configApi.setCommonConfigSnippet("codex", extracted);
     } catch (error) {
       console.error("提取 Codex 通用配置失败:", error);
-      setCommonConfigError(t("codexConfig.extractFailed", { error: String(error) }));
+      setCommonConfigError(
+        t("codexConfig.extractFailed", { error: String(error) }),
+      );
     } finally {
       setIsExtracting(false);
     }

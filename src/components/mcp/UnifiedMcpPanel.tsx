@@ -3,7 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useAllMcpServers, useToggleMcpApp, useDeleteMcpServer, useImportMcpFromApps } from "@/hooks/useMcp";
+import {
+  useAllMcpServers,
+  useToggleMcpApp,
+  useDeleteMcpServer,
+  useImportMcpFromApps,
+} from "@/hooks/useMcp";
 import type { McpServer } from "@/types";
 import type { AppId } from "@/lib/api/types";
 import McpFormModal from "./McpFormModal";
@@ -91,9 +96,13 @@ const UnifiedMcpPanel = React.forwardRef<
     try {
       const count = await importMutation.mutateAsync();
       if (count === 0) {
-        toast.success(t("mcp.unifiedPanel.noImportFound"), { closeButton: true });
+        toast.success(t("mcp.unifiedPanel.noImportFound"), {
+          closeButton: true,
+        });
       } else {
-        toast.success(t("mcp.unifiedPanel.importSuccess", { count }), { closeButton: true });
+        toast.success(t("mcp.unifiedPanel.importSuccess", { count }), {
+          closeButton: true,
+        });
       }
     } catch (error) {
       toast.error(t("common.error"), {

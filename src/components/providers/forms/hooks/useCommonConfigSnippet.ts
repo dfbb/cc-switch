@@ -144,7 +144,13 @@ export function useCommonConfigSnippet({
         // ignore parse error
       }
     }
-  }, [initialData, commonConfigSnippet, isLoading, settingsConfig, onConfigChange]);
+  }, [
+    initialData,
+    commonConfigSnippet,
+    isLoading,
+    settingsConfig,
+    onConfigChange,
+  ]);
 
   // 处理通用配置开关
   const handleCommonConfigToggle = useCallback(
@@ -185,7 +191,9 @@ export function useCommonConfigSnippet({
         // 保存到 config.json（清空）
         configApi.setCommonConfigSnippet("claude", "").catch((error) => {
           console.error("保存通用配置失败:", error);
-          setCommonConfigError(t("claudeConfig.saveFailed", { error: String(error) }));
+          setCommonConfigError(
+            t("claudeConfig.saveFailed", { error: String(error) }),
+          );
         });
 
         if (useCommonConfig) {
@@ -209,7 +217,9 @@ export function useCommonConfigSnippet({
         // 保存到 config.json
         configApi.setCommonConfigSnippet("claude", value).catch((error) => {
           console.error("保存通用配置失败:", error);
-          setCommonConfigError(t("claudeConfig.saveFailed", { error: String(error) }));
+          setCommonConfigError(
+            t("claudeConfig.saveFailed", { error: String(error) }),
+          );
         });
       }
 
@@ -288,7 +298,9 @@ export function useCommonConfigSnippet({
       await configApi.setCommonConfigSnippet("claude", extracted);
     } catch (error) {
       console.error("提取通用配置失败:", error);
-      setCommonConfigError(t("claudeConfig.extractFailed", { error: String(error) }));
+      setCommonConfigError(
+        t("claudeConfig.extractFailed", { error: String(error) }),
+      );
     } finally {
       setIsExtracting(false);
     }
