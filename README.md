@@ -186,7 +186,19 @@ paru -S cc-switch-bin
 
 ### Linux Users
 
-Download the latest `CC-Switch-v{version}-Linux.deb` package or `CC-Switch-v{version}-Linux.AppImage` from the [Releases](../../releases) page.
+Download the latest Linux build from the [Releases](../../releases) page:
+
+- `CC-Switch-v{version}-Linux.deb` (Debian/Ubuntu)
+- `CC-Switch-v{version}-Linux.rpm` (Fedora/RHEL/openSUSE)
+- `CC-Switch-v{version}-Linux.AppImage` (Universal)
+- `CC-Switch-v{version}-Linux.flatpak` (Flatpak)
+
+Flatpak install & run:
+
+```bash
+flatpak install --user ./CC-Switch-v{version}-Linux.flatpak
+flatpak run com.ccswitch.desktop
+```
 
 ## Quick Start
 

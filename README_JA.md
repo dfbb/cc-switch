@@ -186,7 +186,19 @@ paru -S cc-switch-bin
 
 ### Linux ユーザー
 
-[Releases](../../releases) から最新版の `CC-Switch-v{version}-Linux.deb` または `CC-Switch-v{version}-Linux.AppImage` をダウンロード。
+[Releases](../../releases) から最新版の Linux ビルドをダウンロード：
+
+- `CC-Switch-v{version}-Linux.deb`（Debian/Ubuntu）
+- `CC-Switch-v{version}-Linux.rpm`（Fedora/RHEL/openSUSE）
+- `CC-Switch-v{version}-Linux.AppImage`（汎用）
+- `CC-Switch-v{version}-Linux.flatpak`（Flatpak）
+
+Flatpak のインストールと起動：
+
+```bash
+flatpak install --user ./CC-Switch-v{version}-Linux.flatpak
+flatpak run com.ccswitch.desktop
+```
 
 ## クイックスタート
 

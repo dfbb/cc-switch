@@ -186,7 +186,19 @@ paru -S cc-switch-bin
 
 ### Linux 用户
 
-从 [Releases](../../releases) 页面下载最新版本的 `CC-Switch-v{版本号}-Linux.deb` 包或者 `CC-Switch-v{版本号}-Linux.AppImage` 安装包。
+从 [Releases](../../releases) 页面下载最新版本的 Linux 安装包：
+
+- `CC-Switch-v{版本号}-Linux.deb`（Debian/Ubuntu）
+- `CC-Switch-v{版本号}-Linux.rpm`（Fedora/RHEL/openSUSE）
+- `CC-Switch-v{版本号}-Linux.AppImage`（通用）
+- `CC-Switch-v{版本号}-Linux.flatpak`（Flatpak）
+
+Flatpak 安装与运行：
+
+```bash
+flatpak install --user ./CC-Switch-v{版本号}-Linux.flatpak
+flatpak run com.ccswitch.desktop
+```
 
 ## 快速开始
 

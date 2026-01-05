@@ -1,0 +1,45 @@
+id: com.ccswitch.desktop
+
+runtime: org.gnome.Platform
+runtime-version: '46'
+sdk: org.gnome.Sdk
+
+command: cc-switch
+
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Tray icon permissions (required by Tauri tray-icon)
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --filesystem=xdg-run/tray-icon:create
+  # GitHub Releases scenario: Users download and install manually.
+  # For "download and run" convenience (needs read/write access to ~/.cc-switch, ~/.claude, ~/.claude.json, ~/.codex, ~/.gemini,
+  # and supports custom directory overrides), we grant full Home access by default.
+  # If you plan to publish on Flathub or prefer minimal permissions, replace this with more precise directory grants (see flatpak/README.md).
+  - --filesystem=home
+
+modules:
+  - name: cc-switch
+    buildsystem: simple
+    sources:
+      # Placed in flatpak/ directory by CI or local build script
+      - type: file
+        path: cc-switch.deb
+      - type: file
+        path: com.ccswitch.desktop.desktop
+      - type: file
+        path: com.ccswitch.desktop.metainfo.xml
+      - type: file
+        path: ../src-tauri/icons/128x128.png
+    build-commands:
+      - ar -x *.deb
+      - tar -xf data.tar.*
+      - cp -a usr/* /app/
+      # Use our own desktop/metainfo/icon to align with Flatpak app id
+      - rm -f /app/share/applications/*.desktop
+      - install -Dm644 com.ccswitch.desktop.desktop /app/share/applications/com.ccswitch.desktop.desktop
+      - install -Dm644 com.ccswitch.desktop.metainfo.xml /app/share/metainfo/com.ccswitch.desktop.metainfo.xml
+      - install -Dm644 128x128.png /app/share/icons/hicolor/128x128/apps/com.ccswitch.desktop.png
