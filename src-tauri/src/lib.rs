@@ -273,12 +273,25 @@ pub fn run() {
                 None
             };
 
-            // 现在创建数据库
-            let db = match crate::database::Database::init() {
-                Ok(db) => Arc::new(db),
-                Err(e) => {
-                    log::error!("Failed to init database: {e}");
-                    return Err(Box::new(e));
+            // 现在创建数据库（包含 Schema 迁移）
+            //
+            // 说明：从 v3.8.* 升级的用户通常会走到这里的 SQLite schema 迁移，
+            // 若迁移失败（数据库损坏/权限不足/user_version 过新等），需要给用户明确提示，
+            // 否则表现可能只是“应用打不开/闪退”。
+            let db = loop {
+                match crate::database::Database::init() {
+                    Ok(db) => break Arc::new(db),
+                    Err(e) => {
+                        log::error!("Failed to init database: {e}");
+
+                        if !show_database_init_error_dialog(app.handle(), &db_path, &e.to_string())
+                        {
+                            log::info!("用户选择退出程序");
+                            std::process::exit(1);
+                        }
+
+                        log::info!("用户选择重试初始化数据库");
+                    }
                 }
             };
 
@@ -1023,6 +1036,71 @@ fn show_migration_error_dialog(app: &tauri::AppHandle, error: &str) -> bool {
 
     // 使用 blocking_show 同步等待用户响应
     // OkCancelCustom: 第一个按钮（重试）返回 true，第二个按钮（退出）返回 false
+    app.dialog()
+        .message(&message)
+        .title(title)
+        .kind(MessageDialogKind::Error)
+        .buttons(MessageDialogButtons::OkCancelCustom(
+            retry_text.to_string(),
+            exit_text.to_string(),
+        ))
+        .blocking_show()
+}
+
+/// 显示数据库初始化/Schema 迁移失败对话框
+/// 返回 true 表示用户选择重试，false 表示用户选择退出
+fn show_database_init_error_dialog(
+    app: &tauri::AppHandle,
+    db_path: &std::path::Path,
+    error: &str,
+) -> bool {
+    let title = if is_chinese_locale() {
+        "数据库初始化失败"
+    } else {
+        "Database Initialization Failed"
+    };
+
+    let message = if is_chinese_locale() {
+        format!(
+            "初始化数据库或迁移数据库结构时发生错误：\n\n{error}\n\n\
+            数据库文件路径：\n{db}\n\n\
+            您的数据尚未丢失，应用不会自动删除数据库文件。\n\
+            常见原因包括：数据库版本过新、文件损坏、权限不足、磁盘空间不足等。\n\n\
+            建议：\n\
+            1) 先备份整个配置目录（包含 cc-switch.db）\n\
+            2) 如果提示“数据库版本过新”，请升级到更新版本\n\
+            3) 如果刚升级出现异常，可回退旧版本导出/备份后再升级\n\n\
+            点击「重试」重新尝试初始化\n\
+            点击「退出」关闭程序",
+            db = db_path.display()
+        )
+    } else {
+        format!(
+            "An error occurred while initializing or migrating the database:\n\n{error}\n\n\
+            Database file path:\n{db}\n\n\
+            Your data is NOT lost - the app will not delete the database automatically.\n\
+            Common causes include: newer database version, corrupted file, permission issues, or low disk space.\n\n\
+            Suggestions:\n\
+            1) Back up the entire config directory (including cc-switch.db)\n\
+            2) If you see “database version is newer”, please upgrade CC Switch\n\
+            3) If this happened right after upgrading, consider rolling back to export/backup then upgrade again\n\n\
+            Click 'Retry' to attempt initialization again\n\
+            Click 'Exit' to close the program",
+            db = db_path.display()
+        )
+    };
+
+    let retry_text = if is_chinese_locale() {
+        "重试"
+    } else {
+        "Retry"
+    };
+    let exit_text = if is_chinese_locale() {
+        "退出"
+    } else {
+        "Exit"
+    };
+
     app.dialog()
         .message(&message)
         .title(title)
