@@ -52,12 +52,14 @@ interface SettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImportSuccess?: () => void | Promise<void>;
+  defaultTab?: string;
 }
 
 export function SettingsPage({
   open,
   onOpenChange,
   onImportSuccess,
+  defaultTab = "general",
 }: SettingsDialogProps) {
   const { t } = useTranslation();
   const {
@@ -98,10 +100,10 @@ export function SettingsPage({
 
   useEffect(() => {
     if (open) {
-      setActiveTab("general");
+      setActiveTab(defaultTab);
       resetStatus();
     }
-  }, [open, resetStatus]);
+  }, [open, resetStatus, defaultTab]);
 
   useEffect(() => {
     if (requiresRestart) {

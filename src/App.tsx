@@ -70,6 +70,7 @@ function App() {
 
   const [activeApp, setActiveApp] = useState<AppId>("claude");
   const [currentView, setCurrentView] = useState<View>("providers");
+  const [settingsDefaultTab, setSettingsDefaultTab] = useState("general");
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
@@ -411,6 +412,7 @@ function App() {
               open={true}
               onOpenChange={() => setCurrentView("providers")}
               onImportSuccess={handleImportSuccess}
+              defaultTab={settingsDefaultTab}
             />
           );
         case "prompts":
@@ -610,14 +612,20 @@ function App() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => setCurrentView("settings")}
+                    onClick={() => {
+                      setSettingsDefaultTab("general");
+                      setCurrentView("settings");
+                    }}
                     title={t("common.settings")}
                     className="hover:bg-black/5 dark:hover:bg-white/5"
                   >
                     <Settings className="w-4 h-4" />
                   </Button>
                 </div>
-                <UpdateBadge onClick={() => setCurrentView("settings")} />
+                <UpdateBadge onClick={() => {
+                  setSettingsDefaultTab("about");
+                  setCurrentView("settings");
+                }} />
               </>
             )}
           </div>
