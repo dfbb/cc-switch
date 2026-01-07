@@ -373,6 +373,28 @@ export const providerPresets: ProviderPreset[] = [
     icon: "packycode",
   },
   {
+    name: "Cubence",
+    websiteUrl: "https://cubence.com",
+    apiKeyUrl: "https://cubence.com/signup?code=CCSWITCH&source=ccs",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://api.cubence.com",
+        ANTHROPIC_AUTH_TOKEN: "",
+      },
+    },
+    endpointCandidates: [
+      "https://api.cubence.com",
+      "https://api-cf.cubence.com",
+      "https://api-dmit.cubence.com",
+      "https://api-bwg.cubence.com",
+    ],
+    category: "third_party",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "cubence", // 促销信息 i18n key
+    icon: "cubence",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

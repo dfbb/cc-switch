@@ -153,4 +153,40 @@ requires_openai_auth = true`,
     partnerPromotionKey: "packycode", // 促销信息 i18n key
     icon: "packycode",
   },
+  {
+    name: "Cubence",
+    websiteUrl: "https://cubence.com",
+    apiKeyUrl: "https://cubence.com/signup?code=CCSWITCH&source=ccs",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "cubence",
+      "https://api.cubence.com/v1",
+      "gpt-5.2",
+    ),
+    endpointCandidates: [
+      "https://api.cubence.com/v1",
+      "https://api-cf.cubence.com/v1",
+      "https://api-dmit.cubence.com/v1",
+      "https://api-bwg.cubence.com/v1",
+    ],
+    category: "third_party",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "cubence", // 促销信息 i18n key  
+    icon: "cubence",
+    iconColor: "#000000",
+  },
+  {
+    name: "OpenRouter",
+    websiteUrl: "https://openrouter.ai",
+    apiKeyUrl: "https://openrouter.ai/keys",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "openrouter",
+      "https://openrouter.ai/api/v1",
+      "gpt-5.2",
+    ),
+    category: "aggregator",
+    icon: "openrouter",
+    iconColor: "#6566F1",
+  },  
 ];

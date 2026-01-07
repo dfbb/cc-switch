@@ -79,6 +79,13 @@ export const iconMetadata: Record<string, IconMetadata> = {
     keywords: [],
     defaultColor: "currentColor",
   },
+  cubence: {
+    name: "cubence",
+    displayName: "Cubence",
+    category: "ai-provider",
+    keywords: ["cubence", "api", "relay"],
+    defaultColor: "#4B5563",
+  },
   deepseek: {
     name: "deepseek",
     displayName: "DeepSeek",

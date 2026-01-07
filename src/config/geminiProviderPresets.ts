@@ -56,11 +56,11 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     settingsConfig: {
       env: {
         GOOGLE_GEMINI_BASE_URL: "https://www.packyapi.com",
-        GEMINI_MODEL: "gemini-3-pro-preview",
+        GEMINI_MODEL: "gemini-3-pro",
       },
     },
     baseURL: "https://www.packyapi.com",
-    model: "gemini-3-pro-preview",
+    model: "gemini-3-pro",
     description: "PackyCode",
     category: "third_party",
     isPartner: true,
@@ -72,15 +72,57 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     icon: "packycode",
   },
   {
+    name: "Cubence",
+    websiteUrl: "https://cubence.com",
+    apiKeyUrl: "https://cubence.com/signup?code=CCSWITCH&source=ccs",
+    settingsConfig: {
+      env: {
+        GOOGLE_GEMINI_BASE_URL: "https://api.cubence.com",
+        GEMINI_MODEL: "gemini-3-pro",
+      },
+    },
+    baseURL: "https://api.cubence.com",
+    model: "gemini-3-pro",
+    description: "Cubence",
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "cubence",
+    endpointCandidates: [
+      "https://api.cubence.com/v1",
+      "https://api-cf.cubence.com/v1",
+      "https://api-dmit.cubence.com/v1",
+      "https://api-bwg.cubence.com/v1",
+    ],
+    icon: "cubence",
+    iconColor: "#000000",
+  },
+  {
+    name: "OpenRouter",
+    websiteUrl: "https://openrouter.ai",
+    apiKeyUrl: "https://openrouter.ai/keys",
+    settingsConfig: {
+      env: {
+        GOOGLE_GEMINI_BASE_URL: "https://openrouter.ai/api",
+        GEMINI_MODEL: "gemini-3-pro-preview",
+      },
+    },  
+    baseURL: "https://openrouter.ai/api",
+    model: "gemini-3-pro",
+    description: "OpenRouter",
+    category: "aggregator",
+    icon: "openrouter",
+    iconColor: "#6566F1",
+  },
+  {
     name: "自定义",
     websiteUrl: "",
     settingsConfig: {
       env: {
         GOOGLE_GEMINI_BASE_URL: "",
-        GEMINI_MODEL: "gemini-3-pro-preview",
+        GEMINI_MODEL: "gemini-3-pro",
       },
     },
-    model: "gemini-3-pro-preview",
+    model: "gemini-3-pro",
     description: "自定义 Gemini API 端点",
     category: "custom",
   },
