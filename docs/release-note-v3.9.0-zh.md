@@ -133,19 +133,44 @@ CC Switch v3.9.0 是 v3.9 测试版序列（`3.9.0-1`、`3.9.0-2`、`3.9.0-3`）
 
 ## 下载与安装
 
+访问 [Releases](https://github.com/farion1231/cc-switch/releases/latest) 下载对应版本。
+
 ### 系统要求
 
-- **Windows**：Windows 10 +
-- **MacOS**：MacOS 10.15 (Catalina) +
-- **Linux**：Ubuntu 22.04 + | Debian 11 + | Fedora 34 +
+| 系统 | 最低版本 | 架构 |
+|------|----------|------|
+| Windows | Windows 10 及以上 | x64 |
+| macOS | macOS 10.15 (Catalina) 及以上 | Intel (x64) / Apple Silicon (arm64) |
+| Linux | 见下表 | x64 |
 
-### 下载链接
+### Windows
 
-访问 [Releases](https://github.com/farion1231/cc-switch/releases/latest) 下载：
+| 文件 | 说明 |
+|------|------|
+| `CC-Switch-v3.9.0-Windows.msi` | **推荐** - MSI 安装包，支持自动更新 |
+| `CC-Switch-v3.9.0-Windows-Portable.zip` | 便携版，解压即用，不写入注册表 |
 
-- **Windows**：`CC-Switch-v3.9.0-Windows.msi` 或 `-Portable.zip`
-- **MacOS**：`CC-Switch-v3.9.0-macOS.tar.gz` 或 `.zip`
-- **Linux**：`CC-Switch-v3.9.0-Linux.AppImage` 或 `.deb`
+### macOS
+
+| 文件 | 说明 |
+|------|------|
+| `CC-Switch-v3.9.0-macOS.zip` | **推荐** - 解压后拖入 Applications 即可，Universal Binary |
+| `CC-Switch-v3.9.0-macOS.tar.gz` | 用于 Homebrew 安装和自动更新 |
+
+> **提示**：macOS 如遇"已损坏"提示，可在终端执行：`xattr -cr "/Applications/CC Switch.app"`
+
+### Linux
+
+| 发行版 | 推荐格式 | 安装方式 |
+|--------|----------|----------|
+| Ubuntu / Debian / Linux Mint / Pop!_OS | `.deb` | `sudo dpkg -i CC-Switch-*.deb` 或 `sudo apt install ./CC-Switch-*.deb` |
+| Fedora / RHEL / CentOS / Rocky Linux | `.rpm` | `sudo rpm -i CC-Switch-*.rpm` 或 `sudo dnf install ./CC-Switch-*.rpm` |
+| openSUSE | `.rpm` | `sudo zypper install ./CC-Switch-*.rpm` |
+| Arch Linux / Manjaro | `.AppImage` | 添加执行权限后直接运行，或使用 AUR |
+| 其他发行版 / 不确定 | `.AppImage` | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage` |
+| 沙箱隔离需求 | `.flatpak` | `flatpak install CC-Switch-*.flatpak` |
+
+> **提示**：AppImage 支持自动更新，跨发行版通用，推荐不确定使用哪种格式时选择。
 
 ### Homebrew（MacOS）
 

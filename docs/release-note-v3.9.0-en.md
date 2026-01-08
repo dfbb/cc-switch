@@ -133,19 +133,44 @@ It introduces a local API proxy with per-app takeover, automatic failover, unive
 
 ## Download & Installation
 
+Visit [Releases](https://github.com/farion1231/cc-switch/releases/latest) to download the appropriate version.
+
 ### System Requirements
 
-- **Windows**: Windows 10 +
-- **MacOS**: MacOS 10.15 (Catalina) +
-- **Linux**: Ubuntu 22.04 + | Debian 11 + | Fedora 34 +
+| System | Minimum Version | Architecture |
+|--------|-----------------|--------------|
+| Windows | Windows 10 or later | x64 |
+| macOS | macOS 10.15 (Catalina) or later | Intel (x64) / Apple Silicon (arm64) |
+| Linux | See table below | x64 |
 
-### Download Links
+### Windows
 
-Visit [Releases](https://github.com/farion1231/cc-switch/releases/latest) to download:
+| File | Description |
+|------|-------------|
+| `CC-Switch-v3.9.0-Windows.msi` | **Recommended** - MSI installer with auto-update support |
+| `CC-Switch-v3.9.0-Windows-Portable.zip` | Portable version, no installation required |
 
-- **Windows**: `CC-Switch-v3.9.0-Windows.msi` or `-Portable.zip`
-- **MacOS**: `CC-Switch-v3.9.0-macOS.tar.gz` or `.zip`
-- **Linux**: `CC-Switch-v3.9.0-Linux.AppImage` or `.deb`
+### macOS
+
+| File | Description |
+|------|-------------|
+| `CC-Switch-v3.9.0-macOS.zip` | **Recommended** - Extract and drag to Applications, Universal Binary |
+| `CC-Switch-v3.9.0-macOS.tar.gz` | For Homebrew installation and auto-update |
+
+> **Tip**: If you see "app is damaged" on macOS, run in Terminal: `xattr -cr "/Applications/CC Switch.app"`
+
+### Linux
+
+| Distribution | Recommended Format | Installation |
+|--------------|-------------------|--------------|
+| Ubuntu / Debian / Linux Mint / Pop!_OS | `.deb` | `sudo dpkg -i CC-Switch-*.deb` or `sudo apt install ./CC-Switch-*.deb` |
+| Fedora / RHEL / CentOS / Rocky Linux | `.rpm` | `sudo rpm -i CC-Switch-*.rpm` or `sudo dnf install ./CC-Switch-*.rpm` |
+| openSUSE | `.rpm` | `sudo zypper install ./CC-Switch-*.rpm` |
+| Arch Linux / Manjaro | `.AppImage` | Make executable and run directly, or use AUR |
+| Other distros / Unsure | `.AppImage` | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage` |
+| Sandboxed installation | `.flatpak` | `flatpak install CC-Switch-*.flatpak` |
+
+> **Tip**: AppImage supports auto-update and works across all distributions. Recommended if you're unsure which format to choose.
 
 ### Homebrew (MacOS)
 
