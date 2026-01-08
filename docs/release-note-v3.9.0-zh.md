@@ -131,46 +131,37 @@ CC Switch v3.9.0 是 v3.9 测试版序列（`3.9.0-1`、`3.9.0-2`、`3.9.0-3`）
 - 为降低导入风险，SQL 导入被限制为仅允许导入 CC Switch 自己导出的备份。
 - Proxy 接管会修改 CLI 的 live 配置；CC Switch 会在重定向前自动备份 live 配置。如需回退，可关闭接管/停止代理，并在必要时从备份恢复。
 
+## 特别感谢
+
+特别感谢 @xunyu @deijing @su-fen 做出的支持和贡献，没有你们就没有这个版本！
+
 ## 下载与安装
 
 访问 [Releases](https://github.com/farion1231/cc-switch/releases/latest) 下载对应版本。
 
 ### 系统要求
 
-| 系统 | 最低版本 | 架构 |
-|------|----------|------|
-| Windows | Windows 10 及以上 | x64 |
-| macOS | macOS 10.15 (Catalina) 及以上 | Intel (x64) / Apple Silicon (arm64) |
-| Linux | 见下表 | x64 |
+| 系统    | 最低版本                      | 架构                                |
+| ------- | ----------------------------- | ----------------------------------- |
+| Windows | Windows 10 及以上             | x64                                 |
+| macOS   | macOS 10.15 (Catalina) 及以上 | Intel (x64) / Apple Silicon (arm64) |
+| Linux   | 见下表                        | x64                                 |
 
 ### Windows
 
-| 文件 | 说明 |
-|------|------|
-| `CC-Switch-v3.9.0-Windows.msi` | **推荐** - MSI 安装包，支持自动更新 |
-| `CC-Switch-v3.9.0-Windows-Portable.zip` | 便携版，解压即用，不写入注册表 |
+| 文件                                    | 说明                                |
+| --------------------------------------- | ----------------------------------- |
+| `CC-Switch-v3.9.0-Windows.msi`          | **推荐** - MSI 安装包，支持自动更新 |
+| `CC-Switch-v3.9.0-Windows-Portable.zip` | 便携版，解压即用，不写入注册表      |
 
 ### macOS
 
-| 文件 | 说明 |
-|------|------|
-| `CC-Switch-v3.9.0-macOS.zip` | **推荐** - 解压后拖入 Applications 即可，Universal Binary |
-| `CC-Switch-v3.9.0-macOS.tar.gz` | 用于 Homebrew 安装和自动更新 |
+| 文件                            | 说明                                                      |
+| ------------------------------- | --------------------------------------------------------- |
+| `CC-Switch-v3.9.0-macOS.zip`    | **推荐** - 解压后拖入 Applications 即可，Universal Binary |
+| `CC-Switch-v3.9.0-macOS.tar.gz` | 用于 Homebrew 安装和自动更新                              |
 
-> **提示**：macOS 如遇"已损坏"提示，可在终端执行：`xattr -cr "/Applications/CC Switch.app"`
-
-### Linux
-
-| 发行版 | 推荐格式 | 安装方式 |
-|--------|----------|----------|
-| Ubuntu / Debian / Linux Mint / Pop!_OS | `.deb` | `sudo dpkg -i CC-Switch-*.deb` 或 `sudo apt install ./CC-Switch-*.deb` |
-| Fedora / RHEL / CentOS / Rocky Linux | `.rpm` | `sudo rpm -i CC-Switch-*.rpm` 或 `sudo dnf install ./CC-Switch-*.rpm` |
-| openSUSE | `.rpm` | `sudo zypper install ./CC-Switch-*.rpm` |
-| Arch Linux / Manjaro | `.AppImage` | 添加执行权限后直接运行，或使用 AUR |
-| 其他发行版 / 不确定 | `.AppImage` | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage` |
-| 沙箱隔离需求 | `.flatpak` | `flatpak install CC-Switch-*.flatpak` |
-
-> **提示**：AppImage 支持自动更新，跨发行版通用，推荐不确定使用哪种格式时选择。
+> **注意**：由于作者没有苹果开发者账号，首次打开可能出现"未知开发者"警告，请先关闭，然后前往"系统设置" → "隐私与安全性" → 点击"仍要打开"，之后便可以正常打开
 
 ### Homebrew（MacOS）
 
@@ -185,4 +176,13 @@ brew install --cask cc-switch
 brew upgrade --cask cc-switch
 ```
 
-## 
+### Linux
+
+| 发行版                                  | 推荐格式    | 安装方式                                                               |
+| --------------------------------------- | ----------- | ---------------------------------------------------------------------- |
+| Ubuntu / Debian / Linux Mint / Pop!\_OS | `.deb`      | `sudo dpkg -i CC-Switch-*.deb` 或 `sudo apt install ./CC-Switch-*.deb` |
+| Fedora / RHEL / CentOS / Rocky Linux    | `.rpm`      | `sudo rpm -i CC-Switch-*.rpm` 或 `sudo dnf install ./CC-Switch-*.rpm`  |
+| openSUSE                                | `.rpm`      | `sudo zypper install ./CC-Switch-*.rpm`                                |
+| Arch Linux / Manjaro                    | `.AppImage` | 添加执行权限后直接运行，或使用 AUR                                     |
+| 其他发行版 / 不确定                     | `.AppImage` | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage`              |
+| 沙箱隔离需求                            | `.flatpak`  | `flatpak install CC-Switch-*.flatpak`                                  |

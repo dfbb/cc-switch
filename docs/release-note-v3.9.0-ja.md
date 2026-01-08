@@ -131,46 +131,37 @@ CC Switch v3.9.0 は v3.9 ベータ（`3.9.0-1`、`3.9.0-2`、`3.9.0-3`）の安
 - SQL インポートは CC Switch がエクスポートしたバックアップのみに制限されます（安全性のため）。
 - プロキシのテイクオーバーは CLI の live 設定を変更します。CC Switch はリダイレクト前に live 設定をバックアップします。元に戻す場合はテイクオーバー無効化/プロキシ停止を行い、必要に応じてバックアップから復元してください。
 
+## 特別な謝辞
+
+@xunyu @deijing @su-fen の皆様のサポートと貢献に特別な感謝を申し上げます。皆様なしではこのリリースは実現しませんでした！
+
 ## ダウンロード & インストール
 
 [Releases](https://github.com/farion1231/cc-switch/releases/latest) から該当するバージョンをダウンロードしてください。
 
 ### システム要件
 
-| システム | 最低バージョン | アーキテクチャ |
-|----------|----------------|----------------|
-| Windows | Windows 10 以降 | x64 |
-| macOS | macOS 10.15 (Catalina) 以降 | Intel (x64) / Apple Silicon (arm64) |
-| Linux | 下表参照 | x64 |
+| システム | 最低バージョン                | アーキテクチャ                      |
+| -------- | ----------------------------- | ----------------------------------- |
+| Windows  | Windows 10 以降               | x64                                 |
+| macOS    | macOS 10.15 (Catalina) 以降   | Intel (x64) / Apple Silicon (arm64) |
+| Linux    | 下表参照                      | x64                                 |
 
 ### Windows
 
-| ファイル | 説明 |
-|----------|------|
-| `CC-Switch-v3.9.0-Windows.msi` | **推奨** - MSI インストーラー、自動更新対応 |
-| `CC-Switch-v3.9.0-Windows-Portable.zip` | ポータブル版、インストール不要 |
+| ファイル                                | 説明                                         |
+| --------------------------------------- | -------------------------------------------- |
+| `CC-Switch-v3.9.0-Windows.msi`          | **推奨** - MSI インストーラー、自動更新対応  |
+| `CC-Switch-v3.9.0-Windows-Portable.zip` | ポータブル版、インストール不要               |
 
 ### macOS
 
-| ファイル | 説明 |
-|----------|------|
-| `CC-Switch-v3.9.0-macOS.zip` | **推奨** - 解凍して Applications へドラッグ、Universal Binary |
-| `CC-Switch-v3.9.0-macOS.tar.gz` | Homebrew インストールおよび自動更新用 |
+| ファイル                        | 説明                                                              |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `CC-Switch-v3.9.0-macOS.zip`    | **推奨** - 解凍して Applications へドラッグ、Universal Binary     |
+| `CC-Switch-v3.9.0-macOS.tar.gz` | Homebrew インストールおよび自動更新用                             |
 
-> **ヒント**: macOS で「このアプリは破損しています」と表示された場合は、ターミナルで `xattr -cr "/Applications/CC Switch.app"` を実行してください。
-
-### Linux
-
-| ディストリビューション | 推奨形式 | インストール方法 |
-|------------------------|----------|------------------|
-| Ubuntu / Debian / Linux Mint / Pop!_OS | `.deb` | `sudo dpkg -i CC-Switch-*.deb` または `sudo apt install ./CC-Switch-*.deb` |
-| Fedora / RHEL / CentOS / Rocky Linux | `.rpm` | `sudo rpm -i CC-Switch-*.rpm` または `sudo dnf install ./CC-Switch-*.rpm` |
-| openSUSE | `.rpm` | `sudo zypper install ./CC-Switch-*.rpm` |
-| Arch Linux / Manjaro | `.AppImage` | 実行権限を付与して直接実行、または AUR を使用 |
-| その他 / 不明 | `.AppImage` | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage` |
-| サンドボックスで実行したい場合 | `.flatpak` | `flatpak install CC-Switch-*.flatpak` |
-
-> **ヒント**: AppImage は自動更新に対応し、どのディストリビューションでも動作します。迷ったときは AppImage がおすすめです。
+> **注意**: 作者が Apple Developer アカウントを持っていないため、初回起動時に「開発元が未確認」という警告が表示される場合があります。アプリを閉じてから、「システム設定」→「プライバシーとセキュリティ」→「このまま開く」をクリックすると、正常に開けるようになります。
 
 ### Homebrew (MacOS)
 
@@ -184,3 +175,14 @@ brew install --cask cc-switch
 ```bash
 brew upgrade --cask cc-switch
 ```
+
+### Linux
+
+| ディストリビューション                  | 推奨形式    | インストール方法                                                               |
+| --------------------------------------- | ----------- | ------------------------------------------------------------------------------ |
+| Ubuntu / Debian / Linux Mint / Pop!\_OS | `.deb`      | `sudo dpkg -i CC-Switch-*.deb` または `sudo apt install ./CC-Switch-*.deb`     |
+| Fedora / RHEL / CentOS / Rocky Linux    | `.rpm`      | `sudo rpm -i CC-Switch-*.rpm` または `sudo dnf install ./CC-Switch-*.rpm`      |
+| openSUSE                                | `.rpm`      | `sudo zypper install ./CC-Switch-*.rpm`                                        |
+| Arch Linux / Manjaro                    | `.AppImage` | 実行権限を付与して直接実行、または AUR を使用                                  |
+| その他 / 不明                           | `.AppImage` | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage`                      |
+| サンドボックスで実行したい場合          | `.flatpak`  | `flatpak install CC-Switch-*.flatpak`                                          |

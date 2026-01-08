@@ -131,46 +131,37 @@ It introduces a local API proxy with per-app takeover, automatic failover, unive
 - SQL import is restricted to CC Switch exported backups to reduce the risk of importing unsafe or incompatible SQL dumps.
 - Proxy takeover modifies CLI live configs; CC Switch will back up the live config before redirecting it to the local proxy. If you want to revert, disable takeover/stop the proxy and restore from the backup when needed.
 
+## Special Thanks
+
+Special thanks to @xunyu @deijing @su-fen for their support and contributions. This release wouldn't be possible without you!
+
 ## Download & Installation
 
 Visit [Releases](https://github.com/farion1231/cc-switch/releases/latest) to download the appropriate version.
 
 ### System Requirements
 
-| System | Minimum Version | Architecture |
-|--------|-----------------|--------------|
-| Windows | Windows 10 or later | x64 |
-| macOS | macOS 10.15 (Catalina) or later | Intel (x64) / Apple Silicon (arm64) |
-| Linux | See table below | x64 |
+| System  | Minimum Version                 | Architecture                        |
+| ------- | ------------------------------- | ----------------------------------- |
+| Windows | Windows 10 or later             | x64                                 |
+| macOS   | macOS 10.15 (Catalina) or later | Intel (x64) / Apple Silicon (arm64) |
+| Linux   | See table below                 | x64                                 |
 
 ### Windows
 
-| File | Description |
-|------|-------------|
-| `CC-Switch-v3.9.0-Windows.msi` | **Recommended** - MSI installer with auto-update support |
-| `CC-Switch-v3.9.0-Windows-Portable.zip` | Portable version, no installation required |
+| File                                    | Description                                        |
+| --------------------------------------- | -------------------------------------------------- |
+| `CC-Switch-v3.9.0-Windows.msi`          | **Recommended** - MSI installer with auto-update support |
+| `CC-Switch-v3.9.0-Windows-Portable.zip` | Portable version, no installation required         |
 
 ### macOS
 
-| File | Description |
-|------|-------------|
-| `CC-Switch-v3.9.0-macOS.zip` | **Recommended** - Extract and drag to Applications, Universal Binary |
-| `CC-Switch-v3.9.0-macOS.tar.gz` | For Homebrew installation and auto-update |
+| File                            | Description                                                       |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `CC-Switch-v3.9.0-macOS.zip`    | **Recommended** - Extract and drag to Applications, Universal Binary |
+| `CC-Switch-v3.9.0-macOS.tar.gz` | For Homebrew installation and auto-update                         |
 
-> **Tip**: If you see "app is damaged" on macOS, run in Terminal: `xattr -cr "/Applications/CC Switch.app"`
-
-### Linux
-
-| Distribution | Recommended Format | Installation |
-|--------------|-------------------|--------------|
-| Ubuntu / Debian / Linux Mint / Pop!_OS | `.deb` | `sudo dpkg -i CC-Switch-*.deb` or `sudo apt install ./CC-Switch-*.deb` |
-| Fedora / RHEL / CentOS / Rocky Linux | `.rpm` | `sudo rpm -i CC-Switch-*.rpm` or `sudo dnf install ./CC-Switch-*.rpm` |
-| openSUSE | `.rpm` | `sudo zypper install ./CC-Switch-*.rpm` |
-| Arch Linux / Manjaro | `.AppImage` | Make executable and run directly, or use AUR |
-| Other distros / Unsure | `.AppImage` | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage` |
-| Sandboxed installation | `.flatpak` | `flatpak install CC-Switch-*.flatpak` |
-
-> **Tip**: AppImage supports auto-update and works across all distributions. Recommended if you're unsure which format to choose.
+> **Note**: Since the author does not have an Apple Developer account, you may see an "unidentified developer" warning on first launch. Close the app, then go to "System Settings" → "Privacy & Security" → click "Open Anyway", and it will open normally afterwards.
 
 ### Homebrew (MacOS)
 
@@ -184,3 +175,14 @@ Update:
 ```bash
 brew upgrade --cask cc-switch
 ```
+
+### Linux
+
+| Distribution                            | Recommended Format | Installation                                                           |
+| --------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| Ubuntu / Debian / Linux Mint / Pop!\_OS | `.deb`             | `sudo dpkg -i CC-Switch-*.deb` or `sudo apt install ./CC-Switch-*.deb` |
+| Fedora / RHEL / CentOS / Rocky Linux    | `.rpm`             | `sudo rpm -i CC-Switch-*.rpm` or `sudo dnf install ./CC-Switch-*.rpm`  |
+| openSUSE                                | `.rpm`             | `sudo zypper install ./CC-Switch-*.rpm`                                |
+| Arch Linux / Manjaro                    | `.AppImage`        | Make executable and run directly, or use AUR                           |
+| Other distros / Unsure                  | `.AppImage`        | `chmod +x CC-Switch-*.AppImage && ./CC-Switch-*.AppImage`              |
+| Sandboxed installation                  | `.flatpak`         | `flatpak install CC-Switch-*.flatpak`                                  |
