@@ -5,6 +5,67 @@ All notable changes to CC Switch will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+---
+
+## [3.9.0] - 2026-01-07
+
+### Stable Release
+
+This stable release includes all changes from `3.9.0-1`, `3.9.0-2`, and `3.9.0-3`.
+
+### Added
+
+- **Local API Proxy** - High-performance local HTTP proxy for Claude Code, Codex, and Gemini CLI (Axum-based)
+- **Per-App Takeover** - Independently route each app through the proxy with automatic live-config backup/redirect
+- **Auto Failover** - Circuit breaker + smart failover with independent queues and health tracking per app
+- **Universal Provider** - Shared provider configurations that can sync to Claude/Codex/Gemini (ideal for API gateways like NewAPI)
+- **Provider Search Filter** - Quick filter to find providers by name (#435)
+- **Keyboard Shortcut** - Open settings with Command+comma / Ctrl+comma (#436)
+- **Deeplink Usage Config** - Import usage query config via deeplink (#400)
+- **Provider Icon Colors** - Customize provider icon colors (#385)
+- **Skills Multi-App Support** - Skills now support both Claude Code and Codex (#365)
+- **Closable Toasts** - Close button for switch toast and all success toasts (#350)
+- **Skip First-Run Confirmation** - Option to skip Claude Code first-run confirmation dialog
+- **MCP Import** - Import MCP servers from installed apps
+- **Common Config Snippet Extraction** - Extract reusable common config snippets from the current provider or editor content (Claude/Codex/Gemini)
+- **Usage Enhancements** - Model extraction, request logging improvements, cache hit/creation metrics, and auto-refresh (#455, #508)
+- **Error Request Logging** - Detailed logging for proxy requests (#401)
+- **Linux Packaging** - Added RPM and Flatpak packaging targets
+- **Provider Presets & Icons** - Added/updated partner presets and icons (e.g., MiMo, DMXAPI, Cubence)
+
+### Changed
+
+- **Usage Terminology** - Rename "Cache Read/Write" to "Cache Hit/Creation" across all languages (#508)
+- **Model Pricing Data** - Refresh built-in model pricing table (Claude full version IDs, GPT-5 series, Gemini ID formats, and Chinese models) (#508)
+- **Proxy Header Forwarding** - Switch to a blacklist approach and improve header passthrough compatibility (#508)
+- **Failover Behavior** - Bypass timeout/retry configs when failover is disabled; update default failover timeout and circuit breaker values (#508, #521)
+- **Provider Presets** - Update default model versions and change the default Qwen base URL (#517)
+- **Skills Management** - Unify Skills management architecture with SSOT + React Query; improve caching for discoverable skills
+- **Settings UX** - Reorder items in the Advanced tab for better discoverability
+- **Proxy Active Theme** - Apply emerald theme when proxy takeover is active
+
+### Fixed
+
+- **Security** - Security fixes for JavaScript executor and usage script (#151)
+- **Usage Timezone & Parsing** - Fix datetime picker timezone handling; improve token parsing/billing for Gemini and Codex formats (#508)
+- **Windows Compatibility** - Improve MCP export and version check behavior to avoid terminal popups
+- **Windows Startup** - Use system titlebar to prevent black screen on startup
+- **WebView Compatibility** - Add fallback for crypto.randomUUID() on older WebViews
+- **macOS Autostart** - Use `.app` bundle path to prevent terminal window popups
+- **Database** - Add missing schema migrations; show an error dialog on initialization failure with a retry option
+- **Import/Export** - Restrict SQL import to CC Switch exported backups only; refresh providers immediately after import
+- **Prompts** - Allow saving prompts with empty content
+- **MCP Sync** - Skip sync when the target CLI app is not installed
+- **Common Config (Codex)** - Preserve MCP server `base_url` during extraction and remove provider-specific `model_providers` blocks
+- **Proxy** - Improve takeover detection and stability; clean up model override env vars when switching providers in takeover mode (#508)
+- **Skills** - Skip hidden directories during discovery; fix wrong skill repo branch
+- **Settings Navigation** - Navigate to About tab when clicking update badge
+- **UI** - Fix dialogs not opening on first click and improve window dragging area in `FullScreenPanel`
+
+---
+
 ## [3.9.0-3] - 2025-12-29
 
 ### Beta Release
@@ -60,6 +121,34 @@ Third beta release with important bug fixes for Windows compatibility, UI improv
 
 - 35 commits since v3.9.0-2
 - 5 files changed in test/lint fixes
+
+---
+
+## [3.9.0-2] - 2025-12-20
+
+### Beta Release
+
+Second beta release focusing on proxy stability, import safety, and provider preset polish.
+
+### Added
+
+- **DMXAPI Partner** - Added DMXAPI as an official partner provider preset
+- **Provider Icons** - Added provider icons for OpenRouter, LongCat, ModelScope, and AiHubMix
+
+### Changed
+
+- **Proxy (OpenRouter)** - Switched OpenRouter to passthrough mode for native Claude API
+
+### Fixed
+
+- **Import/Export** - Restrict SQL import to CC Switch exported backups only; refresh providers immediately after import
+- **Proxy** - Respect existing Claude token when syncing; add fallback recovery for orphaned takeover state; remove global auto-start flag
+- **Windows** - Add minimum window size to Windows platform config
+- **UI** - Improve About section UI (#419) and unify header toolbar styling
+
+### Stats
+
+- 13 commits since v3.9.0-1
 
 ---
 
@@ -555,8 +644,8 @@ v3.7.0 represents a major evolution from "Provider Switcher" to **"All-in-One AI
 
 ### ⚠ Breaking Changes
 
-- Tauri 命令仅接受参数 `app`（取值：`claude`/`codex`）；移除对 `app_type`/`appType` 的兼容。
-- 前端类型命名统一为 `AppId`（移除 `AppType` 导出），变量命名统一为 `appId`。
+- Tauri commands only accept the `app` parameter (`claude`/`codex`); removed `app_type`/`appType` compatibility.
+- Frontend types are standardized to `AppId` (removed `AppType` export); variable naming is standardized to `appId`.
 
 ### ✨ New Features
 
@@ -799,40 +888,3 @@ For users upgrading from v2.x (Electron version):
 - Basic provider management
 - Claude Code integration
 - Configuration file handling
-
-## [Unreleased]
-
-### ⚠️ Breaking Changes
-
-- **Runtime auto-migration from v1 to v2 config format has been removed**
-  - `MultiAppConfig::load()` no longer automatically migrates v1 configs
-  - When a v1 config is detected, the app now returns a clear error with migration instructions
-  - **Migration path**: Install v3.2.x to perform one-time auto-migration, OR manually edit `~/.cc-switch/config.json` to v2 format
-  - **Rationale**: Separates concerns (load() should be read-only), fail-fast principle, simplifies maintenance
-  - Related: `app_config.rs` (v1 detection improved with structural analysis), `app_config_load.rs` (comprehensive test coverage added)
-
-- **Legacy v1 copy file migration logic has been removed**
-  - Removed entire `migration.rs` module (435 lines) that handled one-time migration from v3.1.0 to v3.2.0
-  - No longer scans/merges legacy copy files (`settings-*.json`, `auth-*.json`, `config-*.toml`)
-  - No longer archives copy files or performs automatic deduplication
-  - **Migration path**: Users upgrading from v3.1.0 must first upgrade to v3.2.x to automatically migrate their configurations
-  - **Benefits**: Improved startup performance (no file scanning), reduced code complexity, cleaner codebase
-
-- **Tauri commands now only accept `app` parameter**
-  - Removed legacy `app_type`/`appType` compatibility paths
-  - Explicit error with available values when unknown `app` is provided
-
-### 🔧 Improvements
-
-- Unified `AppType` parsing: centralized to `FromStr` implementation, command layer no longer implements separate `parse_app()`, reducing code duplication and drift
-- Localized and user-friendly error messages: returns bilingual (Chinese/English) hints for unsupported `app` values with a list of available options
-- Simplified startup logic: Only ensures config structure exists, no migration overhead
-
-### 🧪 Tests
-
-- Added unit tests covering `AppType::from_str`: case sensitivity, whitespace trimming, unknown value error messages
-- Added comprehensive config loading tests:
-  - `load_v1_config_returns_error_and_does_not_write`
-  - `load_v1_with_extra_version_still_treated_as_v1`
-  - `load_invalid_json_returns_parse_error_and_does_not_write`
-  - `load_valid_v2_config_succeeds`

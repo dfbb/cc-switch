@@ -2,14 +2,14 @@
 
 # Claude Code / Codex / Gemini CLI オールインワン・アシスタント
 
-[![Version](https://img.shields.io/badge/version-3.8.3-blue.svg)](https://github.com/farion1231/cc-switch/releases)
+[![Version](https://img.shields.io/badge/version-3.9.0-blue.svg)](https://github.com/farion1231/cc-switch/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/farion1231/cc-switch/releases)
 [![Built with Tauri](https://img.shields.io/badge/built%20with-Tauri%202-orange.svg)](https://tauri.app/)
 [![Downloads](https://img.shields.io/endpoint?url=https://api.pinstudios.net/api/badges/downloads/farion1231/cc-switch/total)](https://github.com/farion1231/cc-switch/releases/latest)
 
 <a href="https://trendshift.io/repositories/15372" target="_blank"><img src="https://trendshift.io/api/badge/repositories/15372" alt="farion1231%2Fcc-switch | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
 
-[English](README.md) | [中文](README_ZH.md) | 日本語 | [Changelog](CHANGELOG.md) | [v3.8.0 リリースノート](docs/release-note-v3.8.0-en.md)
+[English](README.md) | [中文](README_ZH.md) | 日本語 | [Changelog](CHANGELOG.md) | [v3.9.0 リリースノート](docs/release-note-v3.9.0-ja.md)
 
 </div>
 
@@ -52,7 +52,7 @@
 
 ## 特長
 
-### 現在のバージョン：v3.8.3 | [完全な更新履歴](CHANGELOG.md) | [リリースノート](docs/release-note-v3.8.0-en.md)
+### 現在のバージョン：v3.9.0 | [完全な更新履歴](CHANGELOG.md) | [リリースノート](docs/release-note-v3.9.0-ja.md)
 
 **v3.8.0 メジャーアップデート (2025-11-28)**
 
