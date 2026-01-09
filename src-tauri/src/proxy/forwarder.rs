@@ -15,7 +15,7 @@ use crate::{app_config::AppType, provider::Provider};
 use reqwest::{Client, Response};
 use serde_json::Value;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tokio::sync::RwLock;
 
 /// Headers 黑名单 - 不透传到上游的 Headers
@@ -81,7 +81,8 @@ pub struct ForwardError {
 }
 
 pub struct RequestForwarder {
-    client: Client,
+    client: Option<Client>,
+    client_init_error: Option<String>,
     /// 共享的 ProviderRouter（持有熔断器状态）
     router: Arc<ProviderRouter>,
     status: Arc<RwLock<ProxyStatus>>,
@@ -111,21 +112,41 @@ impl RequestForwarder {
         // 参考 Claude Code Hub 的 undici 全局超时设计
         const GLOBAL_TIMEOUT_SECS: u64 = 1800;
 
-        let mut client_builder = Client::builder();
-        if non_streaming_timeout > 0 {
-            // 使用配置的非流式超时
-            client_builder = client_builder.timeout(Duration::from_secs(non_streaming_timeout));
+        let timeout_secs = if non_streaming_timeout > 0 {
+            non_streaming_timeout
         } else {
-            // 禁用超时时使用全局超时作为保底
-            client_builder = client_builder.timeout(Duration::from_secs(GLOBAL_TIMEOUT_SECS));
-        }
+            GLOBAL_TIMEOUT_SECS
+        };
 
-        let client = client_builder
+        // 注意：这里不能用 expect/unwrap。
+        // release 配置为 panic=abort，一旦 build 失败会导致整个应用闪退。
+        // 常见原因：用户环境变量里存在不合法/不支持的代理（HTTP(S)_PROXY/ALL_PROXY 等）。
+        let (client, client_init_error) = match Client::builder()
+            .timeout(Duration::from_secs(timeout_secs))
             .build()
-            .expect("Failed to create HTTP client");
+        {
+            Ok(client) => (Some(client), None),
+            Err(e) => {
+                // 降级：忽略系统/环境代理，避免因代理配置问题导致整个应用崩溃
+                match Client::builder()
+                    .timeout(Duration::from_secs(timeout_secs))
+                    .no_proxy()
+                    .build()
+                {
+                    Ok(client) => (Some(client), Some(e.to_string())),
+                    Err(fallback_err) => (
+                        None,
+                        Some(format!(
+                            "Failed to create HTTP client: {e}; no_proxy fallback failed: {fallback_err}"
+                        )),
+                    ),
+                }
+            }
+        };
 
         Self {
             client,
+            client_init_error,
             router,
             status,
             current_providers,
@@ -162,12 +183,6 @@ impl RequestForwarder {
             });
         }
 
-        log::info!(
-            "[{}] 故障转移链: {} 个可用供应商",
-            app_type_str,
-            providers.len()
-        );
-
         let mut last_error = None;
         let mut last_provider = None;
         let mut attempted_providers = 0usize;
@@ -190,24 +205,10 @@ impl RequestForwarder {
             };
 
             if !allowed {
-                log::debug!(
-                    "[{}] Provider {} 熔断器拒绝本次请求，跳过",
-                    app_type_str,
-                    provider.name
-                );
                 continue;
             }
 
             attempted_providers += 1;
-
-            log::info!(
-                "[{}] 尝试 {}/{} - 使用Provider: {} (sort_index: {})",
-                app_type_str,
-                attempted_providers,
-                providers.len(),
-                provider.name,
-                provider.sort_index.unwrap_or(999999)
-            );
 
             // 更新状态中的当前Provider信息
             {
@@ -218,18 +219,14 @@ impl RequestForwarder {
                 status.last_request_at = Some(chrono::Utc::now().to_rfc3339());
             }
 
-            let start = Instant::now();
-
             // 转发请求（每个 Provider 只尝试一次，重试由客户端控制）
             match self
                 .forward(provider, endpoint, &body, &headers, adapter.as_ref())
                 .await
             {
                 Ok(response) => {
-                    let latency = start.elapsed().as_millis() as u64;
-
                     // 成功：记录成功并更新熔断器
-                    if let Err(e) = self
+                    let _ = self
                         .router
                         .record_result(
                             &provider.id,
@@ -238,10 +235,7 @@ impl RequestForwarder {
                             true,
                             None,
                         )
-                        .await
-                    {
-                        log::warn!("Failed to record success: {e}");
-                    }
+                        .await;
 
                     // 更新当前应用类型使用的 provider
                     {
@@ -261,12 +255,6 @@ impl RequestForwarder {
                             self.current_provider_id_at_start.as_str() != provider.id.as_str();
                         if should_switch {
                             status.failover_count += 1;
-                            log::info!(
-                                "[{}] 代理目标已切换到 Provider: {} (耗时: {}ms)",
-                                app_type_str,
-                                provider.name,
-                                latency
-                            );
 
                             // 异步触发供应商切换，更新 UI/托盘，并把“当前供应商”同步为实际使用的 provider
                             let fm = self.failover_manager.clone();
@@ -276,10 +264,7 @@ impl RequestForwarder {
                             let at = app_type_str.to_string();
 
                             tokio::spawn(async move {
-                                if let Err(e) = fm.try_switch(ah.as_ref(), &at, &pid, &pname).await
-                                {
-                                    log::error!("[Failover] 切换供应商失败: {e}");
-                                }
+                                let _ = fm.try_switch(ah.as_ref(), &at, &pid, &pname).await;
                             });
                         }
                         // 重新计算成功率
@@ -290,23 +275,14 @@ impl RequestForwarder {
                         }
                     }
 
-                    log::info!(
-                        "[{}] 请求成功 - Provider: {} - {}ms",
-                        app_type_str,
-                        provider.name,
-                        latency
-                    );
-
                     return Ok(ForwardResult {
                         response,
                         provider: provider.clone(),
                     });
                 }
                 Err(e) => {
-                    let latency = start.elapsed().as_millis() as u64;
-
                     // 失败：记录失败并更新熔断器
-                    if let Err(record_err) = self
+                    let _ = self
                         .router
                         .record_result(
                             &provider.id,
@@ -315,10 +291,7 @@ impl RequestForwarder {
                             false,
                             Some(e.to_string()),
                         )
-                        .await
-                    {
-                        log::warn!("Failed to record failure: {record_err}");
-                    }
+                        .await;
 
                     // 分类错误
                     let category = self.categorize_proxy_error(&e);
@@ -331,14 +304,6 @@ impl RequestForwarder {
                                 status.last_error =
                                     Some(format!("Provider {} 失败: {}", provider.name, e));
                             }
-
-                            log::warn!(
-                                "[{}] Provider {} 失败（可重试）: {} - {}ms",
-                                app_type_str,
-                                provider.name,
-                                e,
-                                latency
-                            );
 
                             last_error = Some(e);
                             last_provider = Some(provider.clone());
@@ -357,12 +322,6 @@ impl RequestForwarder {
                                         * 100.0;
                                 }
                             }
-                            log::error!(
-                                "[{}] Provider {} 失败（不可重试）: {}",
-                                app_type_str,
-                                provider.name,
-                                e
-                            );
                             return Err(ForwardError {
                                 error: e,
                                 provider: Some(provider.clone()),
@@ -401,12 +360,6 @@ impl RequestForwarder {
             }
         }
 
-        log::error!(
-            "[{}] 所有 {} 个供应商都失败了",
-            app_type_str,
-            providers.len()
-        );
-
         Err(ForwardError {
             error: last_error.unwrap_or(ProxyError::MaxRetriesExceeded),
             provider: last_provider,
@@ -424,7 +377,6 @@ impl RequestForwarder {
     ) -> Result<Response, ProxyError> {
         // 使用适配器提取 base_url
         let base_url = adapter.extract_base_url(provider)?;
-        log::info!("[{}] base_url: {}", adapter.name(), base_url);
 
         // 检查是否需要格式转换
         let needs_transform = adapter.needs_transform(provider);
@@ -439,36 +391,13 @@ impl RequestForwarder {
         // 使用适配器构建 URL
         let url = adapter.build_url(&base_url, effective_endpoint);
 
-        // 记录原始请求 JSON
-        log::info!(
-            "[{}] ====== 请求开始 ======\n>>> 原始请求 JSON:\n{}",
-            adapter.name(),
-            serde_json::to_string_pretty(body).unwrap_or_else(|_| body.to_string())
-        );
-
         // 应用模型映射（独立于格式转换）
-        let (mapped_body, _original_model, mapped_model) =
+        let (mapped_body, _original_model, _mapped_model) =
             super::model_mapper::apply_model_mapping(body.clone(), provider);
-
-        if let Some(ref mapped) = mapped_model {
-            log::info!(
-                "[{}] >>> 模型映射后的请求 JSON:\n{}",
-                adapter.name(),
-                serde_json::to_string_pretty(&mapped_body).unwrap_or_default()
-            );
-            log::info!("[{}] 模型已映射到: {}", adapter.name(), mapped);
-        }
 
         // 转换请求体（如果需要）
         let request_body = if needs_transform {
-            log::info!("[{}] 转换请求格式 (Anthropic → OpenAI)", adapter.name());
-            let transformed = adapter.transform_request(mapped_body, provider)?;
-            log::info!(
-                "[{}] >>> 转换后的请求 JSON:\n{}",
-                adapter.name(),
-                serde_json::to_string_pretty(&transformed).unwrap_or_default()
-            );
-            transformed
+            adapter.transform_request(mapped_body, provider)?
         } else {
             mapped_body
         };
@@ -477,69 +406,25 @@ impl RequestForwarder {
         // 默认使用空白名单，过滤所有 _ 前缀字段
         let filtered_body = filter_private_params_with_whitelist(request_body, &[]);
 
-        // ========== 请求体日志（截断显示） ==========
-        let body_str = serde_json::to_string_pretty(&filtered_body)
-            .unwrap_or_else(|_| filtered_body.to_string());
-        let body_preview = if body_str.len() > 2000 {
-            format!(
-                "{}...\n[截断，总长度: {} 字符]",
-                &body_str[..2000],
-                body_str.len()
-            )
-        } else {
-            body_str
-        };
-        log::info!(
-            "[{}] ====== 最终请求体 ======\n{}",
-            adapter.name(),
-            body_preview
-        );
-
-        log::info!(
-            "[{}] 转发请求: {} -> {}",
-            adapter.name(),
-            provider.name,
-            url
-        );
-
         // 构建请求
-        let mut request = self.client.post(&url);
-
-        // ========== 详细 Headers 日志 ==========
-        log::info!("[{}] ====== 客户端原始 Headers ======", adapter.name());
-        for (key, value) in headers {
-            log::info!(
-                "[{}]   {}: {:?}",
-                adapter.name(),
-                key.as_str(),
-                value.to_str().unwrap_or("<binary>")
-            );
-        }
+        let client = self.client.as_ref().ok_or_else(|| {
+            ProxyError::ForwardFailed(
+                self.client_init_error
+                    .clone()
+                    .unwrap_or_else(|| "HTTP client is not initialized".to_string()),
+            )
+        })?;
+        let mut request = client.post(&url);
 
         // 过滤黑名单 Headers，保护隐私并避免冲突
-        let mut filtered_headers: Vec<String> = Vec::new();
-        let mut passed_headers: Vec<(String, String)> = Vec::new();
-
         for (key, value) in headers {
-            let key_str = key.as_str().to_lowercase();
-            if HEADER_BLACKLIST.contains(&key_str.as_str()) {
-                filtered_headers.push(key_str);
+            if HEADER_BLACKLIST
+                .iter()
+                .any(|h| key.as_str().eq_ignore_ascii_case(h))
+            {
                 continue;
             }
-            let value_str = value.to_str().unwrap_or("<binary>").to_string();
-            passed_headers.push((key.as_str().to_string(), value_str.clone()));
             request = request.header(key, value);
-        }
-
-        if !filtered_headers.is_empty() {
-            log::info!(
-                "[{}] ====== 被过滤的 Headers ({}) ======",
-                adapter.name(),
-                filtered_headers.len()
-            );
-            for h in &filtered_headers {
-                log::info!("[{}]   - {}", adapter.name(), h);
-            }
         }
 
         // 处理 anthropic-beta Header（仅 Claude）
@@ -564,55 +449,27 @@ impl RequestForwarder {
                 CLAUDE_CODE_BETA.to_string()
             };
             request = request.header("anthropic-beta", &beta_value);
-            passed_headers.push(("anthropic-beta".to_string(), beta_value.clone()));
-            log::info!("[{}] 设置 anthropic-beta: {}", adapter.name(), beta_value);
         }
 
         // 客户端 IP 透传（默认开启）
         if let Some(xff) = headers.get("x-forwarded-for") {
             if let Ok(xff_str) = xff.to_str() {
                 request = request.header("x-forwarded-for", xff_str);
-                passed_headers.push(("x-forwarded-for".to_string(), xff_str.to_string()));
-                log::debug!("[{}] 透传 x-forwarded-for: {}", adapter.name(), xff_str);
             }
         }
         if let Some(real_ip) = headers.get("x-real-ip") {
             if let Ok(real_ip_str) = real_ip.to_str() {
                 request = request.header("x-real-ip", real_ip_str);
-                passed_headers.push(("x-real-ip".to_string(), real_ip_str.to_string()));
-                log::debug!("[{}] 透传 x-real-ip: {}", adapter.name(), real_ip_str);
             }
         }
 
         // 禁用压缩，避免 gzip 流式响应解析错误
         // 参考 CCH: undici 在连接提前关闭时会对不完整的 gzip 流抛出错误
         request = request.header("accept-encoding", "identity");
-        passed_headers.push(("accept-encoding".to_string(), "identity".to_string()));
 
         // 使用适配器添加认证头
         if let Some(auth) = adapter.extract_auth(provider) {
-            log::debug!(
-                "[{}] 使用认证: {:?} (key: {})",
-                adapter.name(),
-                auth.strategy,
-                auth.masked_key()
-            );
             request = adapter.add_auth_headers(request, &auth);
-            // 记录认证头（脱敏）
-            passed_headers.push((
-                "authorization".to_string(),
-                format!("Bearer {}...", &auth.api_key[..8.min(auth.api_key.len())]),
-            ));
-            passed_headers.push((
-                "x-api-key".to_string(),
-                format!("{}...", &auth.api_key[..8.min(auth.api_key.len())]),
-            ));
-        } else {
-            log::error!(
-                "[{}] 未找到 API Key！Provider: {}",
-                adapter.name(),
-                provider.name
-            );
         }
 
         // anthropic-version 统一处理（仅 Claude）：优先使用客户端的版本号，否则使用默认值
@@ -623,28 +480,10 @@ impl RequestForwarder {
                 .and_then(|v| v.to_str().ok())
                 .unwrap_or("2023-06-01");
             request = request.header("anthropic-version", version_str);
-            passed_headers.push(("anthropic-version".to_string(), version_str.to_string()));
-            log::info!(
-                "[{}] 设置 anthropic-version: {}",
-                adapter.name(),
-                version_str
-            );
-        }
-
-        // ========== 最终发送的 Headers 日志 ==========
-        log::info!(
-            "[{}] ====== 最终发送的 Headers ({}) ======",
-            adapter.name(),
-            passed_headers.len()
-        );
-        for (k, v) in &passed_headers {
-            log::info!("[{}]   {}: {}", adapter.name(), k, v);
         }
 
         // 发送请求
-        log::info!("[{}] 发送请求到: {}", adapter.name(), url);
         let response = request.json(&filtered_body).send().await.map_err(|e| {
-            log::error!("[{}] 请求失败: {}", adapter.name(), e);
             if e.is_timeout() {
                 ProxyError::Timeout(format!("请求超时: {e}"))
             } else if e.is_connect() {
@@ -656,19 +495,12 @@ impl RequestForwarder {
 
         // 检查响应状态
         let status = response.status();
-        log::info!("[{}] 响应状态: {}", adapter.name(), status);
 
         if status.is_success() {
             Ok(response)
         } else {
             let status_code = status.as_u16();
             let body_text = response.text().await.ok();
-            log::error!(
-                "[{}] 上游错误 ({}): {:?}",
-                adapter.name(),
-                status_code,
-                body_text
-            );
 
             Err(ProxyError::UpstreamError {
                 status: status_code,
