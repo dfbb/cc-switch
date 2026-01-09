@@ -49,7 +49,6 @@ modules:
       - --with-gtk=3
       - --disable-dumper
       - --disable-static
-      - --enable-tests=no
       - --disable-nls
     sources:
       - type: archive
