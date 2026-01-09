@@ -176,7 +176,7 @@ requires_openai_auth = true`,
     iconColor: "#000000",
   },
   {
-    name: "AiGoCode",
+    name: "AIGoCode",
     websiteUrl: "https://aigocode.com",
     apiKeyUrl: "https://aigocode.com/invite/CC-SWITCH",
     category: "third_party",

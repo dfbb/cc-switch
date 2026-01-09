@@ -97,7 +97,7 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     iconColor: "#000000",
   },
   {
-    name: "AiGoCode",
+    name: "AIGoCode",
     websiteUrl: "https://aigocode.com",
     apiKeyUrl: "https://aigocode.com/invite/CC-SWITCH",
     settingsConfig: {
@@ -108,7 +108,7 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     },
     baseURL: "https://api.aigocode.com/gemini",
     model: "gemini-3-pro",
-    description: "AiGoCode",
+    description: "AIGoCode",
     category: "third_party",
     isPartner: true,
     partnerPromotionKey: "aigocode",
