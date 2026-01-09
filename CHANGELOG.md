@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.9.1] - 2026-01-09
+
+### Bug Fix Release
+
+This release focuses on stability improvements and crash prevention.
+
+### Added
+
+- **Crash Logging** - Panic hook captures crash info to `~/.cc-switch/crash.log` with full stack traces (#562)
+- **Release Logging** - Enable logging for release builds with automatic rotation (keeps 2 most recent files)
+- **AIGoCode Icon** - Added colored icon for AIGoCode provider preset
+
+### Fixed
+
+- **Proxy Panic Prevention** - Graceful degradation when HTTP client initialization fails due to invalid proxy settings; falls back to no_proxy mode (#560)
+- **UTF-8 Safety** - Fix potential panic when masking API keys or truncating logs containing multi-byte characters (Chinese, emoji, etc.) (#560)
+- **Default Proxy Port** - Change default port from 5000 to 15721 to avoid conflict with macOS AirPlay Receiver (#560)
+- **Windows Title** - Display "CC Switch" instead of default "Tauri app" in window title
+- **Windows/Linux Spacing** - Remove extra 28px blank space below native titlebar introduced in v3.9.0
+- **Flatpak Tray Icon** - Bundle libayatana-appindicator for tray icon support on Flatpak (#556)
+- **Provider Preset** - Correct casing from "AiGoCode" to "AIGoCode" to match official branding
+
+---
+
 ## [3.9.0] - 2026-01-07
 
 ### Stable Release
