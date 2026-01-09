@@ -284,19 +284,6 @@ jobs:
           else
             echo "No .rpm found (optional)"
           fi
-          # 额外上传 .flatpak（跨发行版；不参与 Updater）
-          if [ -n "$DEB" ]; then
-            echo "Building Flatpak bundle from .deb..."
-            cp "$DEB" flatpak/cc-switch.deb
-            flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-            flatpak install -y --user flathub org.gnome.Platform//46 org.gnome.Sdk//46
-            flatpak-builder --force-clean --user --disable-cache --repo flatpak-repo flatpak-build flatpak/com.ccswitch.desktop.yml
-            NEW_FLATPAK="CC-Switch-${VERSION}-Linux.flatpak"
-            flatpak build-bundle --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo flatpak-repo "release-assets/$NEW_FLATPAK" com.ccswitch.desktop
-            echo "Flatpak bundle created: $NEW_FLATPAK"
-          else
-            echo "Skip Flatpak build: no .deb found"
-          fi
 
       - name: List prepared assets
         shell: bash
@@ -325,7 +312,7 @@ jobs:
 
             - **macOS**: `CC-Switch-${{ github.ref_name }}-macOS.zip`（解压即用）或 `CC-Switch-${{ github.ref_name }}-macOS.tar.gz`（Homebrew）
             - **Windows**: `CC-Switch-${{ github.ref_name }}-Windows.msi`（安装版）或 `CC-Switch-${{ github.ref_name }}-Windows-Portable.zip`（绿色版）
-            - **Linux**: `CC-Switch-${{ github.ref_name }}-Linux.AppImage`（AppImage）或 `CC-Switch-${{ github.ref_name }}-Linux.deb`（Debian/Ubuntu）或 `CC-Switch-${{ github.ref_name }}-Linux.rpm`（Fedora/RHEL/openSUSE）或 `CC-Switch-${{ github.ref_name }}-Linux.flatpak`（Flatpak）
+            - **Linux**: `CC-Switch-${{ github.ref_name }}-Linux.AppImage`（AppImage）或 `CC-Switch-${{ github.ref_name }}-Linux.deb`（Debian/Ubuntu）或 `CC-Switch-${{ github.ref_name }}-Linux.rpm`（Fedora/RHEL/openSUSE）
 
             ---
             提示：macOS 如遇"已损坏"提示，可在终端执行：`xattr -cr "/Applications/CC Switch.app"`
