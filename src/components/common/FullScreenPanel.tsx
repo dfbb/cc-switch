@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isWindows, isLinux } from "@/lib/platform";
 
 interface FullScreenPanelProps {
   isOpen: boolean;
@@ -12,7 +13,7 @@ interface FullScreenPanelProps {
   footer?: React.ReactNode;
 }
 
-const DRAG_BAR_HEIGHT = 28; // px - match App.tsx
+const DRAG_BAR_HEIGHT = isWindows() || isLinux() ? 0 : 28; // px - match App.tsx
 const HEADER_HEIGHT = 64; // px - match App.tsx
 
 /**
