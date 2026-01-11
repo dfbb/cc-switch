@@ -21,52 +21,157 @@ export function AutoFailoverConfigPanel({
   const { data: config, isLoading, error } = useAppProxyConfig(appType);
   const updateConfig = useUpdateAppProxyConfig();
 
+  // 使用字符串状态以支持完全清空数字输入框
   const [formData, setFormData] = useState({
     autoFailoverEnabled: false,
-    maxRetries: 3,
-    streamingFirstByteTimeout: 30,
-    streamingIdleTimeout: 60,
-    nonStreamingTimeout: 300,
-    circuitFailureThreshold: 5,
-    circuitSuccessThreshold: 2,
-    circuitTimeoutSeconds: 60,
-    circuitErrorRateThreshold: 0.5,
-    circuitMinRequests: 10,
+    maxRetries: "3",
+    streamingFirstByteTimeout: "30",
+    streamingIdleTimeout: "60",
+    nonStreamingTimeout: "300",
+    circuitFailureThreshold: "5",
+    circuitSuccessThreshold: "2",
+    circuitTimeoutSeconds: "60",
+    circuitErrorRateThreshold: "50", // 存储百分比值
+    circuitMinRequests: "10",
   });
 
   useEffect(() => {
     if (config) {
       setFormData({
         autoFailoverEnabled: config.autoFailoverEnabled,
-        maxRetries: config.maxRetries,
-        streamingFirstByteTimeout: config.streamingFirstByteTimeout,
-        streamingIdleTimeout: config.streamingIdleTimeout,
-        nonStreamingTimeout: config.nonStreamingTimeout,
-        circuitFailureThreshold: config.circuitFailureThreshold,
-        circuitSuccessThreshold: config.circuitSuccessThreshold,
-        circuitTimeoutSeconds: config.circuitTimeoutSeconds,
-        circuitErrorRateThreshold: config.circuitErrorRateThreshold,
-        circuitMinRequests: config.circuitMinRequests,
+        maxRetries: String(config.maxRetries),
+        streamingFirstByteTimeout: String(config.streamingFirstByteTimeout),
+        streamingIdleTimeout: String(config.streamingIdleTimeout),
+        nonStreamingTimeout: String(config.nonStreamingTimeout),
+        circuitFailureThreshold: String(config.circuitFailureThreshold),
+        circuitSuccessThreshold: String(config.circuitSuccessThreshold),
+        circuitTimeoutSeconds: String(config.circuitTimeoutSeconds),
+        circuitErrorRateThreshold: String(
+          Math.round(config.circuitErrorRateThreshold * 100),
+        ),
+        circuitMinRequests: String(config.circuitMinRequests),
       });
     }
   }, [config]);
 
   const handleSave = async () => {
     if (!config) return;
+    // 解析数字，返回 NaN 表示无效输入
+    const parseNum = (val: string) => {
+      const trimmed = val.trim();
+      // 必须是纯数字
+      if (!/^-?\d+$/.test(trimmed)) return NaN;
+      return parseInt(trimmed);
+    };
+
+    // 定义各字段的有效范围
+    const ranges = {
+      maxRetries: { min: 0, max: 10 },
+      streamingFirstByteTimeout: { min: 0, max: 180 },
+      streamingIdleTimeout: { min: 0, max: 600 },
+      nonStreamingTimeout: { min: 0, max: 1800 },
+      circuitFailureThreshold: { min: 1, max: 20 },
+      circuitSuccessThreshold: { min: 1, max: 10 },
+      circuitTimeoutSeconds: { min: 0, max: 300 },
+      circuitErrorRateThreshold: { min: 0, max: 100 },
+      circuitMinRequests: { min: 5, max: 100 },
+    };
+
+    // 解析原始值
+    const raw = {
+      maxRetries: parseNum(formData.maxRetries),
+      streamingFirstByteTimeout: parseNum(formData.streamingFirstByteTimeout),
+      streamingIdleTimeout: parseNum(formData.streamingIdleTimeout),
+      nonStreamingTimeout: parseNum(formData.nonStreamingTimeout),
+      circuitFailureThreshold: parseNum(formData.circuitFailureThreshold),
+      circuitSuccessThreshold: parseNum(formData.circuitSuccessThreshold),
+      circuitTimeoutSeconds: parseNum(formData.circuitTimeoutSeconds),
+      circuitErrorRateThreshold: parseNum(formData.circuitErrorRateThreshold),
+      circuitMinRequests: parseNum(formData.circuitMinRequests),
+    };
+
+    // 校验是否超出范围（NaN 也视为无效）
+    const errors: string[] = [];
+    const checkRange = (
+      value: number,
+      range: { min: number; max: number },
+      label: string,
+    ) => {
+      if (isNaN(value) || value < range.min || value > range.max) {
+        errors.push(`${label}: ${range.min}-${range.max}`);
+      }
+    };
+
+    checkRange(
+      raw.maxRetries,
+      ranges.maxRetries,
+      t("proxy.autoFailover.maxRetries", "最大重试次数"),
+    );
+    checkRange(
+      raw.streamingFirstByteTimeout,
+      ranges.streamingFirstByteTimeout,
+      t("proxy.autoFailover.streamingFirstByte", "流式首字节超时"),
+    );
+    checkRange(
+      raw.streamingIdleTimeout,
+      ranges.streamingIdleTimeout,
+      t("proxy.autoFailover.streamingIdle", "流式静默超时"),
+    );
+    checkRange(
+      raw.nonStreamingTimeout,
+      ranges.nonStreamingTimeout,
+      t("proxy.autoFailover.nonStreaming", "非流式超时"),
+    );
+    checkRange(
+      raw.circuitFailureThreshold,
+      ranges.circuitFailureThreshold,
+      t("proxy.autoFailover.failureThreshold", "失败阈值"),
+    );
+    checkRange(
+      raw.circuitSuccessThreshold,
+      ranges.circuitSuccessThreshold,
+      t("proxy.autoFailover.successThreshold", "恢复成功阈值"),
+    );
+    checkRange(
+      raw.circuitTimeoutSeconds,
+      ranges.circuitTimeoutSeconds,
+      t("proxy.autoFailover.timeout", "恢复等待时间"),
+    );
+    checkRange(
+      raw.circuitErrorRateThreshold,
+      ranges.circuitErrorRateThreshold,
+      t("proxy.autoFailover.errorRate", "错误率阈值"),
+    );
+    checkRange(
+      raw.circuitMinRequests,
+      ranges.circuitMinRequests,
+      t("proxy.autoFailover.minRequests", "最小请求数"),
+    );
+
+    if (errors.length > 0) {
+      toast.error(
+        t("proxy.autoFailover.validationFailed", {
+          fields: errors.join("; "),
+          defaultValue: `以下字段超出有效范围: ${errors.join("; ")}`,
+        }),
+      );
+      return;
+    }
+
     try {
       await updateConfig.mutateAsync({
         appType,
         enabled: config.enabled,
         autoFailoverEnabled: formData.autoFailoverEnabled,
-        maxRetries: formData.maxRetries,
-        streamingFirstByteTimeout: formData.streamingFirstByteTimeout,
-        streamingIdleTimeout: formData.streamingIdleTimeout,
-        nonStreamingTimeout: formData.nonStreamingTimeout,
-        circuitFailureThreshold: formData.circuitFailureThreshold,
-        circuitSuccessThreshold: formData.circuitSuccessThreshold,
-        circuitTimeoutSeconds: formData.circuitTimeoutSeconds,
-        circuitErrorRateThreshold: formData.circuitErrorRateThreshold,
-        circuitMinRequests: formData.circuitMinRequests,
+        maxRetries: raw.maxRetries,
+        streamingFirstByteTimeout: raw.streamingFirstByteTimeout,
+        streamingIdleTimeout: raw.streamingIdleTimeout,
+        nonStreamingTimeout: raw.nonStreamingTimeout,
+        circuitFailureThreshold: raw.circuitFailureThreshold,
+        circuitSuccessThreshold: raw.circuitSuccessThreshold,
+        circuitTimeoutSeconds: raw.circuitTimeoutSeconds,
+        circuitErrorRateThreshold: raw.circuitErrorRateThreshold / 100,
+        circuitMinRequests: raw.circuitMinRequests,
       });
       toast.success(
         t("proxy.autoFailover.configSaved", "自动故障转移配置已保存"),
@@ -83,15 +188,17 @@ export function AutoFailoverConfigPanel({
     if (config) {
       setFormData({
         autoFailoverEnabled: config.autoFailoverEnabled,
-        maxRetries: config.maxRetries,
-        streamingFirstByteTimeout: config.streamingFirstByteTimeout,
-        streamingIdleTimeout: config.streamingIdleTimeout,
-        nonStreamingTimeout: config.nonStreamingTimeout,
-        circuitFailureThreshold: config.circuitFailureThreshold,
-        circuitSuccessThreshold: config.circuitSuccessThreshold,
-        circuitTimeoutSeconds: config.circuitTimeoutSeconds,
-        circuitErrorRateThreshold: config.circuitErrorRateThreshold,
-        circuitMinRequests: config.circuitMinRequests,
+        maxRetries: String(config.maxRetries),
+        streamingFirstByteTimeout: String(config.streamingFirstByteTimeout),
+        streamingIdleTimeout: String(config.streamingIdleTimeout),
+        nonStreamingTimeout: String(config.nonStreamingTimeout),
+        circuitFailureThreshold: String(config.circuitFailureThreshold),
+        circuitSuccessThreshold: String(config.circuitSuccessThreshold),
+        circuitTimeoutSeconds: String(config.circuitTimeoutSeconds),
+        circuitErrorRateThreshold: String(
+          Math.round(config.circuitErrorRateThreshold * 100),
+        ),
+        circuitMinRequests: String(config.circuitMinRequests),
       });
     }
   };
@@ -142,13 +249,9 @@ export function AutoFailoverConfigPanel({
                 min="0"
                 max="10"
                 value={formData.maxRetries}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  setFormData({
-                    ...formData,
-                    maxRetries: isNaN(val) ? 0 : val,
-                  });
-                }}
+                onChange={(e) =>
+                  setFormData({ ...formData, maxRetries: e.target.value })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -169,13 +272,12 @@ export function AutoFailoverConfigPanel({
                 min="1"
                 max="20"
                 value={formData.circuitFailureThreshold}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    circuitFailureThreshold: isNaN(val) ? 1 : Math.max(1, val),
-                  });
-                }}
+                    circuitFailureThreshold: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -208,13 +310,12 @@ export function AutoFailoverConfigPanel({
                 min="0"
                 max="180"
                 value={formData.streamingFirstByteTimeout}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    streamingFirstByteTimeout: isNaN(val) ? 0 : val,
-                  });
-                }}
+                    streamingFirstByteTimeout: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -235,13 +336,12 @@ export function AutoFailoverConfigPanel({
                 min="0"
                 max="600"
                 value={formData.streamingIdleTimeout}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    streamingIdleTimeout: isNaN(val) ? 0 : val,
-                  });
-                }}
+                    streamingIdleTimeout: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -262,13 +362,12 @@ export function AutoFailoverConfigPanel({
                 min="0"
                 max="1800"
                 value={formData.nonStreamingTimeout}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    nonStreamingTimeout: isNaN(val) ? 0 : val,
-                  });
-                }}
+                    nonStreamingTimeout: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -298,13 +397,12 @@ export function AutoFailoverConfigPanel({
                 min="1"
                 max="10"
                 value={formData.circuitSuccessThreshold}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    circuitSuccessThreshold: isNaN(val) ? 1 : Math.max(1, val),
-                  });
-                }}
+                    circuitSuccessThreshold: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -322,16 +420,15 @@ export function AutoFailoverConfigPanel({
               <Input
                 id={`timeoutSeconds-${appType}`}
                 type="number"
-                min="10"
+                min="0"
                 max="300"
                 value={formData.circuitTimeoutSeconds}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    circuitTimeoutSeconds: isNaN(val) ? 10 : Math.max(10, val),
-                  });
-                }}
+                    circuitTimeoutSeconds: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -352,14 +449,13 @@ export function AutoFailoverConfigPanel({
                 min="0"
                 max="100"
                 step="5"
-                value={Math.round(formData.circuitErrorRateThreshold * 100)}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                value={formData.circuitErrorRateThreshold}
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    circuitErrorRateThreshold: isNaN(val) ? 0.5 : val / 100,
-                  });
-                }}
+                    circuitErrorRateThreshold: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">
@@ -380,13 +476,12 @@ export function AutoFailoverConfigPanel({
                 min="5"
                 max="100"
                 value={formData.circuitMinRequests}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
+                onChange={(e) =>
                   setFormData({
                     ...formData,
-                    circuitMinRequests: isNaN(val) ? 5 : Math.max(5, val),
-                  });
-                }}
+                    circuitMinRequests: e.target.value,
+                  })
+                }
                 disabled={isDisabled}
               />
               <p className="text-xs text-muted-foreground">

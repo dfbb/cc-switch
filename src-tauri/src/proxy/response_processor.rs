@@ -46,8 +46,6 @@ pub async fn handle_streaming(
     state: &ProxyState,
     parser_config: &UsageParserConfig,
 ) -> Response {
-    log::info!("[{}] 流式透传响应 (SSE)", ctx.tag);
-
     let status = response.status();
     let mut builder = axum::response::Response::builder().status(status);
 
@@ -99,12 +97,6 @@ pub async fn handle_non_streaming(
 
     // 解析并记录使用量
     if let Ok(json_value) = serde_json::from_slice::<Value>(&body_bytes) {
-        log::info!(
-            "[{}] <<< 响应 JSON:\n{}",
-            ctx.tag,
-            serde_json::to_string_pretty(&json_value).unwrap_or_default()
-        );
-
         // 解析使用量
         if let Some(usage) = (parser_config.response_parser)(&json_value) {
             // 优先使用 usage 中解析出的模型名称，其次使用响应中的 model 字段，最后回退到请求模型
@@ -137,7 +129,7 @@ pub async fn handle_non_streaming(
             );
         }
     } else {
-        log::info!(
+        log::debug!(
             "[{}] <<< 响应 (非 JSON): {} bytes",
             ctx.tag,
             body_bytes.len()
@@ -151,8 +143,6 @@ pub async fn handle_non_streaming(
             false,
         );
     }
-
-    log::info!("[{}] ====== 请求结束 ======", ctx.tag);
 
     // 构建响应
     let mut builder = axum::response::Response::builder().status(status);
@@ -382,7 +372,12 @@ async fn log_usage_internal(
         Ok(Some(p)) => {
             if let Some(meta) = p.meta {
                 if let Some(cm) = meta.cost_multiplier {
-                    Decimal::from_str(&cm).unwrap_or(Decimal::from(1))
+                    Decimal::from_str(&cm).unwrap_or_else(|e| {
+                        log::warn!(
+                            "cost_multiplier 解析失败 (provider_id={provider_id}): {cm} - {e}"
+                        );
+                        Decimal::from(1)
+                    })
                 } else {
                     Decimal::from(1)
                 }
@@ -418,7 +413,7 @@ async fn log_usage_internal(
         None, // provider_type
         is_streaming,
     ) {
-        log::warn!("记录使用量失败: {e}");
+        log::warn!("[USG-001] 记录使用量失败: {e}");
     }
 }
 
@@ -493,16 +488,16 @@ pub fn create_logged_passthrough_stream(
                                             if let Some(c) = &collector {
                                                 c.push(json_value.clone()).await;
                                             }
-                                            log::info!(
-                                                "[{}] <<< SSE 事件:\n{}",
+                                            log::debug!(
+                                                "[{}] <<< SSE 事件: {}",
                                                 tag,
-                                                serde_json::to_string_pretty(&json_value).unwrap_or_else(|_| data.to_string())
+                                                data.chars().take(100).collect::<String>()
                                             );
                                         } else {
-                                            log::info!("[{tag}] <<< SSE 数据: {data}");
+                                            log::debug!("[{tag}] <<< SSE 数据: {}", data.chars().take(100).collect::<String>());
                                         }
                                     } else {
-                                        log::info!("[{tag}] <<< SSE: [DONE]");
+                                        log::debug!("[{tag}] <<< SSE: [DONE]");
                                     }
                                 }
                             }
@@ -522,8 +517,6 @@ pub fn create_logged_passthrough_stream(
                 }
             }
         }
-
-        log::info!("[{}] ====== 流结束 ======", tag);
 
         if let Some(c) = collector.take() {
             c.finish().await;
