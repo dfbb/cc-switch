@@ -20,13 +20,16 @@ use crate::settings::CustomEndpoint;
 use crate::store::AppState;
 
 // Re-export sub-module functions for external access
-pub use live::{import_default_config, read_live_settings, sync_current_to_live};
+pub use live::{
+    import_default_config, import_opencode_providers_from_live, read_live_settings,
+    sync_current_to_live,
+};
 
 // Internal re-exports (pub(crate))
 pub(crate) use live::write_live_snapshot;
 
 // Internal re-exports
-use live::write_gemini_live;
+use live::{remove_opencode_provider_from_live, write_gemini_live};
 use usage::validate_usage_script;
 
 /// Provider business logic service
@@ -152,7 +155,13 @@ impl ProviderService {
         // Save to database
         state.db.save_provider(app_type.as_str(), &provider)?;
 
-        // Check if sync is needed (if this is current provider, or no current provider)
+        // OpenCode uses additive mode - always write to live config
+        if matches!(app_type, AppType::OpenCode) {
+            write_live_snapshot(&app_type, &provider)?;
+            return Ok(true);
+        }
+
+        // For other apps: Check if sync is needed (if this is current provider, or no current provider)
         let current = state.db.get_current_provider(app_type.as_str())?;
         if current.is_none() {
             // No current provider, set as current and sync
@@ -176,13 +185,19 @@ impl ProviderService {
         Self::normalize_provider_if_claude(&app_type, &mut provider);
         Self::validate_provider_settings(&app_type, &provider)?;
 
-        // Check if this is current provider (use effective current, not just DB)
+        // Save to database
+        state.db.save_provider(app_type.as_str(), &provider)?;
+
+        // OpenCode uses additive mode - always update in live config
+        if matches!(app_type, AppType::OpenCode) {
+            write_live_snapshot(&app_type, &provider)?;
+            return Ok(true);
+        }
+
+        // For other apps: Check if this is current provider (use effective current, not just DB)
         let effective_current =
             crate::settings::get_effective_current_provider(&state.db, &app_type)?;
         let is_current = effective_current.as_deref() == Some(provider.id.as_str());
-
-        // Save to database
-        state.db.save_provider(app_type.as_str(), &provider)?;
 
         if is_current {
             // 如果代理接管模式处于激活状态，并且代理服务正在运行：
@@ -216,8 +231,18 @@ impl ProviderService {
     /// Delete a provider
     ///
     /// 同时检查本地 settings 和数据库的当前供应商，防止删除任一端正在使用的供应商。
+    /// 对于 OpenCode（累加模式），可以随时删除任意供应商，同时从 live 配置中移除。
     pub fn delete(state: &AppState, app_type: AppType, id: &str) -> Result<(), AppError> {
-        // Check both local settings and database
+        // OpenCode uses additive mode - no current provider concept
+        if matches!(app_type, AppType::OpenCode) {
+            // Remove from database
+            state.db.delete_provider(app_type.as_str(), id)?;
+            // Also remove from live config
+            remove_opencode_provider_from_live(id)?;
+            return Ok(());
+        }
+
+        // For other apps: Check both local settings and database
         let local_current = crate::settings::get_current_provider(&app_type);
         let db_current = state.db.get_current_provider(app_type.as_str())?;
 

@@ -121,9 +121,32 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
             write_gemini_live(provider)?;
         }
         AppType::OpenCode => {
-            // OpenCode uses additive mode - providers are written directly to config
-            // This will be fully implemented in Phase 3
-            log::debug!("OpenCode live snapshot not needed (additive mode)");
+            // OpenCode uses additive mode - write provider to config
+            use crate::opencode_config;
+            use crate::provider::OpenCodeProviderConfig;
+
+            // Convert settings_config to OpenCodeProviderConfig
+            let opencode_config_result =
+                serde_json::from_value::<OpenCodeProviderConfig>(provider.settings_config.clone());
+
+            match opencode_config_result {
+                Ok(config) => {
+                    opencode_config::set_typed_provider(&provider.id, &config)?;
+                    log::info!(
+                        "OpenCode provider '{}' written to live config",
+                        provider.id
+                    );
+                }
+                Err(e) => {
+                    log::warn!(
+                        "Failed to parse OpenCode provider config for '{}': {}",
+                        provider.id,
+                        e
+                    );
+                    // Still try to write as raw JSON
+                    opencode_config::set_provider(&provider.id, provider.settings_config.clone())?;
+                }
+            }
         }
     }
     Ok(())
@@ -436,4 +459,82 @@ pub(crate) fn write_gemini_live(provider: &Provider) -> Result<(), AppError> {
     }
 
     Ok(())
+}
+
+/// Remove an OpenCode provider from the live configuration
+///
+/// This is specific to OpenCode's additive mode - removing a provider
+/// from the opencode.json file.
+pub(crate) fn remove_opencode_provider_from_live(provider_id: &str) -> Result<(), AppError> {
+    use crate::opencode_config;
+
+    // Check if OpenCode config directory exists
+    if !opencode_config::get_opencode_dir().exists() {
+        log::debug!(
+            "OpenCode config directory doesn't exist, skipping removal of '{}'",
+            provider_id
+        );
+        return Ok(());
+    }
+
+    opencode_config::remove_provider(provider_id)?;
+    log::info!(
+        "OpenCode provider '{}' removed from live config",
+        provider_id
+    );
+
+    Ok(())
+}
+
+/// Import all providers from OpenCode live config to database
+///
+/// This imports existing providers from ~/.config/opencode/opencode.json
+/// into the CC Switch database. Each provider found will be added to the
+/// database with is_current set to false.
+pub fn import_opencode_providers_from_live(state: &AppState) -> Result<usize, AppError> {
+    use crate::opencode_config;
+
+    let providers = opencode_config::get_typed_providers()?;
+    if providers.is_empty() {
+        return Ok(0);
+    }
+
+    let mut imported = 0;
+    let existing = state.db.get_all_providers("opencode")?;
+
+    for (id, config) in providers {
+        // Skip if already exists in database
+        if existing.contains_key(&id) {
+            log::debug!("OpenCode provider '{}' already exists in database, skipping", id);
+            continue;
+        }
+
+        // Convert to Value for settings_config
+        let settings_config = match serde_json::to_value(&config) {
+            Ok(v) => v,
+            Err(e) => {
+                log::warn!("Failed to serialize OpenCode provider '{}': {}", id, e);
+                continue;
+            }
+        };
+
+        // Create provider
+        let provider = Provider::with_id(
+            id.clone(),
+            config.name.clone().unwrap_or_else(|| id.clone()),
+            settings_config,
+            None,
+        );
+
+        // Save to database
+        if let Err(e) = state.db.save_provider("opencode", &provider) {
+            log::warn!("Failed to import OpenCode provider '{}': {}", id, e);
+            continue;
+        }
+
+        imported += 1;
+        log::info!("Imported OpenCode provider '{}' from live config", id);
+    }
+
+    Ok(imported)
 }
