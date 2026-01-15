@@ -325,3 +325,17 @@ pub fn sync_universal_provider(
 
     Ok(result)
 }
+
+// ============================================================================
+// OpenCode 专属命令
+// ============================================================================
+
+/// 从 OpenCode live 配置导入供应商到数据库
+///
+/// 这是 OpenCode 特有的功能，因为 OpenCode 使用累加模式，
+/// 用户可能已经在 opencode.json 中配置了供应商。
+#[tauri::command]
+pub fn import_opencode_providers_from_live(state: State<'_, AppState>) -> Result<usize, String> {
+    crate::services::provider::import_opencode_providers_from_live(state.inner())
+        .map_err(|e| e.to_string())
+}
