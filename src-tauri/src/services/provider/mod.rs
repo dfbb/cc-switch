@@ -380,6 +380,7 @@ impl ProviderService {
             AppType::Claude => Self::extract_claude_common_config(&provider.settings_config),
             AppType::Codex => Self::extract_codex_common_config(&provider.settings_config),
             AppType::Gemini => Self::extract_gemini_common_config(&provider.settings_config),
+            AppType::OpenCode => Self::extract_opencode_common_config(&provider.settings_config),
         }
     }
 
@@ -392,6 +393,7 @@ impl ProviderService {
             AppType::Claude => Self::extract_claude_common_config(settings_config),
             AppType::Codex => Self::extract_codex_common_config(settings_config),
             AppType::Gemini => Self::extract_gemini_common_config(settings_config),
+            AppType::OpenCode => Self::extract_opencode_common_config(settings_config),
         }
     }
 
@@ -522,6 +524,29 @@ impl ProviderService {
         }
 
         serde_json::to_string_pretty(&Value::Object(snippet))
+            .map_err(|e| AppError::Message(format!("Serialization failed: {e}")))
+    }
+
+    /// Extract common config for OpenCode (JSON format)
+    fn extract_opencode_common_config(settings: &Value) -> Result<String, AppError> {
+        // OpenCode uses a different config structure with npm, options, models
+        // For common config, we exclude provider-specific fields like apiKey
+        let mut config = settings.clone();
+
+        // Remove provider-specific fields
+        if let Some(obj) = config.as_object_mut() {
+            if let Some(options) = obj.get_mut("options").and_then(|v| v.as_object_mut()) {
+                options.remove("apiKey");
+                options.remove("baseURL");
+            }
+            // Keep npm and models as they might be common
+        }
+
+        if config.is_null() || (config.is_object() && config.as_object().unwrap().is_empty()) {
+            return Ok("{}".to_string());
+        }
+
+        serde_json::to_string_pretty(&config)
             .map_err(|e| AppError::Message(format!("Serialization failed: {e}")))
     }
 
@@ -691,6 +716,17 @@ impl ProviderService {
                 use crate::gemini_config::validate_gemini_settings;
                 validate_gemini_settings(&provider.settings_config)?
             }
+            AppType::OpenCode => {
+                // OpenCode uses a different config structure: { npm, options, models }
+                // Basic validation - must be an object
+                if !provider.settings_config.is_object() {
+                    return Err(AppError::localized(
+                        "provider.opencode.settings.not_object",
+                        "OpenCode 配置必须是 JSON 对象",
+                        "OpenCode configuration must be a JSON object",
+                    ));
+                }
+            }
         }
 
         // Validate and clean UsageScript configuration (common for all app types)
@@ -825,6 +861,40 @@ impl ProviderService {
                     .get("GOOGLE_GEMINI_BASE_URL")
                     .cloned()
                     .unwrap_or_else(|| "https://generativelanguage.googleapis.com".to_string());
+
+                Ok((api_key, base_url))
+            }
+            AppType::OpenCode => {
+                // OpenCode uses options.apiKey and options.baseURL
+                let options = provider
+                    .settings_config
+                    .get("options")
+                    .and_then(|v| v.as_object())
+                    .ok_or_else(|| {
+                        AppError::localized(
+                            "provider.opencode.options.missing",
+                            "配置格式错误: 缺少 options",
+                            "Invalid configuration: missing options section",
+                        )
+                    })?;
+
+                let api_key = options
+                    .get("apiKey")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| {
+                        AppError::localized(
+                            "provider.opencode.api_key.missing",
+                            "缺少 API Key",
+                            "API key is missing",
+                        )
+                    })?
+                    .to_string();
+
+                let base_url = options
+                    .get("baseURL")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
 
                 Ok((api_key, base_url))
             }

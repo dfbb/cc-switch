@@ -122,6 +122,10 @@ impl ConfigService {
             AppType::Codex => Self::sync_codex_live(config, &current_id, &provider)?,
             AppType::Claude => Self::sync_claude_live(config, &current_id, &provider)?,
             AppType::Gemini => Self::sync_gemini_live(config, &current_id, &provider)?,
+            AppType::OpenCode => {
+                // OpenCode uses additive mode, no live sync needed
+                // OpenCode providers are managed directly in the config file
+            }
         }
 
         Ok(())

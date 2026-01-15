@@ -113,6 +113,11 @@ impl McpService {
             AppType::Gemini => {
                 mcp::sync_single_server_to_gemini(&Default::default(), &server.id, &server.server)?;
             }
+            AppType::OpenCode => {
+                // OpenCode MCP sync will be implemented in Phase 4
+                // For now, skip silently
+                log::debug!("OpenCode MCP sync not yet implemented, skipping");
+            }
         }
         Ok(())
     }
@@ -135,6 +140,10 @@ impl McpService {
             AppType::Claude => mcp::remove_server_from_claude(id)?,
             AppType::Codex => mcp::remove_server_from_codex(id)?,
             AppType::Gemini => mcp::remove_server_from_gemini(id)?,
+            AppType::OpenCode => {
+                // OpenCode MCP removal will be implemented in Phase 4
+                log::debug!("OpenCode MCP removal not yet implemented, skipping");
+            }
         }
         Ok(())
     }

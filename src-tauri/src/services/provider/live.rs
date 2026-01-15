@@ -120,6 +120,11 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
             // Delegate to write_gemini_live which handles env file writing correctly
             write_gemini_live(provider)?;
         }
+        AppType::OpenCode => {
+            // OpenCode uses additive mode - providers are written directly to config
+            // This will be fully implemented in Phase 3
+            log::debug!("OpenCode live snapshot not needed (additive mode)");
+        }
     }
     Ok(())
 }
@@ -220,6 +225,21 @@ pub fn read_live_settings(app_type: AppType) -> Result<Value, AppError> {
                 "config": config_obj
             }))
         }
+        AppType::OpenCode => {
+            use crate::opencode_config::{get_opencode_config_path, read_opencode_config};
+
+            let config_path = get_opencode_config_path();
+            if !config_path.exists() {
+                return Err(AppError::localized(
+                    "opencode.config.missing",
+                    "OpenCode 配置文件不存在",
+                    "OpenCode configuration file not found",
+                ));
+            }
+
+            let config = read_opencode_config()?;
+            Ok(config)
+        }
     }
 }
 
@@ -294,6 +314,24 @@ pub fn import_default_config(state: &AppState, app_type: AppType) -> Result<bool
                 "env": env_obj,
                 "config": config_obj
             })
+        }
+        AppType::OpenCode => {
+            // OpenCode uses additive mode - import from live is not the same pattern
+            // For now, return an empty config structure
+            use crate::opencode_config::{get_opencode_config_path, read_opencode_config};
+
+            let config_path = get_opencode_config_path();
+            if !config_path.exists() {
+                return Err(AppError::localized(
+                    "opencode.live.missing",
+                    "OpenCode 配置文件不存在",
+                    "OpenCode configuration file is missing",
+                ));
+            }
+
+            // For OpenCode, we return the full config - but note that OpenCode
+            // uses additive mode, so importing defaults works differently
+            read_opencode_config()?
         }
     };
 
