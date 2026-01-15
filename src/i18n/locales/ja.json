@@ -84,6 +84,10 @@
     "addClaudeProvider": "Claude Code プロバイダーを追加",
     "addCodexProvider": "Codex プロバイダーを追加",
     "addGeminiProvider": "Gemini プロバイダーを追加",
+    "addOpenCodeProvider": "OpenCode プロバイダーを追加",
+    "addToConfig": "追加",
+    "removeFromConfig": "削除",
+    "inConfig": "追加済み",
     "addProviderHint": "一覧にすばやく切り替えられるよう、ここに情報を入力してください。",
     "editClaudeProvider": "Claude Code プロバイダーを編集",
     "editCodexProvider": "Codex プロバイダーを編集",
@@ -304,7 +308,8 @@
   "apps": {
     "claude": "Claude Code",
     "codex": "Codex",
-    "gemini": "Gemini"
+    "gemini": "Gemini",
+    "opencode": "OpenCode"
   },
   "console": {
     "providerSwitchReceived": "プロバイダー切り替えイベントを受信:",
@@ -454,6 +459,18 @@
     "noCommonConfigToApply": "共通設定スニペットが空、または適用できる項目がありません",
     "configMergeFailed": "設定のマージに失敗しました: {{error}}",
     "configReplaceFailed": "設定の置換に失敗しました: {{error}}"
+  },
+  "opencode": {
+    "npmPackage": "AI SDK パッケージ",
+    "npmPackageHint": "AI サービスとの通信に使用する npm パッケージを選択",
+    "baseUrl": "Base URL",
+    "baseUrlHint": "カスタム API エンドポイント URL",
+    "models": "モデル設定",
+    "modelsHint": "利用可能なモデルとその表示名を設定",
+    "addModel": "モデルを追加",
+    "modelId": "モデル ID",
+    "modelName": "表示名",
+    "noModels": "モデルが設定されていません"
   },
   "providerPreset": {
     "label": "プロバイダータイプ",
@@ -634,7 +651,8 @@
       "apps": {
         "claude": "Claude",
         "codex": "Codex",
-        "gemini": "Gemini"
+        "gemini": "Gemini",
+        "opencode": "OpenCode"
       }
     },
     "userLevelPath": "ユーザーレベルの MCP パス",
@@ -942,7 +960,8 @@
     "apps": {
       "claude": "Claude",
       "codex": "Codex",
-      "gemini": "Gemini"
+      "gemini": "Gemini",
+      "opencode": "OpenCode"
     }
   },
   "deeplink": {

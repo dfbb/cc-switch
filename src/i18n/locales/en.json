@@ -84,6 +84,10 @@
     "addClaudeProvider": "Add Claude Code Provider",
     "addCodexProvider": "Add Codex Provider",
     "addGeminiProvider": "Add Gemini Provider",
+    "addOpenCodeProvider": "Add OpenCode Provider",
+    "addToConfig": "Add",
+    "removeFromConfig": "Remove",
+    "inConfig": "Added",
     "addProviderHint": "Fill in the information to quickly switch providers in the list.",
     "editClaudeProvider": "Edit Claude Code Provider",
     "editCodexProvider": "Edit Codex Provider",
@@ -304,7 +308,8 @@
   "apps": {
     "claude": "Claude Code",
     "codex": "Codex",
-    "gemini": "Gemini"
+    "gemini": "Gemini",
+    "opencode": "OpenCode"
   },
   "console": {
     "providerSwitchReceived": "Received provider switch event:",
@@ -454,6 +459,18 @@
     "noCommonConfigToApply": "Common config snippet is empty or has no applicable entries",
     "configMergeFailed": "Config merge failed: {{error}}",
     "configReplaceFailed": "Config replace failed: {{error}}"
+  },
+  "opencode": {
+    "npmPackage": "AI SDK Package",
+    "npmPackageHint": "Select the npm package for communicating with the AI service",
+    "baseUrl": "Base URL",
+    "baseUrlHint": "Custom API endpoint URL",
+    "models": "Models",
+    "modelsHint": "Configure available models and their display names",
+    "addModel": "Add Model",
+    "modelId": "Model ID",
+    "modelName": "Display Name",
+    "noModels": "No models configured"
   },
   "providerPreset": {
     "label": "Provider Preset",
@@ -634,7 +651,8 @@
       "apps": {
         "claude": "Claude",
         "codex": "Codex",
-        "gemini": "Gemini"
+        "gemini": "Gemini",
+        "opencode": "OpenCode"
       }
     },
     "userLevelPath": "User-level MCP path",
@@ -942,7 +960,8 @@
     "apps": {
       "claude": "Claude",
       "codex": "Codex",
-      "gemini": "Gemini"
+      "gemini": "Gemini",
+      "opencode": "OpenCode"
     }
   },
   "deeplink": {
