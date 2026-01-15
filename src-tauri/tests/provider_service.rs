@@ -88,6 +88,7 @@ command = "say"
                 claude: false,
                 codex: true,
                 gemini: false,
+                opencode: false,
             },
             description: None,
             homepage: None,
