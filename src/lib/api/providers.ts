@@ -74,6 +74,14 @@ export const providersApi = {
   async openTerminal(providerId: string, appId: AppId): Promise<boolean> {
     return await invoke("open_provider_terminal", { providerId, app: appId });
   },
+
+  /**
+   * 从 OpenCode live 配置导入供应商到数据库
+   * OpenCode 特有功能：由于累加模式，用户可能已在 opencode.json 中配置供应商
+   */
+  async importOpenCodeFromLive(): Promise<number> {
+    return await invoke("import_opencode_providers_from_live");
+  },
 };
 
 // ============================================================================

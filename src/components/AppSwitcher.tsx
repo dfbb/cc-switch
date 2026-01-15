@@ -16,11 +16,13 @@ export function AppSwitcher({ activeApp, onSwitch }: AppSwitcherProps) {
     claude: "claude",
     codex: "openai",
     gemini: "gemini",
+    opencode: "opencode",
   };
   const appDisplayName: Record<AppId, string> = {
     claude: "Claude",
     codex: "Codex",
     gemini: "Gemini",
+    opencode: "OpenCode",
   };
 
   return (

@@ -65,6 +65,7 @@ const McpFormModal: React.FC<McpFormModalProps> = ({
     claude: boolean;
     codex: boolean;
     gemini: boolean;
+    opencode: boolean;
   }>(() => {
     if (initialData?.apps) {
       return { ...initialData.apps };
@@ -73,6 +74,7 @@ const McpFormModal: React.FC<McpFormModalProps> = ({
       claude: defaultEnabledApps.includes("claude"),
       codex: defaultEnabledApps.includes("codex"),
       gemini: defaultEnabledApps.includes("gemini"),
+      opencode: defaultEnabledApps.includes("opencode"),
     };
   });
 

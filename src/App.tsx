@@ -454,7 +454,7 @@ function App() {
             />
           );
         case "skillsDiscovery":
-          return <SkillsPage ref={skillsPageRef} initialApp={activeApp} />;
+          return <SkillsPage ref={skillsPageRef} initialApp={activeApp === "opencode" ? "claude" : activeApp} />;
         case "mcp":
           return (
             <UnifiedMcpPanel

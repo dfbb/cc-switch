@@ -6,7 +6,7 @@ import {
 import type { ProviderCategory } from "@/types";
 
 interface UseBaseUrlStateProps {
-  appType: "claude" | "codex" | "gemini";
+  appType: "claude" | "codex" | "gemini" | "opencode";
   category: ProviderCategory | undefined;
   settingsConfig: string;
   codexConfig?: string;

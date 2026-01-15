@@ -125,6 +125,8 @@ export interface Settings {
   codexConfigDir?: string;
   // 覆盖 Gemini 配置目录（可选）
   geminiConfigDir?: string;
+  // 覆盖 OpenCode 配置目录（可选）
+  opencodeConfigDir?: string;
 
   // ===== 当前供应商 ID（设备级）=====
   // 当前 Claude 供应商 ID（优先于数据库 is_current）
@@ -156,6 +158,7 @@ export interface McpApps {
   claude: boolean;
   codex: boolean;
   gemini: boolean;
+  opencode: boolean;
 }
 
 // MCP 服务器条目（v3.7.0 统一结构）
@@ -247,3 +250,45 @@ export interface UniversalProvider {
 
 // 统一供应商映射（id -> UniversalProvider）
 export type UniversalProvidersMap = Record<string, UniversalProvider>;
+
+// ============================================================================
+// OpenCode 专属配置（v3.9.2+）
+// ============================================================================
+
+// OpenCode 模型配置
+export interface OpenCodeModel {
+  name: string;
+  limit?: {
+    context?: number;
+    output?: number;
+  };
+}
+
+// OpenCode 供应商选项
+export interface OpenCodeProviderOptions {
+  baseURL?: string;
+  apiKey?: string;
+  headers?: Record<string, string>;
+}
+
+// OpenCode 供应商配置（settings_config 结构）
+export interface OpenCodeProviderConfig {
+  npm: string; // AI SDK 包名，如 "@ai-sdk/openai-compatible"
+  name?: string; // 供应商显示名称
+  options: OpenCodeProviderOptions;
+  models: Record<string, OpenCodeModel>;
+}
+
+// OpenCode MCP 服务器配置（与统一格式不同）
+export interface OpenCodeMcpServerSpec {
+  type: "local" | "remote";
+  // local 类型字段
+  command?: string[]; // 与统一格式不同：命令和参数合并为数组
+  environment?: Record<string, string>; // 与统一格式不同：使用 environment 而非 env
+  // remote 类型字段
+  url?: string;
+  headers?: Record<string, string>;
+  // 通用字段
+  enabled?: boolean;
+}
+
