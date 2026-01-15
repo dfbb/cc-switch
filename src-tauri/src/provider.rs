@@ -462,3 +462,113 @@ requires_openai_auth = true"#
         })
     }
 }
+
+// ============================================================================
+// OpenCode 供应商配置结构
+// ============================================================================
+
+/// OpenCode 供应商的 settings_config 结构
+///
+/// OpenCode 使用 AI SDK 包名来指定供应商类型，与其他应用的配置格式不同。
+/// 配置示例：
+/// ```json
+/// {
+///   "npm": "@ai-sdk/openai-compatible",
+///   "options": { "baseURL": "https://api.example.com/v1", "apiKey": "sk-xxx" },
+///   "models": { "gpt-4o": { "name": "GPT-4o" } }
+/// }
+/// ```
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenCodeProviderConfig {
+    /// AI SDK 包名，如 "@ai-sdk/openai-compatible", "@ai-sdk/anthropic"
+    pub npm: String,
+
+    /// 供应商名称（可选，用于显示）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+
+    /// 供应商选项（API 密钥、基础 URL 等）
+    #[serde(default)]
+    pub options: OpenCodeProviderOptions,
+
+    /// 模型定义映射
+    #[serde(default)]
+    pub models: HashMap<String, OpenCodeModel>,
+}
+
+impl Default for OpenCodeProviderConfig {
+    fn default() -> Self {
+        Self {
+            npm: "@ai-sdk/openai-compatible".to_string(),
+            name: None,
+            options: OpenCodeProviderOptions::default(),
+            models: HashMap::new(),
+        }
+    }
+}
+
+/// OpenCode 供应商选项
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct OpenCodeProviderOptions {
+    /// API 基础 URL
+    #[serde(rename = "baseURL", skip_serializing_if = "Option::is_none")]
+    pub base_url: Option<String>,
+
+    /// API 密钥（支持环境变量引用，如 "{env:API_KEY}"）
+    #[serde(rename = "apiKey", skip_serializing_if = "Option::is_none")]
+    pub api_key: Option<String>,
+
+    /// 自定义请求头
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub headers: Option<HashMap<String, String>>,
+}
+
+/// OpenCode 模型定义
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenCodeModel {
+    /// 模型显示名称
+    pub name: String,
+
+    /// 模型限制（上下文和输出 token 数）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub limit: Option<OpenCodeModelLimit>,
+}
+
+/// OpenCode 模型限制
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct OpenCodeModelLimit {
+    /// 上下文 token 限制
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context: Option<u64>,
+
+    /// 输出 token 限制
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output: Option<u64>,
+}
+
+impl OpenCodeProviderConfig {
+    /// 从 serde_json::Value 解析
+    pub fn from_value(value: &Value) -> Result<Self, serde_json::Error> {
+        serde_json::from_value(value.clone())
+    }
+
+    /// 转换为 serde_json::Value
+    pub fn to_value(&self) -> Result<Value, serde_json::Error> {
+        serde_json::to_value(self)
+    }
+
+    /// 获取第一个模型 ID（用于默认模型选择）
+    pub fn first_model_id(&self) -> Option<String> {
+        self.models.keys().next().cloned()
+    }
+
+    /// 检查是否有有效的 API 密钥配置
+    pub fn has_api_key(&self) -> bool {
+        self.options
+            .api_key
+            .as_ref()
+            .map(|k| !k.trim().is_empty())
+            .unwrap_or(false)
+    }
+}
+
