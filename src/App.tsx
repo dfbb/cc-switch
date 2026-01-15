@@ -740,7 +740,9 @@ function App() {
             )}
             {currentView === "providers" && (
               <>
-                <ProxyToggle activeApp={activeApp} />
+                {activeApp !== "opencode" && (
+                  <ProxyToggle activeApp={activeApp} />
+                )}
 
                 <AppSwitcher activeApp={activeApp} onSwitch={setActiveApp} />
 
