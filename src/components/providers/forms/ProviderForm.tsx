@@ -20,6 +20,12 @@ import {
   geminiProviderPresets,
   type GeminiProviderPreset,
 } from "@/config/geminiProviderPresets";
+import {
+  opencodeProviderPresets,
+  type OpenCodeProviderPreset,
+} from "@/config/opencodeProviderPresets";
+import { OpenCodeFormFields } from "./OpenCodeFormFields";
+import type { OpenCodeModel } from "@/types";
 import type { UniversalProviderPreset } from "@/config/universalProviderPresets";
 import { applyTemplateValues } from "@/utils/providerConfigUtils";
 import { mergeProviderMeta } from "@/utils/providerMetaUtils";
@@ -62,9 +68,22 @@ const GEMINI_DEFAULT_CONFIG = JSON.stringify(
   2,
 );
 
+const OPENCODE_DEFAULT_CONFIG = JSON.stringify(
+  {
+    npm: "@ai-sdk/openai-compatible",
+    options: {
+      baseURL: "",
+      apiKey: "",
+    },
+    models: {},
+  },
+  null,
+  2,
+);
+
 type PresetEntry = {
   id: string;
-  preset: ProviderPreset | CodexProviderPreset | GeminiProviderPreset;
+  preset: ProviderPreset | CodexProviderPreset | GeminiProviderPreset | OpenCodeProviderPreset;
 };
 
 interface ProviderFormProps {
@@ -158,7 +177,9 @@ export function ProviderForm({
           ? CODEX_DEFAULT_CONFIG
           : appId === "gemini"
             ? GEMINI_DEFAULT_CONFIG
-            : CLAUDE_DEFAULT_CONFIG,
+            : appId === "opencode"
+              ? OPENCODE_DEFAULT_CONFIG
+              : CLAUDE_DEFAULT_CONFIG,
       icon: initialData?.icon ?? "",
       iconColor: initialData?.iconColor ?? "",
     }),
@@ -328,6 +349,11 @@ export function ProviderForm({
         id: `gemini-${index}`,
         preset,
       }));
+    } else if (appId === "opencode") {
+      return opencodeProviderPresets.map<PresetEntry>((preset, index) => ({
+        id: `opencode-${index}`,
+        preset,
+      }));
     }
     return providerPresets.map<PresetEntry>((preset, index) => ({
       id: `claude-${index}`,
@@ -468,6 +494,106 @@ export function ProviderForm({
     initialData: appId === "gemini" ? initialData : undefined,
     selectedPresetId: selectedPresetId ?? undefined,
   });
+
+  // OpenCode 配置状态
+  const [opencodeNpm, setOpencodeNpm] = useState<string>(() => {
+    if (appId !== "opencode") return "@ai-sdk/openai-compatible";
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.npm || "@ai-sdk/openai-compatible";
+    } catch {
+      return "@ai-sdk/openai-compatible";
+    }
+  });
+
+  const [opencodeApiKey, setOpencodeApiKey] = useState<string>(() => {
+    if (appId !== "opencode") return "";
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.options?.apiKey || "";
+    } catch {
+      return "";
+    }
+  });
+
+  const [opencodeBaseUrl, setOpencodeBaseUrl] = useState<string>(() => {
+    if (appId !== "opencode") return "";
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.options?.baseURL || "";
+    } catch {
+      return "";
+    }
+  });
+
+  const [opencodeModels, setOpencodeModels] = useState<Record<string, OpenCodeModel>>(() => {
+    if (appId !== "opencode") return {};
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.models || {};
+    } catch {
+      return {};
+    }
+  });
+
+  // OpenCode handlers - sync state to form
+  const handleOpencodeNpmChange = useCallback(
+    (npm: string) => {
+      setOpencodeNpm(npm);
+      try {
+        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        config.npm = npm;
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeApiKeyChange = useCallback(
+    (apiKey: string) => {
+      setOpencodeApiKey(apiKey);
+      try {
+        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        if (!config.options) config.options = {};
+        config.options.apiKey = apiKey;
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeBaseUrlChange = useCallback(
+    (baseUrl: string) => {
+      setOpencodeBaseUrl(baseUrl);
+      try {
+        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        if (!config.options) config.options = {};
+        config.options.baseURL = baseUrl.trim().replace(/\/+$/, "");
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeModelsChange = useCallback(
+    (models: Record<string, OpenCodeModel>) => {
+      setOpencodeModels(models);
+      try {
+        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        config.models = models;
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
 
   const [isCommonConfigModalOpen, setIsCommonConfigModalOpen] = useState(false);
 
@@ -941,6 +1067,23 @@ export function ProviderForm({
           />
         )}
 
+        {/* OpenCode 专属字段 */}
+        {appId === "opencode" && (
+          <OpenCodeFormFields
+            npm={opencodeNpm}
+            onNpmChange={handleOpencodeNpmChange}
+            apiKey={opencodeApiKey}
+            onApiKeyChange={handleOpencodeApiKeyChange}
+            category={category}
+            shouldShowApiKeyLink={false}
+            websiteUrl=""
+            baseUrl={opencodeBaseUrl}
+            onBaseUrlChange={handleOpencodeBaseUrlChange}
+            models={opencodeModels}
+            onModelsChange={handleOpencodeModelsChange}
+          />
+        )}
+
         {/* 配置编辑器：Codex、Claude、Gemini 分别使用不同的编辑器 */}
         {appId === "codex" ? (
           <>
@@ -990,6 +1133,32 @@ export function ProviderForm({
               isExtracting={isGeminiExtracting}
             />
             {/* 配置验证错误显示 */}
+            <FormField
+              control={form.control}
+              name="settingsConfig"
+              render={() => (
+                <FormItem className="space-y-0">
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
+        ) : appId === "opencode" ? (
+          <>
+            <CommonConfigEditor
+              value={form.watch("settingsConfig")}
+              onChange={(config) => form.setValue("settingsConfig", config)}
+              useCommonConfig={false}
+              onCommonConfigToggle={() => {}}
+              commonConfigSnippet=""
+              onCommonConfigSnippetChange={() => {}}
+              commonConfigError=""
+              onEditClick={() => {}}
+              isModalOpen={false}
+              onModalClose={() => {}}
+              onExtract={() => Promise.resolve()}
+              isExtracting={false}
+            />
             <FormField
               control={form.control}
               name="settingsConfig"

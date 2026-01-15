@@ -17,6 +17,7 @@ import { UniversalProviderPanel } from "@/components/universal";
 import { providerPresets } from "@/config/claudeProviderPresets";
 import { codexProviderPresets } from "@/config/codexProviderPresets";
 import { geminiProviderPresets } from "@/config/geminiProviderPresets";
+// Note: opencodeProviderPresets is loaded via ProviderForm, not needed here
 import type { UniversalProviderPreset } from "@/config/universalProviderPresets";
 
 interface AddProviderDialogProps {
@@ -153,6 +154,7 @@ export function AddProviderDialog({
               }
             }
           }
+          // Note: OpenCode doesn't use endpointCandidates - it handles endpoints internally
         }
 
         if (appId === "claude") {
@@ -174,6 +176,12 @@ export function AddProviderDialog({
           const env = parsedConfig.env as Record<string, any> | undefined;
           if (env?.GOOGLE_GEMINI_BASE_URL) {
             addUrl(env.GOOGLE_GEMINI_BASE_URL);
+          }
+        } else if (appId === "opencode") {
+          // OpenCode uses options.baseURL
+          const options = parsedConfig.options as Record<string, any> | undefined;
+          if (options?.baseURL) {
+            addUrl(options.baseURL);
           }
         }
 
