@@ -15,8 +15,10 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import type { Provider } from "@/types";
 import type { AppId } from "@/lib/api";
+import { providersApi } from "@/lib/api/providers";
 import { useDragSort } from "@/hooks/useDragSort";
 import { useStreamCheck } from "@/hooks/useStreamCheck";
 import { ProviderCard } from "@/components/providers/ProviderCard";
@@ -70,6 +72,22 @@ export function ProviderList({
   const { sortedProviders, sensors, handleDragEnd } = useDragSort(
     providers,
     appId,
+  );
+
+  // OpenCode: 查询 live 配置中的供应商 ID 列表，用于判断 isInConfig
+  const { data: opencodeLiveIds } = useQuery({
+    queryKey: ["opencodeLiveProviderIds"],
+    queryFn: () => providersApi.getOpenCodeLiveProviderIds(),
+    enabled: appId === "opencode",
+  });
+
+  // OpenCode: 判断供应商是否已添加到 opencode.json
+  const isProviderInConfig = useCallback(
+    (providerId: string): boolean => {
+      if (appId !== "opencode") return true; // 非 OpenCode 应用始终返回 true
+      return opencodeLiveIds?.includes(providerId) ?? false;
+    },
+    [appId, opencodeLiveIds],
   );
 
   // 流式健康检查
@@ -199,6 +217,7 @@ export function ProviderList({
               provider={provider}
               isCurrent={provider.id === currentProviderId}
               appId={appId}
+              isInConfig={isProviderInConfig(provider.id)}
               onSwitch={onSwitch}
               onEdit={onEdit}
               onDelete={onDelete}
@@ -308,6 +327,7 @@ interface SortableProviderCardProps {
   provider: Provider;
   isCurrent: boolean;
   appId: AppId;
+  isInConfig: boolean;
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
@@ -331,6 +351,7 @@ function SortableProviderCard({
   provider,
   isCurrent,
   appId,
+  isInConfig,
   onSwitch,
   onEdit,
   onDelete,
@@ -368,6 +389,7 @@ function SortableProviderCard({
         provider={provider}
         isCurrent={isCurrent}
         appId={appId}
+        isInConfig={isInConfig}
         onSwitch={onSwitch}
         onEdit={onEdit}
         onDelete={onDelete}

@@ -82,6 +82,14 @@ export const providersApi = {
   async importOpenCodeFromLive(): Promise<number> {
     return await invoke("import_opencode_providers_from_live");
   },
+
+  /**
+   * 获取 OpenCode live 配置中的供应商 ID 列表
+   * 用于前端判断供应商是否已添加到 opencode.json
+   */
+  async getOpenCodeLiveProviderIds(): Promise<string[]> {
+    return await invoke("get_opencode_live_provider_ids");
+  },
 };
 
 // ============================================================================

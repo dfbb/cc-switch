@@ -26,6 +26,7 @@ interface ProviderCardProps {
   provider: Provider;
   isCurrent: boolean;
   appId: AppId;
+  isInConfig?: boolean; // OpenCode: 是否已添加到 opencode.json
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
@@ -85,6 +86,7 @@ export function ProviderCard({
   provider,
   isCurrent,
   appId,
+  isInConfig = true,
   onSwitch,
   onEdit,
   onDelete,
@@ -362,7 +364,7 @@ export function ProviderCard({
             <ProviderActions
               appId={appId}
               isCurrent={isCurrent}
-              isInConfig={true}
+              isInConfig={isInConfig}
               isTesting={isTesting}
               isProxyTakeover={isProxyTakeover}
               onSwitch={() => onSwitch(provider)}

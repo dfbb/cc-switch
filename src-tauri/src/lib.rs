@@ -877,6 +877,7 @@ pub fn run() {
             commands::sync_universal_provider,
             // OpenCode specific
             commands::import_opencode_providers_from_live,
+            commands::get_opencode_live_provider_ids,
             // Global upstream proxy
             commands::get_global_proxy_url,
             commands::set_global_proxy_url,

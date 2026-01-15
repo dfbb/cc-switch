@@ -339,3 +339,13 @@ pub fn import_opencode_providers_from_live(state: State<'_, AppState>) -> Result
     crate::services::provider::import_opencode_providers_from_live(state.inner())
         .map_err(|e| e.to_string())
 }
+
+/// 获取 OpenCode live 配置中的供应商 ID 列表
+///
+/// 用于前端判断供应商是否已添加到 opencode.json
+#[tauri::command]
+pub fn get_opencode_live_provider_ids() -> Result<Vec<String>, String> {
+    crate::opencode_config::get_providers()
+        .map(|providers| providers.keys().cloned().collect())
+        .map_err(|e| e.to_string())
+}
