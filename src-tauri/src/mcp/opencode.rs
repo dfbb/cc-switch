@@ -68,10 +68,7 @@ pub fn convert_to_opencode_format(spec: &Value) -> Result<Value, AppError> {
         .as_object()
         .ok_or_else(|| AppError::McpValidation("MCP spec must be a JSON object".into()))?;
 
-    let typ = obj
-        .get("type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("stdio");
+    let typ = obj.get("type").and_then(|v| v.as_str()).unwrap_or("stdio");
 
     let mut result = serde_json::Map::new();
 
@@ -81,10 +78,7 @@ pub fn convert_to_opencode_format(spec: &Value) -> Result<Value, AppError> {
             result.insert("type".into(), json!("local"));
 
             // Merge command and args into a single array
-            let cmd = obj
-                .get("command")
-                .and_then(|v| v.as_str())
-                .unwrap_or("");
+            let cmd = obj.get("command").and_then(|v| v.as_str()).unwrap_or("");
             let mut command_arr = vec![json!(cmd)];
 
             if let Some(args) = obj.get("args").and_then(|v| v.as_array()) {
@@ -149,10 +143,7 @@ pub fn convert_from_opencode_format(spec: &Value) -> Result<Value, AppError> {
         .as_object()
         .ok_or_else(|| AppError::McpValidation("OpenCode MCP spec must be a JSON object".into()))?;
 
-    let typ = obj
-        .get("type")
-        .and_then(|v| v.as_str())
-        .unwrap_or("local");
+    let typ = obj.get("type").and_then(|v| v.as_str()).unwrap_or("local");
 
     let mut result = serde_json::Map::new();
 
@@ -360,7 +351,10 @@ mod tests {
         assert_eq!(result["type"], "local");
         assert_eq!(result["command"][0], "npx");
         assert_eq!(result["command"][1], "-y");
-        assert_eq!(result["command"][2], "@modelcontextprotocol/server-filesystem");
+        assert_eq!(
+            result["command"][2],
+            "@modelcontextprotocol/server-filesystem"
+        );
         assert_eq!(result["environment"]["HOME"], "/Users/test");
         assert_eq!(result["enabled"], true);
     }

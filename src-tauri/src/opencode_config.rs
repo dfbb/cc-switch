@@ -21,6 +21,7 @@
 //! }
 //! ```
 
+use crate::config::write_json_file;
 use crate::error::AppError;
 use crate::provider::{OpenCodeModel, OpenCodeProviderConfig, OpenCodeProviderOptions};
 use crate::settings::get_opencode_override_dir;
@@ -100,21 +101,8 @@ pub fn read_opencode_config() -> Result<Value, AppError> {
 /// 使用临时文件 + 重命名确保原子性
 pub fn write_opencode_config(config: &Value) -> Result<(), AppError> {
     let path = get_opencode_config_path();
-
-    // Ensure directory exists
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|e| AppError::io(parent, e))?;
-    }
-
-    // Write to temporary file first
-    let temp_path = path.with_extension("json.tmp");
-    let content =
-        serde_json::to_string_pretty(config).map_err(|e| AppError::JsonSerialize { source: e })?;
-
-    std::fs::write(&temp_path, &content).map_err(|e| AppError::io(&temp_path, e))?;
-
-    // Atomic rename
-    std::fs::rename(&temp_path, &path).map_err(|e| AppError::io(&path, e))?;
+    // 复用统一的原子写入逻辑（兼容 Windows 上目标文件已存在的情况）
+    write_json_file(&path, config)?;
 
     log::debug!("OpenCode config written to {:?}", path);
     Ok(())
@@ -147,7 +135,10 @@ pub fn set_provider(id: &str, config: Value) -> Result<(), AppError> {
         full_config["provider"] = json!({});
     }
 
-    if let Some(providers) = full_config.get_mut("provider").and_then(|v| v.as_object_mut()) {
+    if let Some(providers) = full_config
+        .get_mut("provider")
+        .and_then(|v| v.as_object_mut())
+    {
         providers.insert(id.to_string(), config);
     }
 
@@ -205,8 +196,7 @@ pub fn get_typed_provider(id: &str) -> Result<Option<OpenCodeProviderConfig>, Ap
 
 /// 设置供应商配置（类型化）
 pub fn set_typed_provider(id: &str, config: &OpenCodeProviderConfig) -> Result<(), AppError> {
-    let value =
-        serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })?;
+    let value = serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })?;
     set_provider(id, value)
 }
 
@@ -302,15 +292,7 @@ pub fn create_provider_config(
 
     let model_map: HashMap<String, OpenCodeModel> = models
         .into_iter()
-        .map(|(id, name)| {
-            (
-                id,
-                OpenCodeModel {
-                    name,
-                    limit: None,
-                },
-            )
-        })
+        .map(|(id, name)| (id, OpenCodeModel { name, limit: None }))
         .collect();
 
     OpenCodeProviderConfig {
@@ -350,11 +332,11 @@ pub fn validate_provider_config(config: &OpenCodeProviderConfig) -> Result<(), A
 pub fn provider_to_opencode_config(
     settings_config: &Value,
 ) -> Result<OpenCodeProviderConfig, AppError> {
-    serde_json::from_value(settings_config.clone()).map_err(|e| AppError::JsonSerialize { source: e })
+    serde_json::from_value(settings_config.clone())
+        .map_err(|e| AppError::JsonSerialize { source: e })
 }
 
 /// 将 OpenCode 配置转换为通用 Provider settings_config
 pub fn opencode_config_to_provider(config: &OpenCodeProviderConfig) -> Result<Value, AppError> {
     serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })
 }
-

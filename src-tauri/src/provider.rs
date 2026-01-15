@@ -571,4 +571,3 @@ impl OpenCodeProviderConfig {
             .unwrap_or(false)
     }
 }
-

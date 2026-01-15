@@ -132,10 +132,7 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
             match opencode_config_result {
                 Ok(config) => {
                     opencode_config::set_typed_provider(&provider.id, &config)?;
-                    log::info!(
-                        "OpenCode provider '{}' written to live config",
-                        provider.id
-                    );
+                    log::info!("OpenCode provider '{}' written to live config", provider.id);
                 }
                 Err(e) => {
                     log::warn!(
@@ -505,7 +502,10 @@ pub fn import_opencode_providers_from_live(state: &AppState) -> Result<usize, Ap
     for (id, config) in providers {
         // Skip if already exists in database
         if existing.contains_key(&id) {
-            log::debug!("OpenCode provider '{}' already exists in database, skipping", id);
+            log::debug!(
+                "OpenCode provider '{}' already exists in database, skipping",
+                id
+            );
             continue;
         }
 

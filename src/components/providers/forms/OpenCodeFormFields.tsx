@@ -93,14 +93,14 @@ export function OpenCodeFormFields({
       {/* NPM Package Selector */}
       <div className="space-y-2">
         <FormLabel htmlFor="opencode-npm">
-          {t("provider.form.opencode.npmPackage", {
+          {t("opencode.npmPackage", {
             defaultValue: "AI SDK Package",
           })}
         </FormLabel>
         <Select value={npm} onValueChange={onNpmChange}>
           <SelectTrigger id="opencode-npm">
             <SelectValue
-              placeholder={t("provider.form.opencode.selectPackage", {
+              placeholder={t("opencode.selectPackage", {
                 defaultValue: "Select a package",
               })}
             />
@@ -114,7 +114,7 @@ export function OpenCodeFormFields({
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          {t("provider.form.opencode.npmPackageHint", {
+          {t("opencode.npmPackageHint", {
             defaultValue:
               "Select the AI SDK package that matches your provider.",
           })}
@@ -134,7 +134,7 @@ export function OpenCodeFormFields({
       {npm === "@ai-sdk/openai-compatible" && (
         <div className="space-y-2">
           <FormLabel htmlFor="opencode-baseurl">
-            {t("provider.form.opencode.baseUrl", { defaultValue: "Base URL" })}
+            {t("opencode.baseUrl", { defaultValue: "Base URL" })}
           </FormLabel>
           <Input
             id="opencode-baseurl"
@@ -143,7 +143,7 @@ export function OpenCodeFormFields({
             placeholder="https://api.example.com/v1"
           />
           <p className="text-xs text-muted-foreground">
-            {t("provider.form.opencode.baseUrlHint", {
+            {t("opencode.baseUrlHint", {
               defaultValue:
                 "The base URL for OpenAI-compatible API endpoints.",
             })}
@@ -155,7 +155,7 @@ export function OpenCodeFormFields({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <FormLabel>
-            {t("provider.form.opencode.models", { defaultValue: "Models" })}
+            {t("opencode.models", { defaultValue: "Models" })}
           </FormLabel>
           <Button
             type="button"
@@ -165,13 +165,13 @@ export function OpenCodeFormFields({
             className="h-7 gap-1"
           >
             <Plus className="h-3.5 w-3.5" />
-            {t("provider.form.opencode.addModel", { defaultValue: "Add" })}
+            {t("opencode.addModel", { defaultValue: "Add" })}
           </Button>
         </div>
 
         {Object.keys(models).length === 0 ? (
           <p className="text-sm text-muted-foreground py-2">
-            {t("provider.form.opencode.noModels", {
+            {t("opencode.noModels", {
               defaultValue: "No models configured. Click Add to add a model.",
             })}
           </p>
@@ -182,7 +182,7 @@ export function OpenCodeFormFields({
                 <Input
                   value={key}
                   onChange={(e) => handleModelIdChange(key, e.target.value)}
-                  placeholder={t("provider.form.opencode.modelId", {
+                  placeholder={t("opencode.modelId", {
                     defaultValue: "Model ID",
                   })}
                   className="flex-1"
@@ -190,7 +190,7 @@ export function OpenCodeFormFields({
                 <Input
                   value={model.name}
                   onChange={(e) => handleModelNameChange(key, e.target.value)}
-                  placeholder={t("provider.form.opencode.modelName", {
+                  placeholder={t("opencode.modelName", {
                     defaultValue: "Display Name",
                   })}
                   className="flex-1"
@@ -210,7 +210,7 @@ export function OpenCodeFormFields({
         )}
 
         <p className="text-xs text-muted-foreground">
-          {t("provider.form.opencode.modelsHint", {
+          {t("opencode.modelsHint", {
             defaultValue:
               "Configure available models. Model ID is the API identifier, Display Name is shown in the UI.",
           })}

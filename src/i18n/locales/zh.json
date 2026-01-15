@@ -462,6 +462,7 @@
   },
   "opencode": {
     "npmPackage": "AI SDK 包",
+    "selectPackage": "选择一个包",
     "npmPackageHint": "选择用于与 AI 服务通信的 npm 包",
     "baseUrl": "Base URL",
     "baseUrlHint": "自定义 API 端点地址",

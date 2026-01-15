@@ -462,6 +462,7 @@
   },
   "opencode": {
     "npmPackage": "AI SDK Package",
+    "selectPackage": "Select a package",
     "npmPackageHint": "Select the npm package for communicating with the AI service",
     "baseUrl": "Base URL",
     "baseUrlHint": "Custom API endpoint URL",

@@ -190,7 +190,7 @@ impl StreamCheckService {
                 return Err(AppError::localized(
                     "opencode_no_stream_check",
                     "OpenCode 暂不支持健康检查",
-                    "OpenCode does not support health check yet"
+                    "OpenCode does not support health check yet",
                 ));
             }
         };

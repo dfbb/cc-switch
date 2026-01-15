@@ -462,6 +462,7 @@
   },
   "opencode": {
     "npmPackage": "AI SDK パッケージ",
+    "selectPackage": "パッケージを選択",
     "npmPackageHint": "AI サービスとの通信に使用する npm パッケージを選択",
     "baseUrl": "Base URL",
     "baseUrlHint": "カスタム API エンドポイント URL",

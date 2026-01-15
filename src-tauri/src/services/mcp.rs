@@ -37,6 +37,9 @@ impl McpService {
         if prev_apps.gemini && !server.apps.gemini {
             Self::remove_server_from_app(state, &server.id, &AppType::Gemini)?;
         }
+        if prev_apps.opencode && !server.apps.opencode {
+            Self::remove_server_from_app(state, &server.id, &AppType::OpenCode)?;
+        }
 
         // 同步到各个启用的应用
         Self::sync_server_to_apps(state, &server)?;
@@ -114,7 +117,11 @@ impl McpService {
                 mcp::sync_single_server_to_gemini(&Default::default(), &server.id, &server.server)?;
             }
             AppType::OpenCode => {
-                mcp::sync_single_server_to_opencode(&Default::default(), &server.id, &server.server)?;
+                mcp::sync_single_server_to_opencode(
+                    &Default::default(),
+                    &server.id,
+                    &server.server,
+                )?;
             }
         }
         Ok(())
