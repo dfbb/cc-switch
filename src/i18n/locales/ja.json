@@ -461,9 +461,9 @@
     "configReplaceFailed": "設定の置換に失敗しました: {{error}}"
   },
   "opencode": {
-    "npmPackage": "AI SDK パッケージ",
-    "selectPackage": "パッケージを選択",
-    "npmPackageHint": "AI サービスとの通信に使用する npm パッケージを選択",
+    "npmPackage": "API フォーマット",
+    "selectPackage": "API フォーマットを選択",
+    "npmPackageHint": "AI サービスの API フォーマットを選択",
     "baseUrl": "Base URL",
     "baseUrlHint": "カスタム API エンドポイント URL",
     "models": "モデル設定",

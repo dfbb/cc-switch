@@ -94,7 +94,7 @@ export function OpenCodeFormFields({
       <div className="space-y-2">
         <FormLabel htmlFor="opencode-npm">
           {t("opencode.npmPackage", {
-            defaultValue: "AI SDK Package",
+            defaultValue: "接口格式",
           })}
         </FormLabel>
         <Select value={npm} onValueChange={onNpmChange}>

@@ -32,15 +32,9 @@ export interface OpenCodeProviderPreset {
  */
 export const opencodeNpmPackages = [
   { value: "@ai-sdk/openai", label: "OpenAI" },
-  { value: "@ai-sdk/anthropic", label: "Anthropic" },
   { value: "@ai-sdk/openai-compatible", label: "OpenAI Compatible" },
+  { value: "@ai-sdk/anthropic", label: "Anthropic" },
   { value: "@ai-sdk/google", label: "Google (Gemini)" },
-  { value: "@ai-sdk/azure", label: "Azure OpenAI" },
-  { value: "@ai-sdk/amazon-bedrock", label: "Amazon Bedrock" },
-  { value: "@ai-sdk/cohere", label: "Cohere" },
-  { value: "@ai-sdk/mistral", label: "Mistral" },
-  { value: "@ai-sdk/groq", label: "Groq" },
-  { value: "@ai-sdk/deepseek", label: "DeepSeek" },
 ] as const;
 
 /**
