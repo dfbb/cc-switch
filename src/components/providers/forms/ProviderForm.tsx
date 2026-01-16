@@ -877,6 +877,13 @@ export function ProviderForm({
       if (appId === "gemini") {
         resetGeminiConfig({}, {});
       }
+      // OpenCode 自定义模式：重置为空配置
+      if (appId === "opencode") {
+        setOpencodeNpm("@ai-sdk/openai-compatible");
+        setOpencodeBaseUrl("");
+        setOpencodeApiKey("");
+        setOpencodeModels({});
+      }
       return;
     }
 
@@ -924,6 +931,28 @@ export function ProviderForm({
         name: preset.name,
         websiteUrl: preset.websiteUrl ?? "",
         settingsConfig: JSON.stringify(preset.settingsConfig, null, 2),
+        icon: preset.icon ?? "",
+        iconColor: preset.iconColor ?? "",
+      });
+      return;
+    }
+
+    // OpenCode preset handling
+    if (appId === "opencode") {
+      const preset = entry.preset as OpenCodeProviderPreset;
+      const config = preset.settingsConfig;
+
+      // Update OpenCode-specific states
+      setOpencodeNpm(config.npm || "@ai-sdk/openai-compatible");
+      setOpencodeBaseUrl(config.options?.baseURL || "");
+      setOpencodeApiKey(config.options?.apiKey || "");
+      setOpencodeModels(config.models || {});
+
+      // Update form fields
+      form.reset({
+        name: preset.name,
+        websiteUrl: preset.websiteUrl ?? "",
+        settingsConfig: JSON.stringify(config, null, 2),
         icon: preset.icon ?? "",
         iconColor: preset.iconColor ?? "",
       });
