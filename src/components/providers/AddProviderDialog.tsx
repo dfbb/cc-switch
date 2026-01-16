@@ -34,6 +34,8 @@ export function AddProviderDialog({
   onSubmit,
 }: AddProviderDialogProps) {
   const { t } = useTranslation();
+  // OpenCode doesn't support universal providers
+  const showUniversalTab = appId !== "opencode";
   const [activeTab, setActiveTab] = useState<"app-specific" | "universal">(
     "app-specific",
   );
@@ -212,7 +214,7 @@ export function AddProviderDialog({
 
   // 动态 footer：根据当前 Tab 显示不同按钮
   const footer =
-    activeTab === "app-specific" ? (
+    !showUniversalTab || activeTab === "app-specific" ? (
       <>
         <Button
           variant="outline"
@@ -256,41 +258,54 @@ export function AddProviderDialog({
       onClose={() => onOpenChange(false)}
       footer={footer}
     >
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as "app-specific" | "universal")}
-      >
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="app-specific">
-            {t(`apps.${appId}`)} {t("provider.tabProvider")}
-          </TabsTrigger>
-          <TabsTrigger value="universal">
-            {t("provider.tabUniversal")}
-          </TabsTrigger>
-        </TabsList>
+      {showUniversalTab ? (
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "app-specific" | "universal")}
+        >
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="app-specific">
+              {t(`apps.${appId}`)} {t("provider.tabProvider")}
+            </TabsTrigger>
+            <TabsTrigger value="universal">
+              {t("provider.tabUniversal")}
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="app-specific" className="mt-0">
-          <ProviderForm
-            appId={appId}
-            submitLabel={t("common.add")}
-            onSubmit={handleSubmit}
-            onCancel={() => onOpenChange(false)}
-            showButtons={false}
-          />
-        </TabsContent>
+          <TabsContent value="app-specific" className="mt-0">
+            <ProviderForm
+              appId={appId}
+              submitLabel={t("common.add")}
+              onSubmit={handleSubmit}
+              onCancel={() => onOpenChange(false)}
+              showButtons={false}
+            />
+          </TabsContent>
 
-        <TabsContent value="universal" className="mt-0">
-          <UniversalProviderPanel />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="universal" className="mt-0">
+            <UniversalProviderPanel />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        // OpenCode: directly show form without tabs
+        <ProviderForm
+          appId={appId}
+          submitLabel={t("common.add")}
+          onSubmit={handleSubmit}
+          onCancel={() => onOpenChange(false)}
+          showButtons={false}
+        />
+      )}
 
       {/* Universal Provider Form Modal */}
-      <UniversalProviderFormModal
-        isOpen={universalFormOpen}
-        onClose={handleUniversalFormClose}
-        onSave={handleUniversalProviderSave}
-        initialPreset={selectedUniversalPreset}
-      />
+      {showUniversalTab && (
+        <UniversalProviderFormModal
+          isOpen={universalFormOpen}
+          onClose={handleUniversalFormClose}
+          onSave={handleUniversalProviderSave}
+          initialPreset={selectedUniversalPreset}
+        />
+      )}
     </FullScreenPanel>
   );
 }
