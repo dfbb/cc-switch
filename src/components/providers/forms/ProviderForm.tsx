@@ -192,7 +192,7 @@ export function ProviderForm({
     mode: "onSubmit",
   });
 
-  const settingsConfigValue = form.watch("settingsConfig");
+  const settingsConfigValue = form.getValues("settingsConfig");
 
   // 使用 API Key hook
   const {
@@ -200,7 +200,7 @@ export function ProviderForm({
     handleApiKeyChange,
     showApiKey: shouldShowApiKey,
   } = useApiKeyState({
-    initialConfig: form.watch("settingsConfig"),
+    initialConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
     selectedPresetId,
     category,
@@ -211,7 +211,7 @@ export function ProviderForm({
   const { baseUrl, handleClaudeBaseUrlChange } = useBaseUrlState({
     appType: appId,
     category,
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     codexConfig: "",
     onSettingsConfigChange: (config) => form.setValue("settingsConfig", config),
     onCodexConfigChange: () => {
@@ -228,7 +228,7 @@ export function ProviderForm({
     defaultOpusModel,
     handleModelChange,
   } = useModelState({
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
   });
 
@@ -371,7 +371,7 @@ export function ProviderForm({
   } = useTemplateValues({
     selectedPresetId: appId === "claude" ? selectedPresetId : null,
     presetEntries: appId === "claude" ? presetEntries : [],
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
   });
 
@@ -385,7 +385,7 @@ export function ProviderForm({
     isExtracting: isClaudeExtracting,
     handleExtract: handleClaudeExtract,
   } = useCommonConfigSnippet({
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
     initialData: appId === "claude" ? initialData : undefined,
     selectedPresetId: selectedPresetId ?? undefined,
@@ -434,7 +434,7 @@ export function ProviderForm({
       originalHandleGeminiApiKeyChange(key);
       // 同步更新 settingsConfig
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || "{}");
+        const config = JSON.parse(form.getValues("settingsConfig") || "{}");
         if (!config.env) config.env = {};
         config.env.GEMINI_API_KEY = key.trim();
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -450,7 +450,7 @@ export function ProviderForm({
       originalHandleGeminiBaseUrlChange(url);
       // 同步更新 settingsConfig
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || "{}");
+        const config = JSON.parse(form.getValues("settingsConfig") || "{}");
         if (!config.env) config.env = {};
         config.env.GOOGLE_GEMINI_BASE_URL = url.trim().replace(/\/+$/, "");
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -466,7 +466,7 @@ export function ProviderForm({
       originalHandleGeminiModelChange(model);
       // 同步更新 settingsConfig
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || "{}");
+        const config = JSON.parse(form.getValues("settingsConfig") || "{}");
         if (!config.env) config.env = {};
         config.env.GEMINI_MODEL = model.trim();
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -541,7 +541,7 @@ export function ProviderForm({
     (npm: string) => {
       setOpencodeNpm(npm);
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
         config.npm = npm;
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
       } catch {
@@ -555,7 +555,7 @@ export function ProviderForm({
     (apiKey: string) => {
       setOpencodeApiKey(apiKey);
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
         if (!config.options) config.options = {};
         config.options.apiKey = apiKey;
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -570,7 +570,7 @@ export function ProviderForm({
     (baseUrl: string) => {
       setOpencodeBaseUrl(baseUrl);
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
         if (!config.options) config.options = {};
         config.options.baseURL = baseUrl.trim().replace(/\/+$/, "");
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -585,7 +585,7 @@ export function ProviderForm({
     (models: Record<string, OpenCodeModel>) => {
       setOpencodeModels(models);
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
         config.models = models;
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
       } catch {
@@ -971,7 +971,7 @@ export function ProviderForm({
           <ClaudeFormFields
             providerId={providerId}
             shouldShowApiKey={shouldShowApiKey(
-              form.watch("settingsConfig"),
+              form.getValues("settingsConfig"),
               isEditMode,
             )}
             apiKey={apiKey}
@@ -1042,7 +1042,7 @@ export function ProviderForm({
           <GeminiFormFields
             providerId={providerId}
             shouldShowApiKey={shouldShowApiKey(
-              form.watch("settingsConfig"),
+              form.getValues("settingsConfig"),
               isEditMode,
             )}
             apiKey={geminiApiKey}
@@ -1146,7 +1146,7 @@ export function ProviderForm({
         ) : appId === "opencode" ? (
           <>
             <CommonConfigEditor
-              value={form.watch("settingsConfig")}
+              value={form.getValues("settingsConfig")}
               onChange={(config) => form.setValue("settingsConfig", config)}
               useCommonConfig={false}
               onCommonConfigToggle={() => {}}
@@ -1172,7 +1172,7 @@ export function ProviderForm({
         ) : (
           <>
             <CommonConfigEditor
-              value={form.watch("settingsConfig")}
+              value={form.getValues("settingsConfig")}
               onChange={(value) => form.setValue("settingsConfig", value)}
               useCommonConfig={useCommonConfig}
               onCommonConfigToggle={handleCommonConfigToggle}

@@ -468,13 +468,13 @@ function App() {
           );
         case "universal":
           return (
-            <div className="mx-auto max-w-[56rem] px-5 pt-4">
+            <div className="px-6 pt-4">
               <UniversalProviderPanel />
             </div>
           );
         default:
           return (
-            <div className="mx-auto max-w-[56rem] px-5 flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
+            <div className="px-6 flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
               {/* 独立滚动容器 - 解决 Linux/Ubuntu 下 DndContext 与滚轮事件冲突 */}
               <div className="flex-1 overflow-y-auto overflow-x-hidden pb-12 px-1">
                 <AnimatePresence mode="wait">
@@ -580,7 +580,7 @@ function App() {
         }
       >
         <div
-          className="mx-auto flex h-full max-w-[56rem] flex-wrap items-center justify-between gap-2 px-6"
+          className="flex h-full items-center justify-between gap-2 px-6"
           data-tauri-drag-region
           style={{ WebkitAppRegion: "drag" } as any}
         >

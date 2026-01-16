@@ -78,7 +78,7 @@ export function BasicFormFields({ form }: BasicFormFieldsProps) {
           >
             <div className="flex h-full flex-col">
               <div className="flex-shrink-0 py-4 border-b border-border-default bg-muted/40">
-                <div className="mx-auto max-w-[56rem] px-6 flex items-center gap-4">
+                <div className="px-6 flex items-center gap-4">
                   <DialogClose asChild>
                     <Button type="button" variant="outline" size="icon">
                       <ArrowLeft className="h-4 w-4" />
@@ -92,7 +92,7 @@ export function BasicFormFields({ form }: BasicFormFieldsProps) {
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto">
-                <div className="space-y-2 mx-auto max-w-[56rem] px-6 py-6 w-full">
+                <div className="space-y-2 px-6 py-6 w-full">
                   <IconPicker
                     value={currentIcon}
                     onValueChange={handleIconSelect}
