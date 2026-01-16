@@ -52,12 +52,13 @@ const UnifiedSkillsPanel = React.forwardRef<
 
   // Count enabled skills per app
   const enabledCounts = useMemo(() => {
-    const counts = { claude: 0, codex: 0, gemini: 0 };
+    const counts = { claude: 0, codex: 0, gemini: 0, opencode: 0 };
     if (!skills) return counts;
     skills.forEach((skill) => {
       if (skill.apps.claude) counts.claude++;
       if (skill.apps.codex) counts.codex++;
       if (skill.apps.gemini) counts.gemini++;
+      if (skill.apps.opencode) counts.opencode++;
     });
     return counts;
   }, [skills]);
@@ -139,7 +140,8 @@ const UnifiedSkillsPanel = React.forwardRef<
           {t("skills.installed", { count: skills?.length || 0 })} ·{" "}
           {t("skills.apps.claude")}: {enabledCounts.claude} ·{" "}
           {t("skills.apps.codex")}: {enabledCounts.codex} ·{" "}
-          {t("skills.apps.gemini")}: {enabledCounts.gemini}
+          {t("skills.apps.gemini")}: {enabledCounts.gemini} ·{" "}
+          {t("skills.apps.opencode")}: {enabledCounts.opencode}
         </div>
       </div>
 
@@ -305,6 +307,22 @@ const InstalledSkillListItem: React.FC<InstalledSkillListItemProps> = ({
             checked={skill.apps.gemini}
             onCheckedChange={(checked: boolean) =>
               onToggleApp(skill.id, "gemini", checked)
+            }
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <label
+            htmlFor={`${skill.id}-opencode`}
+            className="text-sm text-foreground/80 cursor-pointer"
+          >
+            {t("skills.apps.opencode")}
+          </label>
+          <Switch
+            id={`${skill.id}-opencode`}
+            checked={skill.apps.opencode}
+            onCheckedChange={(checked: boolean) =>
+              onToggleApp(skill.id, "opencode", checked)
             }
           />
         </div>
