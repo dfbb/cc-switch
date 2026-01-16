@@ -33,6 +33,8 @@ import { getCodexCustomTemplate } from "@/config/codexTemplates";
 import CodexConfigEditor from "./CodexConfigEditor";
 import { CommonConfigEditor } from "./CommonConfigEditor";
 import GeminiConfigEditor from "./GeminiConfigEditor";
+import JsonEditor from "@/components/JsonEditor";
+import { Label } from "@/components/ui/label";
 import { ProviderPresetSelector } from "./ProviderPresetSelector";
 import { BasicFormFields } from "./BasicFormFields";
 import { ClaudeFormFields } from "./ClaudeFormFields";
@@ -389,6 +391,7 @@ export function ProviderForm({
     onConfigChange: (config) => form.setValue("settingsConfig", config),
     initialData: appId === "claude" ? initialData : undefined,
     selectedPresetId: selectedPresetId ?? undefined,
+    enabled: appId === "claude",
   });
 
   // 使用 Codex 通用配置片段 hook (仅 Codex 模式)
@@ -1145,20 +1148,24 @@ export function ProviderForm({
           </>
         ) : appId === "opencode" ? (
           <>
-            <CommonConfigEditor
-              value={form.getValues("settingsConfig")}
-              onChange={(config) => form.setValue("settingsConfig", config)}
-              useCommonConfig={false}
-              onCommonConfigToggle={() => {}}
-              commonConfigSnippet=""
-              onCommonConfigSnippetChange={() => {}}
-              commonConfigError=""
-              onEditClick={() => {}}
-              isModalOpen={false}
-              onModalClose={() => {}}
-              onExtract={() => Promise.resolve()}
-              isExtracting={false}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="settingsConfig">{t("provider.configJson")}</Label>
+              <JsonEditor
+                value={form.getValues("settingsConfig")}
+                onChange={(config) => form.setValue("settingsConfig", config)}
+                placeholder={`{
+  "npm": "@ai-sdk/openai-compatible",
+  "options": {
+    "baseURL": "https://your-api-endpoint.com",
+    "apiKey": "your-api-key-here"
+  },
+  "models": {}
+}`}
+                rows={14}
+                showValidation={true}
+                language="json"
+              />
+            </div>
             <FormField
               control={form.control}
               name="settingsConfig"
