@@ -29,6 +29,5 @@ pub use gemini::{
     sync_single_server_to_gemini,
 };
 pub use opencode::{
-    import_from_opencode, remove_server_from_opencode, sync_enabled_to_opencode,
-    sync_single_server_to_opencode,
+    import_from_opencode, remove_server_from_opencode, sync_single_server_to_opencode,
 };

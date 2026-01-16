@@ -545,29 +545,3 @@ pub struct OpenCodeModelLimit {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output: Option<u64>,
 }
-
-impl OpenCodeProviderConfig {
-    /// 从 serde_json::Value 解析
-    pub fn from_value(value: &Value) -> Result<Self, serde_json::Error> {
-        serde_json::from_value(value.clone())
-    }
-
-    /// 转换为 serde_json::Value
-    pub fn to_value(&self) -> Result<Value, serde_json::Error> {
-        serde_json::to_value(self)
-    }
-
-    /// 获取第一个模型 ID（用于默认模型选择）
-    pub fn first_model_id(&self) -> Option<String> {
-        self.models.keys().next().cloned()
-    }
-
-    /// 检查是否有有效的 API 密钥配置
-    pub fn has_api_key(&self) -> bool {
-        self.options
-            .api_key
-            .as_ref()
-            .map(|k| !k.trim().is_empty())
-            .unwrap_or(false)
-    }
-}

@@ -23,11 +23,10 @@
 
 use crate::config::write_json_file;
 use crate::error::AppError;
-use crate::provider::{OpenCodeModel, OpenCodeProviderConfig, OpenCodeProviderOptions};
+use crate::provider::OpenCodeProviderConfig;
 use crate::settings::get_opencode_override_dir;
 use indexmap::IndexMap;
 use serde_json::{json, Map, Value};
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 // ============================================================================
@@ -108,11 +107,6 @@ pub fn write_opencode_config(config: &Value) -> Result<(), AppError> {
     Ok(())
 }
 
-/// 检查 OpenCode 配置文件是否存在
-pub fn config_exists() -> bool {
-    get_opencode_config_path().exists()
-}
-
 // ============================================================================
 // Provider Functions (Untyped - for raw JSON operations)
 // ============================================================================
@@ -180,41 +174,10 @@ pub fn get_typed_providers() -> Result<IndexMap<String, OpenCodeProviderConfig>,
     Ok(result)
 }
 
-/// 获取单个供应商配置（类型化）
-pub fn get_typed_provider(id: &str) -> Result<Option<OpenCodeProviderConfig>, AppError> {
-    let providers = get_providers()?;
-
-    match providers.get(id) {
-        Some(value) => {
-            let config = serde_json::from_value::<OpenCodeProviderConfig>(value.clone())
-                .map_err(|e| AppError::JsonSerialize { source: e })?;
-            Ok(Some(config))
-        }
-        None => Ok(None),
-    }
-}
-
 /// 设置供应商配置（类型化）
 pub fn set_typed_provider(id: &str, config: &OpenCodeProviderConfig) -> Result<(), AppError> {
     let value = serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })?;
     set_provider(id, value)
-}
-
-/// 批量设置供应商配置
-pub fn set_providers_batch(
-    providers: &IndexMap<String, OpenCodeProviderConfig>,
-) -> Result<(), AppError> {
-    let mut full_config = read_opencode_config()?;
-
-    let mut provider_map = Map::new();
-    for (id, config) in providers {
-        let value =
-            serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })?;
-        provider_map.insert(id.clone(), value);
-    }
-
-    full_config["provider"] = Value::Object(provider_map);
-    write_opencode_config(&full_config)
 }
 
 // ============================================================================
@@ -257,86 +220,3 @@ pub fn remove_mcp_server(id: &str) -> Result<(), AppError> {
     write_opencode_config(&config)
 }
 
-/// 批量设置 MCP 服务器配置
-pub fn set_mcp_servers_batch(servers: &Map<String, Value>) -> Result<(), AppError> {
-    let mut full_config = read_opencode_config()?;
-    full_config["mcp"] = Value::Object(servers.clone());
-    write_opencode_config(&full_config)
-}
-
-/// 清空所有 MCP 服务器配置
-pub fn clear_mcp_servers() -> Result<(), AppError> {
-    let mut config = read_opencode_config()?;
-    config["mcp"] = json!({});
-    write_opencode_config(&config)
-}
-
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
-/// 创建新的供应商配置
-///
-/// 便捷方法，用于创建 OpenAI 兼容的供应商配置
-pub fn create_provider_config(
-    npm_package: &str,
-    base_url: Option<&str>,
-    api_key: Option<&str>,
-    models: HashMap<String, String>,
-) -> OpenCodeProviderConfig {
-    let options = OpenCodeProviderOptions {
-        base_url: base_url.map(|s| s.to_string()),
-        api_key: api_key.map(|s| s.to_string()),
-        headers: None,
-    };
-
-    let model_map: HashMap<String, OpenCodeModel> = models
-        .into_iter()
-        .map(|(id, name)| (id, OpenCodeModel { name, limit: None }))
-        .collect();
-
-    OpenCodeProviderConfig {
-        npm: npm_package.to_string(),
-        name: None,
-        options,
-        models: model_map,
-    }
-}
-
-/// 验证供应商配置
-pub fn validate_provider_config(config: &OpenCodeProviderConfig) -> Result<(), AppError> {
-    // npm package must not be empty
-    if config.npm.trim().is_empty() {
-        return Err(AppError::localized(
-            "opencode.provider.npm.empty",
-            "npm 包名不能为空",
-            "npm package name cannot be empty",
-        ));
-    }
-
-    // npm package should start with @ or be a valid package name
-    if !config.npm.starts_with('@') && !config.npm.chars().all(|c| c.is_alphanumeric() || c == '-')
-    {
-        log::warn!(
-            "Unusual npm package name: {}. Expected format like '@ai-sdk/openai'",
-            config.npm
-        );
-    }
-
-    Ok(())
-}
-
-/// 从通用 Provider 转换为 OpenCode 配置
-///
-/// 用于从数据库 Provider 结构转换为 OpenCode 配置格式
-pub fn provider_to_opencode_config(
-    settings_config: &Value,
-) -> Result<OpenCodeProviderConfig, AppError> {
-    serde_json::from_value(settings_config.clone())
-        .map_err(|e| AppError::JsonSerialize { source: e })
-}
-
-/// 将 OpenCode 配置转换为通用 Provider settings_config
-pub fn opencode_config_to_provider(config: &OpenCodeProviderConfig) -> Result<Value, AppError> {
-    serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })
-}

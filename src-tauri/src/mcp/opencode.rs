@@ -15,11 +15,11 @@
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
-use crate::app_config::{McpApps, McpConfig, McpServer, MultiAppConfig};
+use crate::app_config::{McpApps, McpServer, MultiAppConfig};
 use crate::error::AppError;
 use crate::opencode_config;
 
-use super::validation::{extract_server_spec, validate_server_spec};
+use super::validation::validate_server_spec;
 
 // ============================================================================
 // Helper Functions
@@ -29,29 +29,6 @@ use super::validation::{extract_server_spec, validate_server_spec};
 fn should_sync_opencode_mcp() -> bool {
     // Skip if OpenCode config directory doesn't exist
     opencode_config::get_opencode_dir().exists()
-}
-
-/// Collect enabled MCP servers for OpenCode
-fn collect_enabled_servers(cfg: &McpConfig) -> HashMap<String, Value> {
-    let mut out = HashMap::new();
-    for (id, entry) in cfg.servers.iter() {
-        let enabled = entry
-            .get("enabled")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-        if !enabled {
-            continue;
-        }
-        match extract_server_spec(entry) {
-            Ok(spec) => {
-                out.insert(id.clone(), spec);
-            }
-            Err(err) => {
-                log::warn!("Skip invalid MCP entry '{}': {}", id, err);
-            }
-        }
-    }
-    out
 }
 
 // ============================================================================
@@ -206,31 +183,6 @@ pub fn convert_from_opencode_format(spec: &Value) -> Result<Value, AppError> {
 // ============================================================================
 // Public API: Sync Functions
 // ============================================================================
-
-/// Sync all enabled_opencode=true servers to OpenCode config
-pub fn sync_enabled_to_opencode(config: &MultiAppConfig) -> Result<(), AppError> {
-    if !should_sync_opencode_mcp() {
-        return Ok(());
-    }
-
-    let enabled = collect_enabled_servers(&config.mcp.opencode);
-
-    // Convert all servers to OpenCode format
-    let mut opencode_servers = serde_json::Map::new();
-    for (id, spec) in enabled {
-        match convert_to_opencode_format(&spec) {
-            Ok(opencode_spec) => {
-                opencode_servers.insert(id, opencode_spec);
-            }
-            Err(e) => {
-                log::warn!("Skip converting MCP server to OpenCode format: {}", e);
-            }
-        }
-    }
-
-    // Write to OpenCode config
-    opencode_config::set_mcp_servers_batch(&opencode_servers)
-}
 
 /// Sync a single MCP server to OpenCode live config
 pub fn sync_single_server_to_opencode(
