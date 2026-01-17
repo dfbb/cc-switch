@@ -229,7 +229,7 @@ export function ProviderList({
               onConfigureUsage={onConfigureUsage}
               onOpenWebsite={onOpenWebsite}
               onOpenTerminal={onOpenTerminal}
-              onTest={handleTest}
+              onTest={appId !== "opencode" ? handleTest : undefined}
               isTesting={isChecking(provider.id)}
               isProxyRunning={isProxyRunning}
               isProxyTakeover={isProxyTakeover}
@@ -341,7 +341,7 @@ interface SortableProviderCardProps {
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
   onOpenTerminal?: (provider: Provider) => void;
-  onTest: (provider: Provider) => void;
+  onTest?: (provider: Provider) => void;
   isTesting: boolean;
   isProxyRunning: boolean;
   isProxyTakeover: boolean;
