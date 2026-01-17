@@ -184,12 +184,16 @@ export function ProviderCard({
   };
 
   // 判断是否是"当前使用中"的供应商
+  // - OpenCode（累加模式）：不存在"当前"概念，始终返回 false
   // - 故障转移模式：代理实际使用的供应商（activeProviderId）
   // - 代理接管模式（非故障转移）：isCurrent
   // - 普通模式：isCurrent
-  const isActiveProvider = isAutoFailoverEnabled
-    ? activeProviderId === provider.id
-    : isCurrent;
+  const isActiveProvider =
+    appId === "opencode"
+      ? false
+      : isAutoFailoverEnabled
+        ? activeProviderId === provider.id
+        : isCurrent;
 
   // 判断是否使用绿色（代理接管模式）还是蓝色（普通模式）
   const shouldUseGreen = isProxyTakeover && isActiveProvider;

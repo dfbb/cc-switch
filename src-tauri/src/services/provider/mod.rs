@@ -140,7 +140,13 @@ impl ProviderService {
     /// 使用有效的当前供应商 ID（验证过存在性）。
     /// 优先从本地 settings 读取，验证后 fallback 到数据库的 is_current 字段。
     /// 这确保了云同步场景下多设备可以独立选择供应商，且返回的 ID 一定有效。
+    ///
+    /// 对于 OpenCode（累加模式），不存在"当前供应商"概念，直接返回空字符串。
     pub fn current(state: &AppState, app_type: AppType) -> Result<String, AppError> {
+        // OpenCode uses additive mode - no "current" provider concept
+        if matches!(app_type, AppType::OpenCode) {
+            return Ok(String::new());
+        }
         crate::settings::get_effective_current_provider(&state.db, &app_type)
             .map(|opt| opt.unwrap_or_default())
     }
@@ -366,11 +372,14 @@ impl ProviderService {
             }
         }
 
-        // Update local settings (device-level, takes priority)
-        crate::settings::set_current_provider(&app_type, Some(id))?;
+        // OpenCode uses additive mode - skip setting is_current (no such concept)
+        if !matches!(app_type, AppType::OpenCode) {
+            // Update local settings (device-level, takes priority)
+            crate::settings::set_current_provider(&app_type, Some(id))?;
 
-        // Update database is_current (as default for new devices)
-        state.db.set_current_provider(app_type.as_str(), id)?;
+            // Update database is_current (as default for new devices)
+            state.db.set_current_provider(app_type.as_str(), id)?;
+        }
 
         // Sync to live (write_gemini_live handles security flag internally for Gemini)
         write_live_snapshot(&app_type, provider)?;
