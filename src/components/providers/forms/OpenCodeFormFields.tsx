@@ -130,26 +130,24 @@ export function OpenCodeFormFields({
         websiteUrl={websiteUrl}
       />
 
-      {/* Base URL (only for compatible providers) */}
-      {npm === "@ai-sdk/openai-compatible" && (
-        <div className="space-y-2">
-          <FormLabel htmlFor="opencode-baseurl">
-            {t("opencode.baseUrl", { defaultValue: "Base URL" })}
-          </FormLabel>
-          <Input
-            id="opencode-baseurl"
-            value={baseUrl}
-            onChange={(e) => onBaseUrlChange(e.target.value)}
-            placeholder="https://api.example.com/v1"
-          />
-          <p className="text-xs text-muted-foreground">
-            {t("opencode.baseUrlHint", {
-              defaultValue:
-                "The base URL for OpenAI-compatible API endpoints.",
-            })}
-          </p>
-        </div>
-      )}
+      {/* Base URL */}
+      <div className="space-y-2">
+        <FormLabel htmlFor="opencode-baseurl">
+          {t("opencode.baseUrl", { defaultValue: "Base URL" })}
+        </FormLabel>
+        <Input
+          id="opencode-baseurl"
+          value={baseUrl}
+          onChange={(e) => onBaseUrlChange(e.target.value)}
+          placeholder="https://api.example.com/v1"
+        />
+        <p className="text-xs text-muted-foreground">
+          {t("opencode.baseUrlHint", {
+            defaultValue:
+              "The base URL for the API endpoint. Leave empty to use the default endpoint for official SDKs.",
+          })}
+        </p>
+      </div>
 
       {/* Models Editor */}
       <div className="space-y-3">
