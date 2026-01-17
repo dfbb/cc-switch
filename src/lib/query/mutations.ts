@@ -6,15 +6,34 @@ import type { Provider, Settings } from "@/types";
 import { extractErrorMessage } from "@/utils/errorUtils";
 import { generateUUID } from "@/utils/uuid";
 
+/**
+ * Convert a name to a URL-safe slug for use as provider ID
+ * Used for OpenCode's additive mode where ID becomes the config key
+ */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_]+/g, "-") // spaces and underscores → hyphens
+    .replace(/[^a-z0-9-]/g, "") // remove special characters
+    .replace(/-+/g, "-") // collapse multiple hyphens
+    .replace(/^-|-$/g, ""); // trim leading/trailing hyphens
+}
+
 export const useAddProviderMutation = (appId: AppId) => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
   return useMutation({
     mutationFn: async (providerInput: Omit<Provider, "id">) => {
+      // OpenCode: use slugified name as ID (for readable config keys)
+      // Other apps: use random UUID
+      const id =
+        appId === "opencode" ? slugify(providerInput.name) : generateUUID();
+
       const newProvider: Provider = {
         ...providerInput,
-        id: generateUUID(),
+        id,
         createdAt: Date.now(),
       };
       await providersApi.add(newProvider, appId);

@@ -125,9 +125,29 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
             use crate::opencode_config;
             use crate::provider::OpenCodeProviderConfig;
 
+            // Defensive check: if settings_config is a full config structure, extract provider fragment
+            let config_to_write = if let Some(obj) = provider.settings_config.as_object() {
+                // Detect full config structure (has $schema or top-level provider field)
+                if obj.contains_key("$schema") || obj.contains_key("provider") {
+                    log::warn!(
+                        "OpenCode provider '{}' has full config structure in settings_config, attempting to extract fragment",
+                        provider.id
+                    );
+                    // Try to extract from provider.{id}
+                    obj.get("provider")
+                        .and_then(|p| p.get(&provider.id))
+                        .cloned()
+                        .unwrap_or_else(|| provider.settings_config.clone())
+                } else {
+                    provider.settings_config.clone()
+                }
+            } else {
+                provider.settings_config.clone()
+            };
+
             // Convert settings_config to OpenCodeProviderConfig
             let opencode_config_result =
-                serde_json::from_value::<OpenCodeProviderConfig>(provider.settings_config.clone());
+                serde_json::from_value::<OpenCodeProviderConfig>(config_to_write.clone());
 
             match opencode_config_result {
                 Ok(config) => {
@@ -140,8 +160,21 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
                         provider.id,
                         e
                     );
-                    // Still try to write as raw JSON
-                    opencode_config::set_provider(&provider.id, provider.settings_config.clone())?;
+                    // Only write if config looks like a valid provider fragment
+                    if config_to_write.get("npm").is_some()
+                        || config_to_write.get("options").is_some()
+                    {
+                        opencode_config::set_provider(&provider.id, config_to_write)?;
+                        log::info!(
+                            "OpenCode provider '{}' written as raw JSON to live config",
+                            provider.id
+                        );
+                    } else {
+                        log::error!(
+                            "OpenCode provider '{}' has invalid config structure, skipping write",
+                            provider.id
+                        );
+                    }
                 }
             }
         }

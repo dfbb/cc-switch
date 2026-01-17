@@ -351,12 +351,16 @@ impl ProviderService {
 
         if let Some(current_id) = current_id {
             if current_id != id {
-                // Only backfill when switching to a different provider
-                if let Ok(live_config) = read_live_settings(app_type.clone()) {
-                    if let Some(mut current_provider) = providers.get(&current_id).cloned() {
-                        current_provider.settings_config = live_config;
-                        // Ignore backfill failure, don't affect switch flow
-                        let _ = state.db.save_provider(app_type.as_str(), &current_provider);
+                // OpenCode uses additive mode - all providers coexist in the same file,
+                // no backfill needed (backfill is for exclusive mode apps like Claude/Codex/Gemini)
+                if !matches!(app_type, AppType::OpenCode) {
+                    // Only backfill when switching to a different provider
+                    if let Ok(live_config) = read_live_settings(app_type.clone()) {
+                        if let Some(mut current_provider) = providers.get(&current_id).cloned() {
+                            current_provider.settings_config = live_config;
+                            // Ignore backfill failure, don't affect switch flow
+                            let _ = state.db.save_provider(app_type.as_str(), &current_provider);
+                        }
                     }
                 }
             }
