@@ -352,13 +352,29 @@ function App() {
     setConfirmAction(null);
   };
 
+  // Generate a unique provider key for OpenCode duplication
+  const generateUniqueOpencodeKey = (originalKey: string, existingKeys: string[]): string => {
+    const baseKey = `${originalKey}-copy`;
+
+    if (!existingKeys.includes(baseKey)) {
+      return baseKey;
+    }
+
+    // If -copy already exists, try -copy-2, -copy-3, ...
+    let counter = 2;
+    while (existingKeys.includes(`${baseKey}-${counter}`)) {
+      counter++;
+    }
+    return `${baseKey}-${counter}`;
+  };
+
   // 复制供应商
   const handleDuplicateProvider = async (provider: Provider) => {
     // 1️⃣ 计算新的 sortIndex：如果原供应商有 sortIndex，则复制它
     const newSortIndex =
       provider.sortIndex !== undefined ? provider.sortIndex + 1 : undefined;
 
-    const duplicatedProvider: Omit<Provider, "id" | "createdAt"> = {
+    const duplicatedProvider: Omit<Provider, "id" | "createdAt"> & { providerKey?: string } = {
       name: `${provider.name} copy`,
       settingsConfig: JSON.parse(JSON.stringify(provider.settingsConfig)), // 深拷贝
       websiteUrl: provider.websiteUrl,
@@ -370,6 +386,12 @@ function App() {
       icon: provider.icon,
       iconColor: provider.iconColor,
     };
+
+    // OpenCode: generate unique provider key (used as ID)
+    if (activeApp === "opencode") {
+      const existingKeys = Object.keys(providers);
+      duplicatedProvider.providerKey = generateUniqueOpencodeKey(provider.id, existingKeys);
+    }
 
     // 2️⃣ 如果原供应商有 sortIndex，需要将后续所有供应商的 sortIndex +1
     if (provider.sortIndex !== undefined) {
