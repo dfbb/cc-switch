@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { providerSchema, type ProviderFormData } from "@/lib/schemas/provider";
 import type { AppId } from "@/lib/api";
 import type { ProviderCategory, ProviderMeta } from "@/types";
@@ -55,6 +56,7 @@ import {
   useGeminiConfigState,
   useGeminiCommonConfig,
 } from "./hooks";
+import { useProvidersQuery } from "@/lib/query/queries";
 
 const CLAUDE_DEFAULT_CONFIG = JSON.stringify({ env: {} }, null, 2);
 const CODEX_DEFAULT_CONFIG = JSON.stringify({ auth: {}, config: "" }, null, 2);
@@ -498,6 +500,23 @@ export function ProviderForm({
     selectedPresetId: selectedPresetId ?? undefined,
   });
 
+  // OpenCode: query existing providers for duplicate key checking
+  const { data: opencodeProvidersData } = useProvidersQuery("opencode");
+  const existingOpencodeKeys = useMemo(() => {
+    if (!opencodeProvidersData?.providers) return [];
+    // Exclude current provider ID when in edit mode
+    return Object.keys(opencodeProvidersData.providers).filter(
+      (k) => k !== providerId
+    );
+  }, [opencodeProvidersData?.providers, providerId]);
+
+  // OpenCode Provider Key state
+  const [opencodeProviderKey, setOpencodeProviderKey] = useState<string>(() => {
+    if (appId !== "opencode") return "";
+    // In edit mode, use the existing provider ID as the key
+    return providerId || "";
+  });
+
   // OpenCode 配置状态
   const [opencodeNpm, setOpencodeNpm] = useState<string>(() => {
     if (appId !== "opencode") return "@ai-sdk/openai-compatible";
@@ -625,6 +644,23 @@ export function ProviderForm({
       return;
     }
 
+    // OpenCode: validate provider key
+    if (appId === "opencode") {
+      const keyPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+      if (!opencodeProviderKey.trim()) {
+        toast.error(t("opencode.providerKeyRequired"));
+        return;
+      }
+      if (!keyPattern.test(opencodeProviderKey)) {
+        toast.error(t("opencode.providerKeyInvalid"));
+        return;
+      }
+      if (!isEditMode && existingOpencodeKeys.includes(opencodeProviderKey)) {
+        toast.error(t("opencode.providerKeyDuplicate"));
+        return;
+      }
+    }
+
     // 非官方供应商必填校验：端点和 API Key
     if (category !== "official") {
       if (appId === "claude") {
@@ -721,6 +757,11 @@ export function ProviderForm({
       websiteUrl: values.websiteUrl?.trim() ?? "",
       settingsConfig,
     };
+
+    // OpenCode: pass provider key for ID generation
+    if (appId === "opencode") {
+      payload.providerKey = opencodeProviderKey;
+    }
 
     if (activePreset) {
       payload.presetId = activePreset.id;
@@ -879,6 +920,7 @@ export function ProviderForm({
       }
       // OpenCode 自定义模式：重置为空配置
       if (appId === "opencode") {
+        setOpencodeProviderKey("");
         setOpencodeNpm("@ai-sdk/openai-compatible");
         setOpencodeBaseUrl("");
         setOpencodeApiKey("");
@@ -942,6 +984,9 @@ export function ProviderForm({
       const preset = entry.preset as OpenCodeProviderPreset;
       const config = preset.settingsConfig;
 
+      // Clear provider key (user must enter their own unique key)
+      setOpencodeProviderKey("");
+
       // Update OpenCode-specific states
       setOpencodeNpm(config.npm || "@ai-sdk/openai-compatible");
       setOpencodeBaseUrl(config.options?.baseURL || "");
@@ -996,7 +1041,48 @@ export function ProviderForm({
         )}
 
         {/* 基础字段 */}
-        <BasicFormFields form={form} />
+        <BasicFormFields
+          form={form}
+          beforeNameSlot={
+            appId === "opencode" ? (
+              <div className="space-y-2">
+                <Label htmlFor="opencode-key">
+                  {t("opencode.providerKey")}
+                  <span className="text-destructive ml-1">*</span>
+                </Label>
+                <Input
+                  id="opencode-key"
+                  value={opencodeProviderKey}
+                  onChange={(e) => setOpencodeProviderKey(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  placeholder={t("opencode.providerKeyPlaceholder")}
+                  disabled={isEditMode}
+                  className={
+                    (existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode) ||
+                    (opencodeProviderKey.trim() !== "" && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey))
+                      ? "border-destructive"
+                      : ""
+                  }
+                />
+                {existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode && (
+                  <p className="text-xs text-destructive">
+                    {t("opencode.providerKeyDuplicate")}
+                  </p>
+                )}
+                {opencodeProviderKey.trim() !== "" && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey) && (
+                  <p className="text-xs text-destructive">
+                    {t("opencode.providerKeyInvalid")}
+                  </p>
+                )}
+                {!(existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode) &&
+                 (opencodeProviderKey.trim() === "" || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey)) && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("opencode.providerKeyHint")}
+                  </p>
+                )}
+              </div>
+            ) : undefined
+          }
+        />
 
         {/* Claude 专属字段 */}
         {appId === "claude" && (
@@ -1252,4 +1338,5 @@ export type ProviderFormValues = ProviderFormData & {
   presetCategory?: ProviderCategory;
   isPartner?: boolean;
   meta?: ProviderMeta;
+  providerKey?: string; // OpenCode: user-defined provider key
 };

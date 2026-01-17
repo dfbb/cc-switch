@@ -475,7 +475,13 @@
     "addModel": "モデルを追加",
     "modelId": "モデル ID",
     "modelName": "表示名",
-    "noModels": "モデルが設定されていません"
+    "noModels": "モデルが設定されていません",
+    "providerKey": "プロバイダーキー",
+    "providerKeyPlaceholder": "my-provider",
+    "providerKeyHint": "設定ファイルの一意の識別子。作成後は変更できません。小文字、数字、ハイフンのみ使用できます。",
+    "providerKeyRequired": "プロバイダーキーを入力してください",
+    "providerKeyDuplicate": "このキーは既に使用されています",
+    "providerKeyInvalid": "無効な形式です。小文字、数字、ハイフンのみ使用できます。"
   },
   "providerPreset": {
     "label": "プロバイダータイプ",

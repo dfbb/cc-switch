@@ -24,7 +24,7 @@ interface AddProviderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   appId: AppId;
-  onSubmit: (provider: Omit<Provider, "id">) => Promise<void> | void;
+  onSubmit: (provider: Omit<Provider, "id"> & { providerKey?: string }) => Promise<void> | void;
 }
 
 export function AddProviderDialog({
@@ -85,7 +85,7 @@ export function AddProviderDialog({
       >;
 
       // 构造基础提交数据
-      const providerData: Omit<Provider, "id"> = {
+      const providerData: Omit<Provider, "id"> & { providerKey?: string } = {
         name: values.name.trim(),
         notes: values.notes?.trim() || undefined,
         websiteUrl: values.websiteUrl?.trim() || undefined,
@@ -95,6 +95,11 @@ export function AddProviderDialog({
         ...(values.presetCategory ? { category: values.presetCategory } : {}),
         ...(values.meta ? { meta: values.meta } : {}),
       };
+
+      // OpenCode: pass providerKey for ID generation
+      if (appId === "opencode" && values.providerKey) {
+        providerData.providerKey = values.providerKey;
+      }
 
       const hasCustomEndpoints =
         providerData.meta?.custom_endpoints &&

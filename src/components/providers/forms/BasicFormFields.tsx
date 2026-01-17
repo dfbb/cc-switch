@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import type { ReactNode } from "react";
 import {
   FormControl,
   FormField,
@@ -24,9 +25,11 @@ import type { ProviderFormData } from "@/lib/schemas/provider";
 
 interface BasicFormFieldsProps {
   form: UseFormReturn<ProviderFormData>;
+  /** Slot to render content between icon and name fields */
+  beforeNameSlot?: ReactNode;
 }
 
-export function BasicFormFields({ form }: BasicFormFieldsProps) {
+export function BasicFormFields({ form, beforeNameSlot }: BasicFormFieldsProps) {
   const { t } = useTranslation();
   const [iconDialogOpen, setIconDialogOpen] = useState(false);
 
@@ -111,6 +114,9 @@ export function BasicFormFields({ form }: BasicFormFieldsProps) {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Slot for additional fields between icon and name */}
+      {beforeNameSlot}
 
       {/* 基础信息 - 网格布局 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
