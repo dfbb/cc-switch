@@ -152,8 +152,8 @@ export function ProviderActions({
 
   const buttonState = getMainButtonState();
 
-  // OpenCode 模式下删除按钮的行为不同（主按钮已处理移除功能）
-  const canDelete = isOpenCodeMode ? !isInConfig : !isCurrent;
+  // OpenCode 模式下删除按钮始终可用（主按钮"移除"是从 live 配置移除，删除是从数据库删除）
+  const canDelete = isOpenCodeMode ? true : !isCurrent;
 
   return (
     <div className="flex items-center gap-1.5">
