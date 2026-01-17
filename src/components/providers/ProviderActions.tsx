@@ -29,6 +29,8 @@ interface ProviderActionsProps {
   onTest?: () => void;
   onConfigureUsage: () => void;
   onDelete: () => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: () => void;
   onOpenTerminal?: () => void;
   // 故障转移相关
   isAutoFailoverEnabled?: boolean;
@@ -48,6 +50,7 @@ export function ProviderActions({
   onTest,
   onConfigureUsage,
   onDelete,
+  onRemoveFromConfig,
   onOpenTerminal,
   // 故障转移相关
   isAutoFailoverEnabled = false,
@@ -68,7 +71,12 @@ export function ProviderActions({
     if (isOpenCodeMode) {
       // OpenCode 模式：切换配置状态（添加/移除）
       if (isInConfig) {
-        onDelete(); // 从配置移除
+        // Use onRemoveFromConfig if available, otherwise fall back to onDelete
+        if (onRemoveFromConfig) {
+          onRemoveFromConfig();
+        } else {
+          onDelete();
+        }
       } else {
         onSwitch(); // 添加到配置
       }

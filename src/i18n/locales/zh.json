@@ -157,7 +157,9 @@
   },
   "confirm": {
     "deleteProvider": "删除供应商",
-    "deleteProviderMessage": "确定要删除供应商 \"{{name}}\" 吗？此操作无法撤销。"
+    "deleteProviderMessage": "确定要删除供应商 \"{{name}}\" 吗？此操作无法撤销。",
+    "removeProvider": "移除供应商",
+    "removeProviderMessage": "确定要从配置中移除供应商 \"{{name}}\" 吗？\n\n移除后该供应商将不再生效，但配置数据会保留在 CC Switch 中，您可以随时重新添加。"
   },
   "settings": {
     "title": "设置",

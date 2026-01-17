@@ -77,7 +77,11 @@ function App() {
 
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [usageProvider, setUsageProvider] = useState<Provider | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Provider | null>(null);
+  // Confirm action state: 'remove' = remove from live config, 'delete' = delete from database
+  const [confirmAction, setConfirmAction] = useState<{
+    provider: Provider;
+    action: "remove" | "delete";
+  } | null>(null);
   const [envConflicts, setEnvConflicts] = useState<EnvConflict[]>([]);
   const [showEnvBanner, setShowEnvBanner] = useState(false);
 
@@ -322,11 +326,20 @@ function App() {
     setEditingProvider(null);
   };
 
-  // 确认删除供应商
-  const handleConfirmDelete = async () => {
-    if (!confirmDelete) return;
-    await deleteProvider(confirmDelete.id);
-    setConfirmDelete(null);
+  // 确认删除/移除供应商
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { provider, action } = confirmAction;
+
+    if (action === "remove") {
+      // Remove from live config only (OpenCode)
+      // The switch operation with empty/removal semantics
+      await deleteProvider(provider.id);
+    } else {
+      // Delete from database
+      await deleteProvider(provider.id);
+    }
+    setConfirmAction(null);
   };
 
   // 复制供应商
@@ -498,7 +511,15 @@ function App() {
                       activeProviderId={activeProviderId}
                       onSwitch={switchProvider}
                       onEdit={setEditingProvider}
-                      onDelete={setConfirmDelete}
+                      onDelete={(provider) =>
+                        setConfirmAction({ provider, action: "delete" })
+                      }
+                      onRemoveFromConfig={
+                        activeApp === "opencode"
+                          ? (provider) =>
+                              setConfirmAction({ provider, action: "remove" })
+                          : undefined
+                      }
                       onDuplicate={handleDuplicateProvider}
                       onConfigureUsage={setUsageProvider}
                       onOpenWebsite={handleOpenWebsite}
@@ -847,17 +868,25 @@ function App() {
       )}
 
       <ConfirmDialog
-        isOpen={Boolean(confirmDelete)}
-        title={t("confirm.deleteProvider")}
+        isOpen={Boolean(confirmAction)}
+        title={
+          confirmAction?.action === "remove"
+            ? t("confirm.removeProvider")
+            : t("confirm.deleteProvider")
+        }
         message={
-          confirmDelete
-            ? t("confirm.deleteProviderMessage", {
-                name: confirmDelete.name,
-              })
+          confirmAction
+            ? confirmAction.action === "remove"
+              ? t("confirm.removeProviderMessage", {
+                  name: confirmAction.provider.name,
+                })
+              : t("confirm.deleteProviderMessage", {
+                  name: confirmAction.provider.name,
+                })
             : ""
         }
-        onConfirm={() => void handleConfirmDelete()}
-        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => void handleConfirmAction()}
+        onCancel={() => setConfirmAction(null)}
       />
 
       <DeepLinkImportDialog />

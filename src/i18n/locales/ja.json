@@ -157,7 +157,9 @@
   },
   "confirm": {
     "deleteProvider": "プロバイダーを削除",
-    "deleteProviderMessage": "プロバイダー「{{name}}」を削除してもよろしいですか？この操作は元に戻せません。"
+    "deleteProviderMessage": "プロバイダー「{{name}}」を削除してもよろしいですか？この操作は元に戻せません。",
+    "removeProvider": "プロバイダーを解除",
+    "removeProviderMessage": "プロバイダー「{{name}}」を設定から解除してもよろしいですか？\n\n解除後、このプロバイダーは無効になりますが、設定データは CC Switch に保持されます。いつでも再追加できます。"
   },
   "settings": {
     "title": "設定",

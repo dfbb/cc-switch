@@ -157,7 +157,9 @@
   },
   "confirm": {
     "deleteProvider": "Delete Provider",
-    "deleteProviderMessage": "Are you sure you want to delete provider \"{{name}}\"? This action cannot be undone."
+    "deleteProviderMessage": "Are you sure you want to delete provider \"{{name}}\"? This action cannot be undone.",
+    "removeProvider": "Remove Provider",
+    "removeProviderMessage": "Are you sure you want to remove provider \"{{name}}\" from the configuration?\n\nAfter removal, this provider will no longer be active, but the configuration data will be retained in CC Switch. You can re-add it at any time."
   },
   "settings": {
     "title": "Settings",

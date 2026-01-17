@@ -40,6 +40,8 @@ interface ProviderListProps {
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: (provider: Provider) => void;
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
@@ -58,6 +60,7 @@ export function ProviderList({
   onSwitch,
   onEdit,
   onDelete,
+  onRemoveFromConfig,
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
@@ -221,6 +224,7 @@ export function ProviderList({
               onSwitch={onSwitch}
               onEdit={onEdit}
               onDelete={onDelete}
+              onRemoveFromConfig={onRemoveFromConfig}
               onDuplicate={onDuplicate}
               onConfigureUsage={onConfigureUsage}
               onOpenWebsite={onOpenWebsite}
@@ -331,6 +335,8 @@ interface SortableProviderCardProps {
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: (provider: Provider) => void;
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
@@ -355,6 +361,7 @@ function SortableProviderCard({
   onSwitch,
   onEdit,
   onDelete,
+  onRemoveFromConfig,
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
@@ -393,6 +400,7 @@ function SortableProviderCard({
         onSwitch={onSwitch}
         onEdit={onEdit}
         onDelete={onDelete}
+        onRemoveFromConfig={onRemoveFromConfig}
         onDuplicate={onDuplicate}
         onConfigureUsage={
           onConfigureUsage ? (item) => onConfigureUsage(item) : () => undefined

@@ -30,6 +30,8 @@ interface ProviderCardProps {
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: (provider: Provider) => void;
   onConfigureUsage: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
   onDuplicate: (provider: Provider) => void;
@@ -90,6 +92,7 @@ export function ProviderCard({
   onSwitch,
   onEdit,
   onDelete,
+  onRemoveFromConfig,
   onConfigureUsage,
   onOpenWebsite,
   onDuplicate,
@@ -380,6 +383,11 @@ export function ProviderCard({
               onTest={onTest ? () => onTest(provider) : undefined}
               onConfigureUsage={() => onConfigureUsage(provider)}
               onDelete={() => onDelete(provider)}
+              onRemoveFromConfig={
+                onRemoveFromConfig
+                  ? () => onRemoveFromConfig(provider)
+                  : undefined
+              }
               onOpenTerminal={
                 onOpenTerminal ? () => onOpenTerminal(provider) : undefined
               }
