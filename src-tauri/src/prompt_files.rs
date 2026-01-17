@@ -20,7 +20,7 @@ pub fn prompt_file_path(app: &AppType) -> Result<PathBuf, AppError> {
         AppType::Claude => "CLAUDE.md",
         AppType::Codex => "AGENTS.md",
         AppType::Gemini => "GEMINI.md",
-        AppType::OpenCode => "OPENCODE.md",
+        AppType::OpenCode => "AGENTS.md",
     };
 
     Ok(base_dir.join(filename))
