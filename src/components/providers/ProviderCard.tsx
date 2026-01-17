@@ -136,7 +136,9 @@ export function ProviderCard({
   const usageEnabled = provider.meta?.usage_script?.enabled ?? false;
 
   // 获取用量数据以判断是否有多套餐
-  const autoQueryInterval = isCurrent
+  // OpenCode（累加模式）：使用 isInConfig 代替 isCurrent
+  const shouldAutoQuery = appId === "opencode" ? isInConfig : isCurrent;
+  const autoQueryInterval = shouldAutoQuery
     ? provider.meta?.usage_script?.autoQueryInterval || 0
     : 0;
 
@@ -333,6 +335,7 @@ export function ProviderCard({
                   appId={appId}
                   usageEnabled={usageEnabled}
                   isCurrent={isCurrent}
+                  isInConfig={isInConfig}
                   inline={true}
                 />
               )}
@@ -398,6 +401,7 @@ export function ProviderCard({
             appId={appId}
             usageEnabled={usageEnabled}
             isCurrent={isCurrent}
+            isInConfig={isInConfig}
             inline={false}
           />
         </div>
