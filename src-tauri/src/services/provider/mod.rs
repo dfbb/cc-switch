@@ -261,6 +261,27 @@ impl ProviderService {
         state.db.delete_provider(app_type.as_str(), id)
     }
 
+    /// Remove provider from live config only (for additive mode apps like OpenCode)
+    ///
+    /// Does NOT delete from database - provider remains in the list.
+    /// This is used when user wants to "remove" a provider from active config
+    /// but keep it available for future use.
+    pub fn remove_from_live_config(app_type: AppType, id: &str) -> Result<(), AppError> {
+        match app_type {
+            AppType::OpenCode => {
+                remove_opencode_provider_from_live(id)?;
+            }
+            // Future: add other additive mode apps here
+            _ => {
+                return Err(AppError::Message(format!(
+                    "App {} does not support remove from live config",
+                    app_type.as_str()
+                )));
+            }
+        }
+        Ok(())
+    }
+
     /// Switch to a provider
     ///
     /// Switch flow:

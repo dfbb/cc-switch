@@ -332,9 +332,19 @@ function App() {
     const { provider, action } = confirmAction;
 
     if (action === "remove") {
-      // Remove from live config only (OpenCode)
-      // The switch operation with empty/removal semantics
-      await deleteProvider(provider.id);
+      // Remove from live config only (for additive mode apps like OpenCode)
+      // Does NOT delete from database - provider remains in the list
+      await providersApi.removeFromLiveConfig(provider.id, activeApp);
+      // Invalidate queries to refresh the isInConfig state
+      await queryClient.invalidateQueries({
+        queryKey: ["opencodeLiveProviderIds"],
+      });
+      toast.success(
+        t("notifications.removeFromConfigSuccess", {
+          defaultValue: "已从配置移除",
+        }),
+        { closeButton: true },
+      );
     } else {
       // Delete from database
       await deleteProvider(provider.id);

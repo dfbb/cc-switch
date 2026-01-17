@@ -60,6 +60,16 @@ pub fn delete_provider(
         .map_err(|e| e.to_string())
 }
 
+/// Remove provider from live config only (for additive mode apps like OpenCode)
+/// Does NOT delete from database - provider remains in the list
+#[tauri::command]
+pub fn remove_provider_from_live_config(app: String, id: String) -> Result<bool, String> {
+    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
+    ProviderService::remove_from_live_config(app_type, &id)
+        .map(|_| true)
+        .map_err(|e| e.to_string())
+}
+
 /// 切换供应商
 fn switch_provider_internal(state: &AppState, app_type: AppType, id: &str) -> Result<(), AppError> {
     ProviderService::switch(state, app_type, id)

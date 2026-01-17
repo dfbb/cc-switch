@@ -38,6 +38,14 @@ export const providersApi = {
     return await invoke("delete_provider", { id, app: appId });
   },
 
+  /**
+   * Remove provider from live config only (for additive mode apps like OpenCode)
+   * Does NOT delete from database - provider remains in the list
+   */
+  async removeFromLiveConfig(id: string, appId: AppId): Promise<boolean> {
+    return await invoke("remove_provider_from_live_config", { id, app: appId });
+  },
+
   async switch(id: string, appId: AppId): Promise<boolean> {
     return await invoke("switch_provider", { id, app: appId });
   },
