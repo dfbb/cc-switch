@@ -483,6 +483,17 @@ pub fn run() {
                 }
             }
 
+            // 2.1 OpenCode 供应商导入（累加式模式，需特殊处理）
+            // OpenCode 与其他应用不同：配置文件中可同时存在多个供应商
+            // 需要遍历 provider 字段下的每个供应商并导入
+            match crate::services::provider::import_opencode_providers_from_live(&app_state) {
+                Ok(count) if count > 0 => {
+                    log::info!("✓ Imported {count} OpenCode provider(s) from live config");
+                }
+                Ok(_) => log::debug!("○ No OpenCode providers found to import"),
+                Err(e) => log::debug!("○ Failed to import OpenCode providers: {e}"),
+            }
+
             // 3. 导入 MCP 服务器配置（表空时触发）
             if app_state.db.is_mcp_table_empty().unwrap_or(false) {
                 log::info!("MCP table empty, importing from live configurations...");
@@ -509,6 +520,14 @@ pub fn run() {
                     }
                     Ok(_) => log::debug!("○ No Gemini MCP servers found to import"),
                     Err(e) => log::warn!("✗ Failed to import Gemini MCP: {e}"),
+                }
+
+                match crate::services::mcp::McpService::import_from_opencode(&app_state) {
+                    Ok(count) if count > 0 => {
+                        log::info!("✓ Imported {count} MCP server(s) from OpenCode");
+                    }
+                    Ok(_) => log::debug!("○ No OpenCode MCP servers found to import"),
+                    Err(e) => log::warn!("✗ Failed to import OpenCode MCP: {e}"),
                 }
             }
 
