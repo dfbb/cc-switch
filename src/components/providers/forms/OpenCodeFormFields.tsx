@@ -213,6 +213,15 @@ export function OpenCodeFormFields({
           </p>
         ) : (
           <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground px-1 mb-1">
+              <span className="flex-1">
+                {t("opencode.modelId", { defaultValue: "模型 ID" })}
+              </span>
+              <span className="flex-1">
+                {t("opencode.modelName", { defaultValue: "显示名称" })}
+              </span>
+              <span className="w-9" />
+            </div>
             {Object.entries(models).map(([key, model]) => (
               <div key={key} className="flex items-center gap-2">
                 <ModelIdInput
