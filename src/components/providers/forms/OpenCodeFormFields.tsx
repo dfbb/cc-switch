@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,43 @@ import { Plus, Trash2 } from "lucide-react";
 import { ApiKeySection } from "./shared";
 import { opencodeNpmPackages } from "@/config/opencodeProviderPresets";
 import type { ProviderCategory, OpenCodeModel } from "@/types";
+
+/**
+ * Model ID input with local state to prevent focus loss.
+ * The key prop issue: when Model ID changes, React sees it as a new element
+ * and unmounts/remounts the input, losing focus. Using local state + onBlur
+ * keeps the key stable during editing.
+ */
+function ModelIdInput({
+  modelId,
+  onChange,
+  placeholder,
+}: {
+  modelId: string;
+  onChange: (newId: string) => void;
+  placeholder?: string;
+}) {
+  const [localValue, setLocalValue] = useState(modelId);
+
+  // Sync when external modelId changes (e.g., undo operation)
+  useEffect(() => {
+    setLocalValue(modelId);
+  }, [modelId]);
+
+  return (
+    <Input
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={() => {
+        if (localValue !== modelId && localValue.trim()) {
+          onChange(localValue);
+        }
+      }}
+      placeholder={placeholder}
+      className="flex-1"
+    />
+  );
+}
 
 interface OpenCodeFormFieldsProps {
   // NPM Package
@@ -177,13 +215,12 @@ export function OpenCodeFormFields({
           <div className="space-y-2">
             {Object.entries(models).map(([key, model]) => (
               <div key={key} className="flex items-center gap-2">
-                <Input
-                  value={key}
-                  onChange={(e) => handleModelIdChange(key, e.target.value)}
+                <ModelIdInput
+                  modelId={key}
+                  onChange={(newId) => handleModelIdChange(key, newId)}
                   placeholder={t("opencode.modelId", {
                     defaultValue: "Model ID",
                   })}
-                  className="flex-1"
                 />
                 <Input
                   value={model.name}
