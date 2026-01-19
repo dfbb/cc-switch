@@ -537,6 +537,10 @@ pub struct OpenCodeModel {
     /// 模型限制（上下文和输出 token 数）
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limit: Option<OpenCodeModelLimit>,
+
+    /// 模型额外选项（provider 路由等）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub options: Option<HashMap<String, Value>>,
 }
 
 /// OpenCode 模型限制

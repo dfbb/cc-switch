@@ -262,6 +262,7 @@ export interface OpenCodeModel {
     context?: number;
     output?: number;
   };
+  options?: Record<string, unknown>; // 模型级别额外选项（provider 路由等）
 }
 
 // OpenCode 供应商选项

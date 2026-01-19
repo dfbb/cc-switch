@@ -10,9 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ChevronRight } from "lucide-react";
 import { ApiKeySection } from "./shared";
 import { opencodeNpmPackages } from "@/config/opencodeProviderPresets";
+import { cn } from "@/lib/utils";
 import type { ProviderCategory, OpenCodeModel } from "@/types";
 
 /**
@@ -91,6 +92,42 @@ function ExtraOptionKeyInput({
   );
 }
 
+/**
+ * Model option key input with local state to prevent focus loss.
+ * Reuses the same pattern as ExtraOptionKeyInput.
+ */
+function ModelOptionKeyInput({
+  optionKey,
+  onChange,
+  placeholder,
+}: {
+  optionKey: string;
+  onChange: (newKey: string) => void;
+  placeholder?: string;
+}) {
+  const displayValue = optionKey.startsWith("option-") ? "" : optionKey;
+  const [localValue, setLocalValue] = useState(displayValue);
+
+  useEffect(() => {
+    setLocalValue(optionKey.startsWith("option-") ? "" : optionKey);
+  }, [optionKey]);
+
+  return (
+    <Input
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={() => {
+        const trimmed = localValue.trim();
+        if (trimmed && trimmed !== optionKey) {
+          onChange(trimmed);
+        }
+      }}
+      placeholder={placeholder}
+      className="flex-1"
+    />
+  );
+}
+
 interface OpenCodeFormFieldsProps {
   // NPM Package
   npm: string;
@@ -133,6 +170,19 @@ export function OpenCodeFormFields({
 }: OpenCodeFormFieldsProps) {
   const { t } = useTranslation();
 
+  // Track which models have expanded options panel
+  const [expandedModels, setExpandedModels] = useState<Set<string>>(new Set());
+
+  // Toggle model expand state
+  const toggleModelExpand = (key: string) => {
+    setExpandedModels((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   // Add a new model entry
   const handleAddModel = () => {
     const newKey = `model-${Date.now()}`;
@@ -147,6 +197,12 @@ export function OpenCodeFormFields({
     const newModels = { ...models };
     delete newModels[key];
     onModelsChange(newModels);
+    // Also remove from expanded set
+    setExpandedModels((prev) => {
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
   };
 
   // Update model ID (key)
@@ -161,6 +217,15 @@ export function OpenCodeFormFields({
       }
     }
     onModelsChange(newModels);
+    // Update expanded set if this model was expanded
+    if (expandedModels.has(oldKey)) {
+      setExpandedModels((prev) => {
+        const next = new Set(prev);
+        next.delete(oldKey);
+        next.add(newKey);
+        return next;
+      });
+    }
   };
 
   // Update model name
@@ -168,6 +233,71 @@ export function OpenCodeFormFields({
     onModelsChange({
       ...models,
       [key]: { ...models[key], name },
+    });
+  };
+
+  // Model options handlers
+  const handleAddModelOption = (modelKey: string) => {
+    const model = models[modelKey];
+    const newOptionKey = `option-${Date.now()}`;
+    onModelsChange({
+      ...models,
+      [modelKey]: {
+        ...model,
+        options: { ...model.options, [newOptionKey]: "" },
+      },
+    });
+  };
+
+  const handleRemoveModelOption = (modelKey: string, optionKey: string) => {
+    const model = models[modelKey];
+    const newOptions = { ...model.options };
+    delete newOptions[optionKey];
+    onModelsChange({
+      ...models,
+      [modelKey]: {
+        ...model,
+        options: Object.keys(newOptions).length > 0 ? newOptions : undefined,
+      },
+    });
+  };
+
+  const handleModelOptionKeyChange = (
+    modelKey: string,
+    oldKey: string,
+    newKey: string
+  ) => {
+    if (!newKey.trim() || oldKey === newKey) return;
+    const model = models[modelKey];
+    const newOptions: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(model.options || {})) {
+      if (k === oldKey) newOptions[newKey] = v;
+      else newOptions[k] = v;
+    }
+    onModelsChange({
+      ...models,
+      [modelKey]: { ...model, options: newOptions },
+    });
+  };
+
+  const handleModelOptionValueChange = (
+    modelKey: string,
+    optionKey: string,
+    value: string
+  ) => {
+    const model = models[modelKey];
+    let parsedValue: unknown;
+    try {
+      parsedValue = JSON.parse(value);
+    } catch {
+      parsedValue = value;
+    }
+    onModelsChange({
+      ...models,
+      [modelKey]: {
+        ...model,
+        options: { ...model.options, [optionKey]: parsedValue },
+      },
     });
   };
 
@@ -368,6 +498,7 @@ export function OpenCodeFormFields({
         ) : (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs text-muted-foreground px-1 mb-1">
+              <span className="w-9" />
               <span className="flex-1">
                 {t("opencode.modelId", { defaultValue: "模型 ID" })}
               </span>
@@ -377,31 +508,136 @@ export function OpenCodeFormFields({
               <span className="w-9" />
             </div>
             {Object.entries(models).map(([key, model]) => (
-              <div key={key} className="flex items-center gap-2">
-                <ModelIdInput
-                  modelId={key}
-                  onChange={(newId) => handleModelIdChange(key, newId)}
-                  placeholder={t("opencode.modelId", {
-                    defaultValue: "Model ID",
-                  })}
-                />
-                <Input
-                  value={model.name}
-                  onChange={(e) => handleModelNameChange(key, e.target.value)}
-                  placeholder={t("opencode.modelName", {
-                    defaultValue: "Display Name",
-                  })}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleRemoveModel(key)}
-                  className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <div key={key} className="space-y-2">
+                {/* Model row */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleModelExpand(key)}
+                    className="h-9 w-9 shrink-0"
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        expandedModels.has(key) && "rotate-90"
+                      )}
+                    />
+                  </Button>
+                  <ModelIdInput
+                    modelId={key}
+                    onChange={(newId) => handleModelIdChange(key, newId)}
+                    placeholder={t("opencode.modelId", {
+                      defaultValue: "Model ID",
+                    })}
+                  />
+                  <Input
+                    value={model.name}
+                    onChange={(e) => handleModelNameChange(key, e.target.value)}
+                    placeholder={t("opencode.modelName", {
+                      defaultValue: "Display Name",
+                    })}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveModel(key)}
+                    className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Expanded model options */}
+                {expandedModels.has(key) && (
+                  <div className="ml-9 pl-4 border-l-2 border-muted space-y-2">
+                    {Object.keys(model.options || {}).length === 0 ? (
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground py-1">
+                          {t("opencode.noModelOptions", {
+                            defaultValue: "模型选项，点击 + 添加",
+                          })}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleAddModelOption(key)}
+                          className="h-6 px-2 gap-1"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAddModelOption(key)}
+                            className="h-6 px-2 gap-1"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        {Object.entries(model.options || {}).map(
+                          ([optKey, optValue]) => (
+                            <div key={optKey} className="flex items-center gap-2">
+                              <ModelOptionKeyInput
+                                optionKey={optKey}
+                                onChange={(newKey) =>
+                                  handleModelOptionKeyChange(key, optKey, newKey)
+                                }
+                                placeholder={t(
+                                  "opencode.modelOptionKeyPlaceholder",
+                                  {
+                                    defaultValue: "provider",
+                                  }
+                                )}
+                              />
+                              <Input
+                                value={
+                                  typeof optValue === "string"
+                                    ? optValue
+                                    : JSON.stringify(optValue)
+                                }
+                                onChange={(e) =>
+                                  handleModelOptionValueChange(
+                                    key,
+                                    optKey,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder={t(
+                                  "opencode.modelOptionValuePlaceholder",
+                                  {
+                                    defaultValue: '{"order": ["baseten"]}',
+                                  }
+                                )}
+                                className="flex-1"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  handleRemoveModelOption(key, optKey)
+                                }
+                                className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

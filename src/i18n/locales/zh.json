@@ -489,7 +489,10 @@
     "extraOptionValue": "值",
     "extraOptionKeyPlaceholder": "timeout",
     "extraOptionValuePlaceholder": "600000",
-    "noExtraOptions": "暂无额外选项"
+    "noExtraOptions": "暂无额外选项",
+    "noModelOptions": "模型选项，点击 + 添加",
+    "modelOptionKeyPlaceholder": "provider",
+    "modelOptionValuePlaceholder": "{\"order\": [\"baseten\"]}"
   },
   "providerPreset": {
     "label": "预设供应商",

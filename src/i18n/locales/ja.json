@@ -489,7 +489,10 @@
     "extraOptionValue": "値",
     "extraOptionKeyPlaceholder": "timeout",
     "extraOptionValuePlaceholder": "600000",
-    "noExtraOptions": "追加オプションはありません"
+    "noExtraOptions": "追加オプションはありません",
+    "noModelOptions": "モデルオプション、+ をクリックして追加",
+    "modelOptionKeyPlaceholder": "provider",
+    "modelOptionValuePlaceholder": "{\"order\": [\"baseten\"]}"
   },
   "providerPreset": {
     "label": "プロバイダータイプ",
