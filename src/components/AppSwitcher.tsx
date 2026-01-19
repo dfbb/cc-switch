@@ -16,11 +16,13 @@ export function AppSwitcher({ activeApp, onSwitch }: AppSwitcherProps) {
     claude: "claude",
     codex: "openai",
     gemini: "gemini",
+    opencode: "opencode",
   };
   const appDisplayName: Record<AppId, string> = {
     claude: "Claude",
     codex: "Codex",
     gemini: "Gemini",
+    opencode: "OpenCode",
   };
 
   return (
@@ -89,6 +91,28 @@ export function AppSwitcher({ activeApp, onSwitch }: AppSwitcherProps) {
           }
         />
         <span>{appDisplayName.gemini}</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => handleSwitch("opencode")}
+        className={`group inline-flex items-center gap-2 px-3 h-8 rounded-md text-sm font-medium transition-all duration-200 ${
+          activeApp === "opencode"
+            ? "bg-background text-foreground shadow-sm"
+            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+        }`}
+      >
+        <ProviderIcon
+          icon={appIconName.opencode}
+          name={appDisplayName.opencode}
+          size={iconSize}
+          className={
+            activeApp === "opencode"
+              ? "text-foreground"
+              : "text-muted-foreground group-hover:text-foreground transition-colors"
+          }
+        />
+        <span>{appDisplayName.opencode}</span>
       </button>
     </div>
   );

@@ -20,13 +20,16 @@ use crate::settings::CustomEndpoint;
 use crate::store::AppState;
 
 // Re-export sub-module functions for external access
-pub use live::{import_default_config, read_live_settings, sync_current_to_live};
+pub use live::{
+    import_default_config, import_opencode_providers_from_live, read_live_settings,
+    sync_current_to_live,
+};
 
 // Internal re-exports (pub(crate))
 pub(crate) use live::write_live_snapshot;
 
 // Internal re-exports
-use live::write_gemini_live;
+use live::{remove_opencode_provider_from_live, write_gemini_live};
 use usage::validate_usage_script;
 
 /// Provider business logic service
@@ -137,7 +140,13 @@ impl ProviderService {
     /// 使用有效的当前供应商 ID（验证过存在性）。
     /// 优先从本地 settings 读取，验证后 fallback 到数据库的 is_current 字段。
     /// 这确保了云同步场景下多设备可以独立选择供应商，且返回的 ID 一定有效。
+    ///
+    /// 对于 OpenCode（累加模式），不存在"当前供应商"概念，直接返回空字符串。
     pub fn current(state: &AppState, app_type: AppType) -> Result<String, AppError> {
+        // OpenCode uses additive mode - no "current" provider concept
+        if matches!(app_type, AppType::OpenCode) {
+            return Ok(String::new());
+        }
         crate::settings::get_effective_current_provider(&state.db, &app_type)
             .map(|opt| opt.unwrap_or_default())
     }
@@ -152,7 +161,13 @@ impl ProviderService {
         // Save to database
         state.db.save_provider(app_type.as_str(), &provider)?;
 
-        // Check if sync is needed (if this is current provider, or no current provider)
+        // OpenCode uses additive mode - always write to live config
+        if matches!(app_type, AppType::OpenCode) {
+            write_live_snapshot(&app_type, &provider)?;
+            return Ok(true);
+        }
+
+        // For other apps: Check if sync is needed (if this is current provider, or no current provider)
         let current = state.db.get_current_provider(app_type.as_str())?;
         if current.is_none() {
             // No current provider, set as current and sync
@@ -176,13 +191,19 @@ impl ProviderService {
         Self::normalize_provider_if_claude(&app_type, &mut provider);
         Self::validate_provider_settings(&app_type, &provider)?;
 
-        // Check if this is current provider (use effective current, not just DB)
+        // Save to database
+        state.db.save_provider(app_type.as_str(), &provider)?;
+
+        // OpenCode uses additive mode - always update in live config
+        if matches!(app_type, AppType::OpenCode) {
+            write_live_snapshot(&app_type, &provider)?;
+            return Ok(true);
+        }
+
+        // For other apps: Check if this is current provider (use effective current, not just DB)
         let effective_current =
             crate::settings::get_effective_current_provider(&state.db, &app_type)?;
         let is_current = effective_current.as_deref() == Some(provider.id.as_str());
-
-        // Save to database
-        state.db.save_provider(app_type.as_str(), &provider)?;
 
         if is_current {
             // 如果代理接管模式处于激活状态，并且代理服务正在运行：
@@ -216,8 +237,18 @@ impl ProviderService {
     /// Delete a provider
     ///
     /// 同时检查本地 settings 和数据库的当前供应商，防止删除任一端正在使用的供应商。
+    /// 对于 OpenCode（累加模式），可以随时删除任意供应商，同时从 live 配置中移除。
     pub fn delete(state: &AppState, app_type: AppType, id: &str) -> Result<(), AppError> {
-        // Check both local settings and database
+        // OpenCode uses additive mode - no current provider concept
+        if matches!(app_type, AppType::OpenCode) {
+            // Remove from database
+            state.db.delete_provider(app_type.as_str(), id)?;
+            // Also remove from live config
+            remove_opencode_provider_from_live(id)?;
+            return Ok(());
+        }
+
+        // For other apps: Check both local settings and database
         let local_current = crate::settings::get_current_provider(&app_type);
         let db_current = state.db.get_current_provider(app_type.as_str())?;
 
@@ -228,6 +259,27 @@ impl ProviderService {
         }
 
         state.db.delete_provider(app_type.as_str(), id)
+    }
+
+    /// Remove provider from live config only (for additive mode apps like OpenCode)
+    ///
+    /// Does NOT delete from database - provider remains in the list.
+    /// This is used when user wants to "remove" a provider from active config
+    /// but keep it available for future use.
+    pub fn remove_from_live_config(app_type: AppType, id: &str) -> Result<(), AppError> {
+        match app_type {
+            AppType::OpenCode => {
+                remove_opencode_provider_from_live(id)?;
+            }
+            // Future: add other additive mode apps here
+            _ => {
+                return Err(AppError::Message(format!(
+                    "App {} does not support remove from live config",
+                    app_type.as_str()
+                )));
+            }
+        }
+        Ok(())
     }
 
     /// Switch to a provider
@@ -326,22 +378,29 @@ impl ProviderService {
 
         if let Some(current_id) = current_id {
             if current_id != id {
-                // Only backfill when switching to a different provider
-                if let Ok(live_config) = read_live_settings(app_type.clone()) {
-                    if let Some(mut current_provider) = providers.get(&current_id).cloned() {
-                        current_provider.settings_config = live_config;
-                        // Ignore backfill failure, don't affect switch flow
-                        let _ = state.db.save_provider(app_type.as_str(), &current_provider);
+                // OpenCode uses additive mode - all providers coexist in the same file,
+                // no backfill needed (backfill is for exclusive mode apps like Claude/Codex/Gemini)
+                if !matches!(app_type, AppType::OpenCode) {
+                    // Only backfill when switching to a different provider
+                    if let Ok(live_config) = read_live_settings(app_type.clone()) {
+                        if let Some(mut current_provider) = providers.get(&current_id).cloned() {
+                            current_provider.settings_config = live_config;
+                            // Ignore backfill failure, don't affect switch flow
+                            let _ = state.db.save_provider(app_type.as_str(), &current_provider);
+                        }
                     }
                 }
             }
         }
 
-        // Update local settings (device-level, takes priority)
-        crate::settings::set_current_provider(&app_type, Some(id))?;
+        // OpenCode uses additive mode - skip setting is_current (no such concept)
+        if !matches!(app_type, AppType::OpenCode) {
+            // Update local settings (device-level, takes priority)
+            crate::settings::set_current_provider(&app_type, Some(id))?;
 
-        // Update database is_current (as default for new devices)
-        state.db.set_current_provider(app_type.as_str(), id)?;
+            // Update database is_current (as default for new devices)
+            state.db.set_current_provider(app_type.as_str(), id)?;
+        }
 
         // Sync to live (write_gemini_live handles security flag internally for Gemini)
         write_live_snapshot(&app_type, provider)?;
@@ -380,6 +439,7 @@ impl ProviderService {
             AppType::Claude => Self::extract_claude_common_config(&provider.settings_config),
             AppType::Codex => Self::extract_codex_common_config(&provider.settings_config),
             AppType::Gemini => Self::extract_gemini_common_config(&provider.settings_config),
+            AppType::OpenCode => Self::extract_opencode_common_config(&provider.settings_config),
         }
     }
 
@@ -392,6 +452,7 @@ impl ProviderService {
             AppType::Claude => Self::extract_claude_common_config(settings_config),
             AppType::Codex => Self::extract_codex_common_config(settings_config),
             AppType::Gemini => Self::extract_gemini_common_config(settings_config),
+            AppType::OpenCode => Self::extract_opencode_common_config(settings_config),
         }
     }
 
@@ -522,6 +583,29 @@ impl ProviderService {
         }
 
         serde_json::to_string_pretty(&Value::Object(snippet))
+            .map_err(|e| AppError::Message(format!("Serialization failed: {e}")))
+    }
+
+    /// Extract common config for OpenCode (JSON format)
+    fn extract_opencode_common_config(settings: &Value) -> Result<String, AppError> {
+        // OpenCode uses a different config structure with npm, options, models
+        // For common config, we exclude provider-specific fields like apiKey
+        let mut config = settings.clone();
+
+        // Remove provider-specific fields
+        if let Some(obj) = config.as_object_mut() {
+            if let Some(options) = obj.get_mut("options").and_then(|v| v.as_object_mut()) {
+                options.remove("apiKey");
+                options.remove("baseURL");
+            }
+            // Keep npm and models as they might be common
+        }
+
+        if config.is_null() || (config.is_object() && config.as_object().unwrap().is_empty()) {
+            return Ok("{}".to_string());
+        }
+
+        serde_json::to_string_pretty(&config)
             .map_err(|e| AppError::Message(format!("Serialization failed: {e}")))
     }
 
@@ -691,6 +775,17 @@ impl ProviderService {
                 use crate::gemini_config::validate_gemini_settings;
                 validate_gemini_settings(&provider.settings_config)?
             }
+            AppType::OpenCode => {
+                // OpenCode uses a different config structure: { npm, options, models }
+                // Basic validation - must be an object
+                if !provider.settings_config.is_object() {
+                    return Err(AppError::localized(
+                        "provider.opencode.settings.not_object",
+                        "OpenCode 配置必须是 JSON 对象",
+                        "OpenCode configuration must be a JSON object",
+                    ));
+                }
+            }
         }
 
         // Validate and clean UsageScript configuration (common for all app types)
@@ -825,6 +920,40 @@ impl ProviderService {
                     .get("GOOGLE_GEMINI_BASE_URL")
                     .cloned()
                     .unwrap_or_else(|| "https://generativelanguage.googleapis.com".to_string());
+
+                Ok((api_key, base_url))
+            }
+            AppType::OpenCode => {
+                // OpenCode uses options.apiKey and options.baseURL
+                let options = provider
+                    .settings_config
+                    .get("options")
+                    .and_then(|v| v.as_object())
+                    .ok_or_else(|| {
+                        AppError::localized(
+                            "provider.opencode.options.missing",
+                            "配置格式错误: 缺少 options",
+                            "Invalid configuration: missing options section",
+                        )
+                    })?;
+
+                let api_key = options
+                    .get("apiKey")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| {
+                        AppError::localized(
+                            "provider.opencode.api_key.missing",
+                            "缺少 API Key",
+                            "API key is missing",
+                        )
+                    })?
+                    .to_string();
+
+                let base_url = options
+                    .get("baseURL")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string();
 
                 Ok((api_key, base_url))
             }

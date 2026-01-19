@@ -11,12 +11,30 @@ export const useAddProviderMutation = (appId: AppId) => {
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: async (providerInput: Omit<Provider, "id">) => {
+    mutationFn: async (
+      providerInput: Omit<Provider, "id"> & { providerKey?: string }
+    ) => {
+      let id: string;
+
+      if (appId === "opencode") {
+        // OpenCode: use user-provided providerKey as ID
+        if (!providerInput.providerKey) {
+          throw new Error("Provider key is required for OpenCode");
+        }
+        id = providerInput.providerKey;
+      } else {
+        // Other apps: use random UUID
+        id = generateUUID();
+      }
+
       const newProvider: Provider = {
         ...providerInput,
-        id: generateUUID(),
+        id,
         createdAt: Date.now(),
       };
+      // Remove providerKey from the provider object before saving
+      delete (newProvider as any).providerKey;
+
       await providersApi.add(newProvider, appId);
       return newProvider;
     },
@@ -136,6 +154,13 @@ export const useSwitchProviderMutation = (appId: AppId) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["providers", appId] });
 
+      // OpenCode: also invalidate live provider IDs cache to update button state
+      if (appId === "opencode") {
+        await queryClient.invalidateQueries({
+          queryKey: ["opencodeLiveProviderIds"],
+        });
+      }
+
       // 更新托盘菜单（失败不影响主操作）
       try {
         await providersApi.updateTrayMenu();
@@ -146,15 +171,17 @@ export const useSwitchProviderMutation = (appId: AppId) => {
         );
       }
 
-      toast.success(
-        t("notifications.switchSuccess", {
-          defaultValue: "切换供应商成功",
-          appName: t(`apps.${appId}`, { defaultValue: appId }),
-        }),
-        {
-          closeButton: true,
-        },
-      );
+      // OpenCode: show "added to config" message instead of "switched"
+      const messageKey =
+        appId === "opencode"
+          ? "notifications.addToConfigSuccess"
+          : "notifications.switchSuccess";
+      const defaultMessage =
+        appId === "opencode" ? "已添加到配置" : "切换供应商成功";
+
+      toast.success(t(messageKey, { defaultValue: defaultMessage }), {
+        closeButton: true,
+      });
     },
     onError: (error: Error) => {
       const detail = extractErrorMessage(error) || t("common.unknown");

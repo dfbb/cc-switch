@@ -4,6 +4,7 @@ import {
   Copy,
   Edit,
   Loader2,
+  Minus,
   Play,
   Plus,
   Terminal,
@@ -13,9 +14,13 @@ import {
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { AppId } from "@/lib/api";
 
 interface ProviderActionsProps {
+  appId?: AppId;
   isCurrent: boolean;
+  /** OpenCode: 是否已添加到配置 */
+  isInConfig?: boolean;
   isTesting?: boolean;
   isProxyTakeover?: boolean;
   onSwitch: () => void;
@@ -24,6 +29,8 @@ interface ProviderActionsProps {
   onTest?: () => void;
   onConfigureUsage: () => void;
   onDelete: () => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: () => void;
   onOpenTerminal?: () => void;
   // 故障转移相关
   isAutoFailoverEnabled?: boolean;
@@ -32,7 +39,9 @@ interface ProviderActionsProps {
 }
 
 export function ProviderActions({
+  appId,
   isCurrent,
+  isInConfig = false,
   isTesting,
   isProxyTakeover = false,
   onSwitch,
@@ -41,6 +50,7 @@ export function ProviderActions({
   onTest,
   onConfigureUsage,
   onDelete,
+  onRemoveFromConfig,
   onOpenTerminal,
   // 故障转移相关
   isAutoFailoverEnabled = false,
@@ -50,12 +60,27 @@ export function ProviderActions({
   const { t } = useTranslation();
   const iconButtonClass = "h-8 w-8 p-1";
 
-  // 故障转移模式下的按钮逻辑
-  const isFailoverMode = isAutoFailoverEnabled && onToggleFailover;
+  // OpenCode 使用累加模式
+  const isOpenCodeMode = appId === "opencode";
+
+  // 故障转移模式下的按钮逻辑（OpenCode 不支持故障转移）
+  const isFailoverMode = !isOpenCodeMode && isAutoFailoverEnabled && onToggleFailover;
 
   // 处理主按钮点击
   const handleMainButtonClick = () => {
-    if (isFailoverMode) {
+    if (isOpenCodeMode) {
+      // OpenCode 模式：切换配置状态（添加/移除）
+      if (isInConfig) {
+        // Use onRemoveFromConfig if available, otherwise fall back to onDelete
+        if (onRemoveFromConfig) {
+          onRemoveFromConfig();
+        } else {
+          onDelete();
+        }
+      } else {
+        onSwitch(); // 添加到配置
+      }
+    } else if (isFailoverMode) {
       // 故障转移模式：切换队列状态
       onToggleFailover(!isInFailoverQueue);
     } else {
@@ -66,8 +91,30 @@ export function ProviderActions({
 
   // 主按钮的状态和样式
   const getMainButtonState = () => {
+    // OpenCode 累加模式
+    if (isOpenCodeMode) {
+      if (isInConfig) {
+        return {
+          disabled: false,
+          variant: "secondary" as const,
+          className:
+            "bg-orange-100 text-orange-600 hover:bg-orange-200 dark:bg-orange-900/50 dark:text-orange-400 dark:hover:bg-orange-900/70",
+          icon: <Minus className="h-4 w-4" />,
+          text: t("provider.removeFromConfig", { defaultValue: "移除" }),
+        };
+      }
+      return {
+        disabled: false,
+        variant: "default" as const,
+        className:
+          "bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700",
+        icon: <Plus className="h-4 w-4" />,
+        text: t("provider.addToConfig", { defaultValue: "添加" }),
+      };
+    }
+
+    // 故障转移模式
     if (isFailoverMode) {
-      // 故障转移模式
       if (isInFailoverQueue) {
         return {
           disabled: false,
@@ -112,6 +159,9 @@ export function ProviderActions({
   };
 
   const buttonState = getMainButtonState();
+
+  // OpenCode 模式下删除按钮始终可用（主按钮"移除"是从 live 配置移除，删除是从数据库删除）
+  const canDelete = isOpenCodeMode ? true : !isCurrent;
 
   return (
     <div className="flex items-center gap-1.5">
@@ -192,12 +242,12 @@ export function ProviderActions({
         <Button
           size="icon"
           variant="ghost"
-          onClick={isCurrent ? undefined : onDelete}
+          onClick={canDelete ? onDelete : undefined}
           title={t("common.delete")}
           className={cn(
             iconButtonClass,
-            !isCurrent && "hover:text-red-500 dark:hover:text-red-400",
-            isCurrent && "opacity-40 cursor-not-allowed text-muted-foreground",
+            canDelete && "hover:text-red-500 dark:hover:text-red-400",
+            !canDelete && "opacity-40 cursor-not-allowed text-muted-foreground",
           )}
         >
           <Trash2 className="h-4 w-4" />

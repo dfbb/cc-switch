@@ -57,12 +57,14 @@ const createDefaultProviders = (): ProvidersByApp => ({
       createdAt: Date.now(),
     },
   },
+  opencode: {},
 });
 
 const createDefaultCurrent = (): CurrentProviderState => ({
   claude: "claude-1",
   codex: "codex-1",
   gemini: "gemini-1",
+  opencode: "",
 });
 
 let providers = createDefaultProviders();
@@ -82,7 +84,7 @@ let mcpConfigs: McpConfigState = {
       id: "sample",
       name: "Sample Claude Server",
       enabled: true,
-      apps: { claude: true, codex: false, gemini: false },
+      apps: { claude: true, codex: false, gemini: false, opencode: false },
       server: {
         type: "stdio",
         command: "claude-server",
@@ -94,7 +96,7 @@ let mcpConfigs: McpConfigState = {
       id: "httpServer",
       name: "HTTP Codex Server",
       enabled: false,
-      apps: { claude: false, codex: true, gemini: false },
+      apps: { claude: false, codex: true, gemini: false, opencode: false },
       server: {
         type: "http",
         url: "http://localhost:3000",
@@ -102,6 +104,7 @@ let mcpConfigs: McpConfigState = {
     },
   },
   gemini: {},
+  opencode: {},
 };
 
 const cloneProviders = (value: ProvidersByApp) =>
@@ -125,7 +128,7 @@ export const resetProviderState = () => {
         id: "sample",
         name: "Sample Claude Server",
         enabled: true,
-        apps: { claude: true, codex: false, gemini: false },
+        apps: { claude: true, codex: false, gemini: false, opencode: false },
         server: {
           type: "stdio",
           command: "claude-server",
@@ -137,7 +140,7 @@ export const resetProviderState = () => {
         id: "httpServer",
         name: "HTTP Codex Server",
         enabled: false,
-        apps: { claude: false, codex: true, gemini: false },
+        apps: { claude: false, codex: true, gemini: false, opencode: false },
         server: {
           type: "http",
           url: "http://localhost:3000",
@@ -145,6 +148,7 @@ export const resetProviderState = () => {
       },
     },
     gemini: {},
+    opencode: {},
   };
 };
 

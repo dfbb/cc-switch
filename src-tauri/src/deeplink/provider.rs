@@ -145,6 +145,7 @@ pub(crate) fn build_provider_from_request(
         AppType::Claude => build_claude_settings(request),
         AppType::Codex => build_codex_settings(request),
         AppType::Gemini => build_gemini_settings(request),
+        AppType::OpenCode => build_opencode_settings(request),
     };
 
     // Build usage script configuration if provided
@@ -361,6 +362,33 @@ fn build_gemini_settings(request: &DeepLinkImportRequest) -> serde_json::Value {
     }
 
     json!({ "env": env })
+}
+
+/// Build OpenCode settings configuration
+fn build_opencode_settings(request: &DeepLinkImportRequest) -> serde_json::Value {
+    let endpoint = get_primary_endpoint(request);
+
+    // Build options object
+    let mut options = serde_json::Map::new();
+    if !endpoint.is_empty() {
+        options.insert("baseURL".to_string(), json!(endpoint));
+    }
+    if let Some(api_key) = &request.api_key {
+        options.insert("apiKey".to_string(), json!(api_key));
+    }
+
+    // Build models object
+    let mut models = serde_json::Map::new();
+    if let Some(model) = &request.model {
+        models.insert(model.clone(), json!({ "name": model }));
+    }
+
+    // Default to openai-compatible npm package
+    json!({
+        "npm": "@ai-sdk/openai-compatible",
+        "options": options,
+        "models": models
+    })
 }
 
 // =============================================================================

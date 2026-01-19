@@ -47,6 +47,8 @@ pub struct AppSettings {
     pub codex_config_dir: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gemini_config_dir: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub opencode_config_dir: Option<String>,
 
     // ===== 当前供应商 ID（设备级）=====
     /// 当前 Claude 供应商 ID（本地存储，优先于数据库 is_current）
@@ -58,6 +60,9 @@ pub struct AppSettings {
     /// 当前 Gemini 供应商 ID（本地存储，优先于数据库 is_current）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_provider_gemini: Option<String>,
+    /// 当前 OpenCode 供应商 ID（本地存储，对 OpenCode 可能无意义，但保持结构一致）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_provider_opencode: Option<String>,
 }
 
 fn default_show_in_tray() -> bool {
@@ -84,9 +89,11 @@ impl Default for AppSettings {
             claude_config_dir: None,
             codex_config_dir: None,
             gemini_config_dir: None,
+            opencode_config_dir: None,
             current_provider_claude: None,
             current_provider_codex: None,
             current_provider_gemini: None,
+            current_provider_opencode: None,
         }
     }
 }
@@ -114,6 +121,13 @@ impl AppSettings {
 
         self.gemini_config_dir = self
             .gemini_config_dir
+            .as_ref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string());
+
+        self.opencode_config_dir = self
+            .opencode_config_dir
             .as_ref()
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
@@ -251,6 +265,14 @@ pub fn get_gemini_override_dir() -> Option<PathBuf> {
         .map(|p| resolve_override_path(p))
 }
 
+pub fn get_opencode_override_dir() -> Option<PathBuf> {
+    let settings = settings_store().read().ok()?;
+    settings
+        .opencode_config_dir
+        .as_ref()
+        .map(|p| resolve_override_path(p))
+}
+
 // ===== 当前供应商管理函数 =====
 
 /// 获取指定应用类型的当前供应商 ID（从本地 settings 读取）
@@ -263,6 +285,7 @@ pub fn get_current_provider(app_type: &AppType) -> Option<String> {
         AppType::Claude => settings.current_provider_claude.clone(),
         AppType::Codex => settings.current_provider_codex.clone(),
         AppType::Gemini => settings.current_provider_gemini.clone(),
+        AppType::OpenCode => settings.current_provider_opencode.clone(),
     }
 }
 
@@ -277,6 +300,7 @@ pub fn set_current_provider(app_type: &AppType, id: Option<&str>) -> Result<(), 
         AppType::Claude => settings.current_provider_claude = id.map(|s| s.to_string()),
         AppType::Codex => settings.current_provider_codex = id.map(|s| s.to_string()),
         AppType::Gemini => settings.current_provider_gemini = id.map(|s| s.to_string()),
+        AppType::OpenCode => settings.current_provider_opencode = id.map(|s| s.to_string()),
     }
 
     update_settings(settings)

@@ -38,6 +38,14 @@ export const providersApi = {
     return await invoke("delete_provider", { id, app: appId });
   },
 
+  /**
+   * Remove provider from live config only (for additive mode apps like OpenCode)
+   * Does NOT delete from database - provider remains in the list
+   */
+  async removeFromLiveConfig(id: string, appId: AppId): Promise<boolean> {
+    return await invoke("remove_provider_from_live_config", { id, app: appId });
+  },
+
   async switch(id: string, appId: AppId): Promise<boolean> {
     return await invoke("switch_provider", { id, app: appId });
   },
@@ -73,6 +81,22 @@ export const providersApi = {
    */
   async openTerminal(providerId: string, appId: AppId): Promise<boolean> {
     return await invoke("open_provider_terminal", { providerId, app: appId });
+  },
+
+  /**
+   * 从 OpenCode live 配置导入供应商到数据库
+   * OpenCode 特有功能：由于累加模式，用户可能已在 opencode.json 中配置供应商
+   */
+  async importOpenCodeFromLive(): Promise<number> {
+    return await invoke("import_opencode_providers_from_live");
+  },
+
+  /**
+   * 获取 OpenCode live 配置中的供应商 ID 列表
+   * 用于前端判断供应商是否已添加到 opencode.json
+   */
+  async getOpenCodeLiveProviderIds(): Promise<string[]> {
+    return await invoke("get_opencode_live_provider_ids");
   },
 };
 

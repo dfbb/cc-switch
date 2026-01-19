@@ -84,6 +84,10 @@
     "addClaudeProvider": "Add Claude Code Provider",
     "addCodexProvider": "Add Codex Provider",
     "addGeminiProvider": "Add Gemini Provider",
+    "addOpenCodeProvider": "Add OpenCode Provider",
+    "addToConfig": "Add",
+    "removeFromConfig": "Remove",
+    "inConfig": "Added",
     "addProviderHint": "Fill in the information to quickly switch providers in the list.",
     "editClaudeProvider": "Edit Claude Code Provider",
     "editCodexProvider": "Edit Codex Provider",
@@ -133,6 +137,8 @@
     "providerSaved": "Provider configuration saved",
     "providerDeleted": "Provider deleted successfully",
     "switchSuccess": "Switch successful!",
+    "addToConfigSuccess": "Added to config",
+    "removeFromConfigSuccess": "Removed from config",
     "switchFailedTitle": "Switch failed",
     "switchFailed": "Switch failed: {{error}}",
     "autoImported": "Default provider created from existing configuration",
@@ -153,7 +159,9 @@
   },
   "confirm": {
     "deleteProvider": "Delete Provider",
-    "deleteProviderMessage": "Are you sure you want to delete provider \"{{name}}\"? This action cannot be undone."
+    "deleteProviderMessage": "Are you sure you want to delete provider \"{{name}}\"? This action cannot be undone.",
+    "removeProvider": "Remove Provider",
+    "removeProviderMessage": "Are you sure you want to remove provider \"{{name}}\" from the configuration?\n\nAfter removal, this provider will no longer be active, but the configuration data will be retained in CC Switch. You can re-add it at any time."
   },
   "settings": {
     "title": "Settings",
@@ -304,7 +312,8 @@
   "apps": {
     "claude": "Claude Code",
     "codex": "Codex",
-    "gemini": "Gemini"
+    "gemini": "Gemini",
+    "opencode": "OpenCode"
   },
   "console": {
     "providerSwitchReceived": "Received provider switch event:",
@@ -454,6 +463,36 @@
     "noCommonConfigToApply": "Common config snippet is empty or has no applicable entries",
     "configMergeFailed": "Config merge failed: {{error}}",
     "configReplaceFailed": "Config replace failed: {{error}}"
+  },
+  "opencode": {
+    "npmPackage": "API Format",
+    "selectPackage": "Select API format",
+    "npmPackageHint": "Select the API format for the AI service",
+    "baseUrl": "Base URL",
+    "baseUrlHint": "Custom API endpoint URL",
+    "models": "Models",
+    "modelsHint": "Configure available models and their display names",
+    "addModel": "Add Model",
+    "modelId": "Model ID",
+    "modelName": "Display Name",
+    "noModels": "No models configured",
+    "providerKey": "Provider Key",
+    "providerKeyPlaceholder": "my-provider",
+    "providerKeyHint": "Unique identifier in config file. Cannot be changed after creation. Use lowercase letters, numbers, and hyphens only.",
+    "providerKeyRequired": "Provider key is required",
+    "providerKeyDuplicate": "This key is already in use",
+    "providerKeyInvalid": "Invalid format. Use lowercase letters, numbers, and hyphens only.",
+    "extraOptions": "Extra Options",
+    "extraOptionsHint": "Configure extra SDK options like timeout, setCacheKey, etc. Values are auto-parsed to appropriate types (number, boolean, etc.).",
+    "addExtraOption": "Add",
+    "extraOptionKey": "Key",
+    "extraOptionValue": "Value",
+    "extraOptionKeyPlaceholder": "timeout",
+    "extraOptionValuePlaceholder": "600000",
+    "noExtraOptions": "No extra options configured",
+    "noModelOptions": "Model options, click + to add",
+    "modelOptionKeyPlaceholder": "provider",
+    "modelOptionValuePlaceholder": "{\"order\": [\"baseten\"]}"
   },
   "providerPreset": {
     "label": "Provider Preset",
@@ -634,7 +673,8 @@
       "apps": {
         "claude": "Claude",
         "codex": "Codex",
-        "gemini": "Gemini"
+        "gemini": "Gemini",
+        "opencode": "OpenCode"
       }
     },
     "userLevelPath": "User-level MCP path",
@@ -942,7 +982,8 @@
     "apps": {
       "claude": "Claude",
       "codex": "Codex",
-      "gemini": "Gemini"
+      "gemini": "Gemini",
+      "opencode": "OpenCode"
     }
   },
   "deeplink": {

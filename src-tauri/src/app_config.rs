@@ -13,6 +13,8 @@ pub struct McpApps {
     pub codex: bool,
     #[serde(default)]
     pub gemini: bool,
+    #[serde(default)]
+    pub opencode: bool,
 }
 
 impl McpApps {
@@ -22,6 +24,7 @@ impl McpApps {
             AppType::Claude => self.claude,
             AppType::Codex => self.codex,
             AppType::Gemini => self.gemini,
+            AppType::OpenCode => self.opencode,
         }
     }
 
@@ -31,6 +34,7 @@ impl McpApps {
             AppType::Claude => self.claude = enabled,
             AppType::Codex => self.codex = enabled,
             AppType::Gemini => self.gemini = enabled,
+            AppType::OpenCode => self.opencode = enabled,
         }
     }
 
@@ -46,12 +50,15 @@ impl McpApps {
         if self.gemini {
             apps.push(AppType::Gemini);
         }
+        if self.opencode {
+            apps.push(AppType::OpenCode);
+        }
         apps
     }
 
     /// 检查是否所有应用都未启用
     pub fn is_empty(&self) -> bool {
-        !self.claude && !self.codex && !self.gemini
+        !self.claude && !self.codex && !self.gemini && !self.opencode
     }
 }
 
@@ -64,6 +71,8 @@ pub struct SkillApps {
     pub codex: bool,
     #[serde(default)]
     pub gemini: bool,
+    #[serde(default)]
+    pub opencode: bool,
 }
 
 impl SkillApps {
@@ -73,6 +82,7 @@ impl SkillApps {
             AppType::Claude => self.claude,
             AppType::Codex => self.codex,
             AppType::Gemini => self.gemini,
+            AppType::OpenCode => self.opencode,
         }
     }
 
@@ -82,6 +92,7 @@ impl SkillApps {
             AppType::Claude => self.claude = enabled,
             AppType::Codex => self.codex = enabled,
             AppType::Gemini => self.gemini = enabled,
+            AppType::OpenCode => self.opencode = enabled,
         }
     }
 
@@ -97,12 +108,15 @@ impl SkillApps {
         if self.gemini {
             apps.push(AppType::Gemini);
         }
+        if self.opencode {
+            apps.push(AppType::OpenCode);
+        }
         apps
     }
 
     /// 检查是否所有应用都未启用
     pub fn is_empty(&self) -> bool {
-        !self.claude && !self.codex && !self.gemini
+        !self.claude && !self.codex && !self.gemini && !self.opencode
     }
 
     /// 仅启用指定应用（其他应用设为禁用）
@@ -205,6 +219,9 @@ pub struct McpRoot {
     pub codex: McpConfig,
     #[serde(default, skip_serializing_if = "McpConfig::is_empty")]
     pub gemini: McpConfig,
+    /// OpenCode MCP 配置（v4.0.0+，实际使用 opencode.json）
+    #[serde(default, skip_serializing_if = "McpConfig::is_empty")]
+    pub opencode: McpConfig,
 }
 
 impl Default for McpRoot {
@@ -216,6 +233,7 @@ impl Default for McpRoot {
             claude: McpConfig::default(),
             codex: McpConfig::default(),
             gemini: McpConfig::default(),
+            opencode: McpConfig::default(),
         }
     }
 }
@@ -236,6 +254,8 @@ pub struct PromptRoot {
     pub codex: PromptConfig,
     #[serde(default)]
     pub gemini: PromptConfig,
+    #[serde(default)]
+    pub opencode: PromptConfig,
 }
 
 use crate::config::{copy_file, get_app_config_dir, get_app_config_path, write_json_file};
@@ -249,7 +269,8 @@ use crate::provider::ProviderManager;
 pub enum AppType {
     Claude,
     Codex,
-    Gemini, // 新增
+    Gemini,
+    OpenCode,
 }
 
 impl AppType {
@@ -257,7 +278,8 @@ impl AppType {
         match self {
             AppType::Claude => "claude",
             AppType::Codex => "codex",
-            AppType::Gemini => "gemini", // 新增
+            AppType::Gemini => "gemini",
+            AppType::OpenCode => "opencode",
         }
     }
 }
@@ -270,11 +292,12 @@ impl FromStr for AppType {
         match normalized.as_str() {
             "claude" => Ok(AppType::Claude),
             "codex" => Ok(AppType::Codex),
-            "gemini" => Ok(AppType::Gemini), // 新增
+            "gemini" => Ok(AppType::Gemini),
+            "opencode" => Ok(AppType::OpenCode),
             other => Err(AppError::localized(
                 "unsupported_app",
-                format!("不支持的应用标识: '{other}'。可选值: claude, codex, gemini。"),
-                format!("Unsupported app id: '{other}'. Allowed: claude, codex, gemini."),
+                format!("不支持的应用标识: '{other}'。可选值: claude, codex, gemini, opencode。"),
+                format!("Unsupported app id: '{other}'. Allowed: claude, codex, gemini, opencode."),
             )),
         }
     }
@@ -291,6 +314,9 @@ pub struct CommonConfigSnippets {
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gemini: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub opencode: Option<String>,
 }
 
 impl CommonConfigSnippets {
@@ -300,6 +326,7 @@ impl CommonConfigSnippets {
             AppType::Claude => self.claude.as_ref(),
             AppType::Codex => self.codex.as_ref(),
             AppType::Gemini => self.gemini.as_ref(),
+            AppType::OpenCode => self.opencode.as_ref(),
         }
     }
 
@@ -309,6 +336,7 @@ impl CommonConfigSnippets {
             AppType::Claude => self.claude = snippet,
             AppType::Codex => self.codex = snippet,
             AppType::Gemini => self.gemini = snippet,
+            AppType::OpenCode => self.opencode = snippet,
         }
     }
 }
@@ -347,7 +375,8 @@ impl Default for MultiAppConfig {
         let mut apps = HashMap::new();
         apps.insert("claude".to_string(), ProviderManager::default());
         apps.insert("codex".to_string(), ProviderManager::default());
-        apps.insert("gemini".to_string(), ProviderManager::default()); // 新增
+        apps.insert("gemini".to_string(), ProviderManager::default());
+        apps.insert("opencode".to_string(), ProviderManager::default());
 
         Self {
             version: 2,
@@ -506,6 +535,7 @@ impl MultiAppConfig {
             AppType::Claude => &self.mcp.claude,
             AppType::Codex => &self.mcp.codex,
             AppType::Gemini => &self.mcp.gemini,
+            AppType::OpenCode => &self.mcp.opencode,
         }
     }
 
@@ -515,6 +545,7 @@ impl MultiAppConfig {
             AppType::Claude => &mut self.mcp.claude,
             AppType::Codex => &mut self.mcp.codex,
             AppType::Gemini => &mut self.mcp.gemini,
+            AppType::OpenCode => &mut self.mcp.opencode,
         }
     }
 
@@ -528,6 +559,7 @@ impl MultiAppConfig {
         Self::auto_import_prompt_if_exists(&mut config, AppType::Claude)?;
         Self::auto_import_prompt_if_exists(&mut config, AppType::Codex)?;
         Self::auto_import_prompt_if_exists(&mut config, AppType::Gemini)?;
+        Self::auto_import_prompt_if_exists(&mut config, AppType::OpenCode)?;
 
         Ok(config)
     }
@@ -547,6 +579,7 @@ impl MultiAppConfig {
         if !self.prompts.claude.prompts.is_empty()
             || !self.prompts.codex.prompts.is_empty()
             || !self.prompts.gemini.prompts.is_empty()
+            || !self.prompts.opencode.prompts.is_empty()
         {
             return Ok(false);
         }
@@ -554,7 +587,12 @@ impl MultiAppConfig {
         log::info!("检测到已存在配置文件且 Prompt 列表为空，将尝试从现有提示词文件自动导入");
 
         let mut imported = false;
-        for app in [AppType::Claude, AppType::Codex, AppType::Gemini] {
+        for app in [
+            AppType::Claude,
+            AppType::Codex,
+            AppType::Gemini,
+            AppType::OpenCode,
+        ] {
             // 复用已有的单应用导入逻辑
             if Self::auto_import_prompt_if_exists(self, app)? {
                 imported = true;
@@ -623,6 +661,7 @@ impl MultiAppConfig {
             AppType::Claude => &mut config.prompts.claude.prompts,
             AppType::Codex => &mut config.prompts.codex.prompts,
             AppType::Gemini => &mut config.prompts.gemini.prompts,
+            AppType::OpenCode => &mut config.prompts.opencode.prompts,
         };
 
         prompts.insert(id, prompt);
@@ -656,6 +695,7 @@ impl MultiAppConfig {
                 AppType::Claude => &self.mcp.claude.servers,
                 AppType::Codex => &self.mcp.codex.servers,
                 AppType::Gemini => &self.mcp.gemini.servers,
+                AppType::OpenCode => &self.mcp.opencode.servers,
             };
 
             for (id, entry) in old_servers {

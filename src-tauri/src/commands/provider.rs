@@ -60,6 +60,16 @@ pub fn delete_provider(
         .map_err(|e| e.to_string())
 }
 
+/// Remove provider from live config only (for additive mode apps like OpenCode)
+/// Does NOT delete from database - provider remains in the list
+#[tauri::command]
+pub fn remove_provider_from_live_config(app: String, id: String) -> Result<bool, String> {
+    let app_type = AppType::from_str(&app).map_err(|e| e.to_string())?;
+    ProviderService::remove_from_live_config(app_type, &id)
+        .map(|_| true)
+        .map_err(|e| e.to_string())
+}
+
 /// 切换供应商
 fn switch_provider_internal(state: &AppState, app_type: AppType, id: &str) -> Result<(), AppError> {
     ProviderService::switch(state, app_type, id)
@@ -324,4 +334,28 @@ pub fn sync_universal_provider(
     emit_universal_provider_synced(&app, "sync", &id);
 
     Ok(result)
+}
+
+// ============================================================================
+// OpenCode 专属命令
+// ============================================================================
+
+/// 从 OpenCode live 配置导入供应商到数据库
+///
+/// 这是 OpenCode 特有的功能，因为 OpenCode 使用累加模式，
+/// 用户可能已经在 opencode.json 中配置了供应商。
+#[tauri::command]
+pub fn import_opencode_providers_from_live(state: State<'_, AppState>) -> Result<usize, String> {
+    crate::services::provider::import_opencode_providers_from_live(state.inner())
+        .map_err(|e| e.to_string())
+}
+
+/// 获取 OpenCode live 配置中的供应商 ID 列表
+///
+/// 用于前端判断供应商是否已添加到 opencode.json
+#[tauri::command]
+pub fn get_opencode_live_provider_ids() -> Result<Vec<String>, String> {
+    crate::opencode_config::get_providers()
+        .map(|providers| providers.keys().cloned().collect())
+        .map_err(|e| e.to_string())
 }

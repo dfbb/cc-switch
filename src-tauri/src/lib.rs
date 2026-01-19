@@ -13,6 +13,7 @@ mod gemini_config;
 mod gemini_mcp;
 mod init_status;
 mod mcp;
+mod opencode_config;
 mod panic_hook;
 mod prompt;
 mod prompt_files;
@@ -482,6 +483,17 @@ pub fn run() {
                 }
             }
 
+            // 2.1 OpenCode 供应商导入（累加式模式，需特殊处理）
+            // OpenCode 与其他应用不同：配置文件中可同时存在多个供应商
+            // 需要遍历 provider 字段下的每个供应商并导入
+            match crate::services::provider::import_opencode_providers_from_live(&app_state) {
+                Ok(count) if count > 0 => {
+                    log::info!("✓ Imported {count} OpenCode provider(s) from live config");
+                }
+                Ok(_) => log::debug!("○ No OpenCode providers found to import"),
+                Err(e) => log::debug!("○ Failed to import OpenCode providers: {e}"),
+            }
+
             // 3. 导入 MCP 服务器配置（表空时触发）
             if app_state.db.is_mcp_table_empty().unwrap_or(false) {
                 log::info!("MCP table empty, importing from live configurations...");
@@ -508,6 +520,14 @@ pub fn run() {
                     }
                     Ok(_) => log::debug!("○ No Gemini MCP servers found to import"),
                     Err(e) => log::warn!("✗ Failed to import Gemini MCP: {e}"),
+                }
+
+                match crate::services::mcp::McpService::import_from_opencode(&app_state) {
+                    Ok(count) if count > 0 => {
+                        log::info!("✓ Imported {count} MCP server(s) from OpenCode");
+                    }
+                    Ok(_) => log::debug!("○ No OpenCode MCP servers found to import"),
+                    Err(e) => log::warn!("✗ Failed to import OpenCode MCP: {e}"),
                 }
             }
 
@@ -712,6 +732,7 @@ pub fn run() {
             commands::add_provider,
             commands::update_provider,
             commands::delete_provider,
+            commands::remove_provider_from_live_config,
             commands::switch_provider,
             commands::import_default_config,
             commands::get_claude_config_status,
@@ -874,6 +895,9 @@ pub fn run() {
             commands::upsert_universal_provider,
             commands::delete_universal_provider,
             commands::sync_universal_provider,
+            // OpenCode specific
+            commands::import_opencode_providers_from_live,
+            commands::get_opencode_live_provider_ids,
             // Global upstream proxy
             commands::get_global_proxy_url,
             commands::set_global_proxy_url,

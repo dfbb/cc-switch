@@ -15,8 +15,10 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import type { Provider } from "@/types";
 import type { AppId } from "@/lib/api";
+import { providersApi } from "@/lib/api/providers";
 import { useDragSort } from "@/hooks/useDragSort";
 import { useStreamCheck } from "@/hooks/useStreamCheck";
 import { ProviderCard } from "@/components/providers/ProviderCard";
@@ -38,6 +40,8 @@ interface ProviderListProps {
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: (provider: Provider) => void;
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
@@ -56,6 +60,7 @@ export function ProviderList({
   onSwitch,
   onEdit,
   onDelete,
+  onRemoveFromConfig,
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
@@ -70,6 +75,22 @@ export function ProviderList({
   const { sortedProviders, sensors, handleDragEnd } = useDragSort(
     providers,
     appId,
+  );
+
+  // OpenCode: 查询 live 配置中的供应商 ID 列表，用于判断 isInConfig
+  const { data: opencodeLiveIds } = useQuery({
+    queryKey: ["opencodeLiveProviderIds"],
+    queryFn: () => providersApi.getOpenCodeLiveProviderIds(),
+    enabled: appId === "opencode",
+  });
+
+  // OpenCode: 判断供应商是否已添加到 opencode.json
+  const isProviderInConfig = useCallback(
+    (providerId: string): boolean => {
+      if (appId !== "opencode") return true; // 非 OpenCode 应用始终返回 true
+      return opencodeLiveIds?.includes(providerId) ?? false;
+    },
+    [appId, opencodeLiveIds],
   );
 
   // 流式健康检查
@@ -199,14 +220,16 @@ export function ProviderList({
               provider={provider}
               isCurrent={provider.id === currentProviderId}
               appId={appId}
+              isInConfig={isProviderInConfig(provider.id)}
               onSwitch={onSwitch}
               onEdit={onEdit}
               onDelete={onDelete}
+              onRemoveFromConfig={onRemoveFromConfig}
               onDuplicate={onDuplicate}
               onConfigureUsage={onConfigureUsage}
               onOpenWebsite={onOpenWebsite}
               onOpenTerminal={onOpenTerminal}
-              onTest={handleTest}
+              onTest={appId !== "opencode" ? handleTest : undefined}
               isTesting={isChecking(provider.id)}
               isProxyRunning={isProxyRunning}
               isProxyTakeover={isProxyTakeover}
@@ -308,14 +331,17 @@ interface SortableProviderCardProps {
   provider: Provider;
   isCurrent: boolean;
   appId: AppId;
+  isInConfig: boolean;
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: (provider: Provider) => void;
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
   onOpenTerminal?: (provider: Provider) => void;
-  onTest: (provider: Provider) => void;
+  onTest?: (provider: Provider) => void;
   isTesting: boolean;
   isProxyRunning: boolean;
   isProxyTakeover: boolean;
@@ -331,9 +357,11 @@ function SortableProviderCard({
   provider,
   isCurrent,
   appId,
+  isInConfig,
   onSwitch,
   onEdit,
   onDelete,
+  onRemoveFromConfig,
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
@@ -368,9 +396,11 @@ function SortableProviderCard({
         provider={provider}
         isCurrent={isCurrent}
         appId={appId}
+        isInConfig={isInConfig}
         onSwitch={onSwitch}
         onEdit={onEdit}
         onDelete={onDelete}
+        onRemoveFromConfig={onRemoveFromConfig}
         onDuplicate={onDuplicate}
         onConfigureUsage={
           onConfigureUsage ? (item) => onConfigureUsage(item) : () => undefined

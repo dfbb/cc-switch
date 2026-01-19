@@ -37,6 +37,9 @@ impl McpService {
         if prev_apps.gemini && !server.apps.gemini {
             Self::remove_server_from_app(state, &server.id, &AppType::Gemini)?;
         }
+        if prev_apps.opencode && !server.apps.opencode {
+            Self::remove_server_from_app(state, &server.id, &AppType::OpenCode)?;
+        }
 
         // 同步到各个启用的应用
         Self::sync_server_to_apps(state, &server)?;
@@ -113,6 +116,13 @@ impl McpService {
             AppType::Gemini => {
                 mcp::sync_single_server_to_gemini(&Default::default(), &server.id, &server.server)?;
             }
+            AppType::OpenCode => {
+                mcp::sync_single_server_to_opencode(
+                    &Default::default(),
+                    &server.id,
+                    &server.server,
+                )?;
+            }
         }
         Ok(())
     }
@@ -135,6 +145,9 @@ impl McpService {
             AppType::Claude => mcp::remove_server_from_claude(id)?,
             AppType::Codex => mcp::remove_server_from_codex(id)?,
             AppType::Gemini => mcp::remove_server_from_gemini(id)?,
+            AppType::OpenCode => {
+                mcp::remove_server_from_opencode(id)?;
+            }
         }
         Ok(())
     }
@@ -293,6 +306,44 @@ impl McpService {
                     let to_save = if let Some(existing_server) = existing.get(&server.id) {
                         let mut merged = existing_server.clone();
                         merged.apps.gemini = true;
+                        merged
+                    } else {
+                        // 真正的新服务器
+                        new_count += 1;
+                        server.clone()
+                    };
+
+                    state.db.save_mcp_server(&to_save)?;
+                    existing.insert(to_save.id.clone(), to_save.clone());
+
+                    // 同步到对应应用 live 配置
+                    Self::sync_server_to_apps(state, &to_save)?;
+                }
+            }
+        }
+
+        Ok(new_count)
+    }
+
+    /// 从 OpenCode 导入 MCP（v3.9.2+ 新增）
+    pub fn import_from_opencode(state: &AppState) -> Result<usize, AppError> {
+        // 创建临时 MultiAppConfig 用于导入
+        let mut temp_config = crate::app_config::MultiAppConfig::default();
+
+        // 调用原有的导入逻辑（从 mcp/opencode.rs）
+        let count = crate::mcp::import_from_opencode(&mut temp_config)?;
+
+        let mut new_count = 0;
+
+        // 如果有导入的服务器，保存到数据库
+        if count > 0 {
+            if let Some(servers) = &temp_config.mcp.servers {
+                let mut existing = state.db.get_all_mcp_servers()?;
+                for server in servers.values() {
+                    // 已存在：仅启用 OpenCode，不覆盖其他字段（与导入模块语义保持一致）
+                    let to_save = if let Some(existing_server) = existing.get(&server.id) {
+                        let mut merged = existing_server.clone();
+                        merged.apps.opencode = true;
                         merged
                     } else {
                         // 真正的新服务器

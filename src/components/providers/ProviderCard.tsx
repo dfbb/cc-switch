@@ -26,9 +26,12 @@ interface ProviderCardProps {
   provider: Provider;
   isCurrent: boolean;
   appId: AppId;
+  isInConfig?: boolean; // OpenCode: 是否已添加到 opencode.json
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
+  /** OpenCode: remove from live config (not delete from database) */
+  onRemoveFromConfig?: (provider: Provider) => void;
   onConfigureUsage: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
   onDuplicate: (provider: Provider) => void;
@@ -85,9 +88,11 @@ export function ProviderCard({
   provider,
   isCurrent,
   appId,
+  isInConfig = true,
   onSwitch,
   onEdit,
   onDelete,
+  onRemoveFromConfig,
   onConfigureUsage,
   onOpenWebsite,
   onDuplicate,
@@ -134,7 +139,9 @@ export function ProviderCard({
   const usageEnabled = provider.meta?.usage_script?.enabled ?? false;
 
   // 获取用量数据以判断是否有多套餐
-  const autoQueryInterval = isCurrent
+  // OpenCode（累加模式）：使用 isInConfig 代替 isCurrent
+  const shouldAutoQuery = appId === "opencode" ? isInConfig : isCurrent;
+  const autoQueryInterval = shouldAutoQuery
     ? provider.meta?.usage_script?.autoQueryInterval || 0
     : 0;
 
@@ -182,12 +189,16 @@ export function ProviderCard({
   };
 
   // 判断是否是"当前使用中"的供应商
+  // - OpenCode（累加模式）：不存在"当前"概念，始终返回 false
   // - 故障转移模式：代理实际使用的供应商（activeProviderId）
   // - 代理接管模式（非故障转移）：isCurrent
   // - 普通模式：isCurrent
-  const isActiveProvider = isAutoFailoverEnabled
-    ? activeProviderId === provider.id
-    : isCurrent;
+  const isActiveProvider =
+    appId === "opencode"
+      ? false
+      : isAutoFailoverEnabled
+        ? activeProviderId === provider.id
+        : isCurrent;
 
   // 判断是否使用绿色（代理接管模式）还是蓝色（普通模式）
   const shouldUseGreen = isProxyTakeover && isActiveProvider;
@@ -327,6 +338,7 @@ export function ProviderCard({
                   appId={appId}
                   usageEnabled={usageEnabled}
                   isCurrent={isCurrent}
+                  isInConfig={isInConfig}
                   inline={true}
                 />
               )}
@@ -360,7 +372,9 @@ export function ProviderCard({
             className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pl-3 opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100 group-hover:pointer-events-auto group-focus-within:pointer-events-auto transition-all duration-200 translate-x-2 group-hover:translate-x-0 group-focus-within:translate-x-0"
           >
             <ProviderActions
+              appId={appId}
               isCurrent={isCurrent}
+              isInConfig={isInConfig}
               isTesting={isTesting}
               isProxyTakeover={isProxyTakeover}
               onSwitch={() => onSwitch(provider)}
@@ -369,6 +383,11 @@ export function ProviderCard({
               onTest={onTest ? () => onTest(provider) : undefined}
               onConfigureUsage={() => onConfigureUsage(provider)}
               onDelete={() => onDelete(provider)}
+              onRemoveFromConfig={
+                onRemoveFromConfig
+                  ? () => onRemoveFromConfig(provider)
+                  : undefined
+              }
               onOpenTerminal={
                 onOpenTerminal ? () => onOpenTerminal(provider) : undefined
               }
@@ -390,6 +409,7 @@ export function ProviderCard({
             appId={appId}
             usageEnabled={usageEnabled}
             isCurrent={isCurrent}
+            isInConfig={isInConfig}
             inline={false}
           />
         </div>

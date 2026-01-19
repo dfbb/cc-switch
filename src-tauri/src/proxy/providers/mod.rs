@@ -132,6 +132,10 @@ impl ProviderType {
                 }
                 ProviderType::Gemini
             }
+            AppType::OpenCode => {
+                // OpenCode doesn't support proxy, but return a default type for completeness
+                ProviderType::Codex // Fallback to Codex-like type
+            }
         }
     }
 
@@ -176,6 +180,10 @@ pub fn get_adapter(app_type: &AppType) -> Box<dyn ProviderAdapter> {
         AppType::Claude => Box::new(ClaudeAdapter::new()),
         AppType::Codex => Box::new(CodexAdapter::new()),
         AppType::Gemini => Box::new(GeminiAdapter::new()),
+        AppType::OpenCode => {
+            // OpenCode doesn't support proxy, fallback to Codex adapter
+            Box::new(CodexAdapter::new())
+        }
     }
 }
 

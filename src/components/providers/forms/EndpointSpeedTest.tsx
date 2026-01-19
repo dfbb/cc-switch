@@ -9,11 +9,12 @@ import { FullScreenPanel } from "@/components/common/FullScreenPanel";
 import type { CustomEndpoint, EndpointCandidate } from "@/types";
 
 // 端点测速超时配置（秒）
-const ENDPOINT_TIMEOUT_SECS = {
+const ENDPOINT_TIMEOUT_SECS: Record<AppId, number> = {
   codex: 12,
   claude: 8,
-  gemini: 8, // 新增 gemini
-} as const;
+  gemini: 8,
+  opencode: 8,
+};
 
 interface TestResult {
   url: string;

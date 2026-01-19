@@ -185,6 +185,14 @@ impl StreamCheckService {
                 )
                 .await
             }
+            AppType::OpenCode => {
+                // OpenCode doesn't support stream check yet
+                return Err(AppError::localized(
+                    "opencode_no_stream_check",
+                    "OpenCode 暂不支持健康检查",
+                    "OpenCode does not support health check yet",
+                ));
+            }
         };
 
         let response_time = start.elapsed().as_millis() as u64;
@@ -477,7 +485,22 @@ impl StreamCheckService {
             }
             AppType::Gemini => Self::extract_env_model(provider, "GEMINI_MODEL")
                 .unwrap_or_else(|| config.gemini_model.clone()),
+            AppType::OpenCode => {
+                // OpenCode uses models map in settings_config
+                // Try to extract first model from the models object
+                Self::extract_opencode_model(provider).unwrap_or_else(|| "gpt-4o".to_string())
+            }
         }
+    }
+
+    fn extract_opencode_model(provider: &Provider) -> Option<String> {
+        let models = provider
+            .settings_config
+            .get("models")
+            .and_then(|m| m.as_object())?;
+
+        // Return the first model ID from the models map
+        models.keys().next().map(|s| s.to_string())
     }
 
     fn extract_env_model(provider: &Provider, key: &str) -> Option<String> {

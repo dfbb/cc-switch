@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { providerSchema, type ProviderFormData } from "@/lib/schemas/provider";
 import type { AppId } from "@/lib/api";
 import type { ProviderCategory, ProviderMeta } from "@/types";
@@ -20,6 +21,12 @@ import {
   geminiProviderPresets,
   type GeminiProviderPreset,
 } from "@/config/geminiProviderPresets";
+import {
+  opencodeProviderPresets,
+  type OpenCodeProviderPreset,
+} from "@/config/opencodeProviderPresets";
+import { OpenCodeFormFields } from "./OpenCodeFormFields";
+import type { OpenCodeModel } from "@/types";
 import type { UniversalProviderPreset } from "@/config/universalProviderPresets";
 import { applyTemplateValues } from "@/utils/providerConfigUtils";
 import { mergeProviderMeta } from "@/utils/providerMetaUtils";
@@ -27,6 +34,8 @@ import { getCodexCustomTemplate } from "@/config/codexTemplates";
 import CodexConfigEditor from "./CodexConfigEditor";
 import { CommonConfigEditor } from "./CommonConfigEditor";
 import GeminiConfigEditor from "./GeminiConfigEditor";
+import JsonEditor from "@/components/JsonEditor";
+import { Label } from "@/components/ui/label";
 import { ProviderPresetSelector } from "./ProviderPresetSelector";
 import { BasicFormFields } from "./BasicFormFields";
 import { ClaudeFormFields } from "./ClaudeFormFields";
@@ -47,6 +56,7 @@ import {
   useGeminiConfigState,
   useGeminiCommonConfig,
 } from "./hooks";
+import { useProvidersQuery } from "@/lib/query/queries";
 
 const CLAUDE_DEFAULT_CONFIG = JSON.stringify({ env: {} }, null, 2);
 const CODEX_DEFAULT_CONFIG = JSON.stringify({ auth: {}, config: "" }, null, 2);
@@ -62,9 +72,22 @@ const GEMINI_DEFAULT_CONFIG = JSON.stringify(
   2,
 );
 
+const OPENCODE_DEFAULT_CONFIG = JSON.stringify(
+  {
+    npm: "@ai-sdk/openai-compatible",
+    options: {
+      baseURL: "",
+      apiKey: "",
+    },
+    models: {},
+  },
+  null,
+  2,
+);
+
 type PresetEntry = {
   id: string;
-  preset: ProviderPreset | CodexProviderPreset | GeminiProviderPreset;
+  preset: ProviderPreset | CodexProviderPreset | GeminiProviderPreset | OpenCodeProviderPreset;
 };
 
 interface ProviderFormProps {
@@ -158,7 +181,9 @@ export function ProviderForm({
           ? CODEX_DEFAULT_CONFIG
           : appId === "gemini"
             ? GEMINI_DEFAULT_CONFIG
-            : CLAUDE_DEFAULT_CONFIG,
+            : appId === "opencode"
+              ? OPENCODE_DEFAULT_CONFIG
+              : CLAUDE_DEFAULT_CONFIG,
       icon: initialData?.icon ?? "",
       iconColor: initialData?.iconColor ?? "",
     }),
@@ -171,7 +196,7 @@ export function ProviderForm({
     mode: "onSubmit",
   });
 
-  const settingsConfigValue = form.watch("settingsConfig");
+  const settingsConfigValue = form.getValues("settingsConfig");
 
   // 使用 API Key hook
   const {
@@ -179,7 +204,7 @@ export function ProviderForm({
     handleApiKeyChange,
     showApiKey: shouldShowApiKey,
   } = useApiKeyState({
-    initialConfig: form.watch("settingsConfig"),
+    initialConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
     selectedPresetId,
     category,
@@ -190,7 +215,7 @@ export function ProviderForm({
   const { baseUrl, handleClaudeBaseUrlChange } = useBaseUrlState({
     appType: appId,
     category,
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     codexConfig: "",
     onSettingsConfigChange: (config) => form.setValue("settingsConfig", config),
     onCodexConfigChange: () => {
@@ -207,7 +232,7 @@ export function ProviderForm({
     defaultOpusModel,
     handleModelChange,
   } = useModelState({
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
   });
 
@@ -328,6 +353,11 @@ export function ProviderForm({
         id: `gemini-${index}`,
         preset,
       }));
+    } else if (appId === "opencode") {
+      return opencodeProviderPresets.map<PresetEntry>((preset, index) => ({
+        id: `opencode-${index}`,
+        preset,
+      }));
     }
     return providerPresets.map<PresetEntry>((preset, index) => ({
       id: `claude-${index}`,
@@ -345,7 +375,7 @@ export function ProviderForm({
   } = useTemplateValues({
     selectedPresetId: appId === "claude" ? selectedPresetId : null,
     presetEntries: appId === "claude" ? presetEntries : [],
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
   });
 
@@ -359,10 +389,11 @@ export function ProviderForm({
     isExtracting: isClaudeExtracting,
     handleExtract: handleClaudeExtract,
   } = useCommonConfigSnippet({
-    settingsConfig: form.watch("settingsConfig"),
+    settingsConfig: form.getValues("settingsConfig"),
     onConfigChange: (config) => form.setValue("settingsConfig", config),
     initialData: appId === "claude" ? initialData : undefined,
     selectedPresetId: selectedPresetId ?? undefined,
+    enabled: appId === "claude",
   });
 
   // 使用 Codex 通用配置片段 hook (仅 Codex 模式)
@@ -408,7 +439,7 @@ export function ProviderForm({
       originalHandleGeminiApiKeyChange(key);
       // 同步更新 settingsConfig
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || "{}");
+        const config = JSON.parse(form.getValues("settingsConfig") || "{}");
         if (!config.env) config.env = {};
         config.env.GEMINI_API_KEY = key.trim();
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -424,7 +455,7 @@ export function ProviderForm({
       originalHandleGeminiBaseUrlChange(url);
       // 同步更新 settingsConfig
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || "{}");
+        const config = JSON.parse(form.getValues("settingsConfig") || "{}");
         if (!config.env) config.env = {};
         config.env.GOOGLE_GEMINI_BASE_URL = url.trim().replace(/\/+$/, "");
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -440,7 +471,7 @@ export function ProviderForm({
       originalHandleGeminiModelChange(model);
       // 同步更新 settingsConfig
       try {
-        const config = JSON.parse(form.watch("settingsConfig") || "{}");
+        const config = JSON.parse(form.getValues("settingsConfig") || "{}");
         if (!config.env) config.env = {};
         config.env.GEMINI_MODEL = model.trim();
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -469,6 +500,180 @@ export function ProviderForm({
     selectedPresetId: selectedPresetId ?? undefined,
   });
 
+  // OpenCode: query existing providers for duplicate key checking
+  const { data: opencodeProvidersData } = useProvidersQuery("opencode");
+  const existingOpencodeKeys = useMemo(() => {
+    if (!opencodeProvidersData?.providers) return [];
+    // Exclude current provider ID when in edit mode
+    return Object.keys(opencodeProvidersData.providers).filter(
+      (k) => k !== providerId
+    );
+  }, [opencodeProvidersData?.providers, providerId]);
+
+  // OpenCode Provider Key state
+  const [opencodeProviderKey, setOpencodeProviderKey] = useState<string>(() => {
+    if (appId !== "opencode") return "";
+    // In edit mode, use the existing provider ID as the key
+    return providerId || "";
+  });
+
+  // OpenCode 配置状态
+  const [opencodeNpm, setOpencodeNpm] = useState<string>(() => {
+    if (appId !== "opencode") return "@ai-sdk/openai-compatible";
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.npm || "@ai-sdk/openai-compatible";
+    } catch {
+      return "@ai-sdk/openai-compatible";
+    }
+  });
+
+  const [opencodeApiKey, setOpencodeApiKey] = useState<string>(() => {
+    if (appId !== "opencode") return "";
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.options?.apiKey || "";
+    } catch {
+      return "";
+    }
+  });
+
+  const [opencodeBaseUrl, setOpencodeBaseUrl] = useState<string>(() => {
+    if (appId !== "opencode") return "";
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.options?.baseURL || "";
+    } catch {
+      return "";
+    }
+  });
+
+  const [opencodeModels, setOpencodeModels] = useState<Record<string, OpenCodeModel>>(() => {
+    if (appId !== "opencode") return {};
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      return config.models || {};
+    } catch {
+      return {};
+    }
+  });
+
+  // OpenCode extra options state (e.g., timeout, setCacheKey)
+  const [opencodeExtraOptions, setOpencodeExtraOptions] = useState<Record<string, string>>(() => {
+    if (appId !== "opencode") return {};
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      const options = config.options || {};
+      const extra: Record<string, string> = {};
+      const knownKeys = ["baseURL", "apiKey", "headers"];
+      for (const [k, v] of Object.entries(options)) {
+        if (!knownKeys.includes(k)) {
+          // Convert value to string for display
+          extra[k] = typeof v === "string" ? v : JSON.stringify(v);
+        }
+      }
+      return extra;
+    } catch {
+      return {};
+    }
+  });
+
+  // OpenCode handlers - sync state to form
+  const handleOpencodeNpmChange = useCallback(
+    (npm: string) => {
+      setOpencodeNpm(npm);
+      try {
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        config.npm = npm;
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeApiKeyChange = useCallback(
+    (apiKey: string) => {
+      setOpencodeApiKey(apiKey);
+      try {
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        if (!config.options) config.options = {};
+        config.options.apiKey = apiKey;
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeBaseUrlChange = useCallback(
+    (baseUrl: string) => {
+      setOpencodeBaseUrl(baseUrl);
+      try {
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        if (!config.options) config.options = {};
+        config.options.baseURL = baseUrl.trim().replace(/\/+$/, "");
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeModelsChange = useCallback(
+    (models: Record<string, OpenCodeModel>) => {
+      setOpencodeModels(models);
+      try {
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        config.models = models;
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeExtraOptionsChange = useCallback(
+    (options: Record<string, string>) => {
+      setOpencodeExtraOptions(options);
+      try {
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        if (!config.options) config.options = {};
+
+        // Remove old extra options (keep only known keys)
+        const knownKeys = ["baseURL", "apiKey", "headers"];
+        for (const k of Object.keys(config.options)) {
+          if (!knownKeys.includes(k)) {
+            delete config.options[k];
+          }
+        }
+
+        // Add new extra options (auto-parse value types)
+        for (const [k, v] of Object.entries(options)) {
+          const trimmedKey = k.trim();
+          if (trimmedKey && !trimmedKey.startsWith("option-")) {
+            try {
+              // Try to parse as JSON (number, boolean, object, array)
+              config.options[trimmedKey] = JSON.parse(v);
+            } catch {
+              // If parsing fails, keep as string
+              config.options[trimmedKey] = v;
+            }
+          }
+        }
+
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
   const [isCommonConfigModalOpen, setIsCommonConfigModalOpen] = useState(false);
 
   const handleSubmit = (values: ProviderFormData) => {
@@ -494,6 +699,23 @@ export function ProviderForm({
         }),
       );
       return;
+    }
+
+    // OpenCode: validate provider key
+    if (appId === "opencode") {
+      const keyPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+      if (!opencodeProviderKey.trim()) {
+        toast.error(t("opencode.providerKeyRequired"));
+        return;
+      }
+      if (!keyPattern.test(opencodeProviderKey)) {
+        toast.error(t("opencode.providerKeyInvalid"));
+        return;
+      }
+      if (!isEditMode && existingOpencodeKeys.includes(opencodeProviderKey)) {
+        toast.error(t("opencode.providerKeyDuplicate"));
+        return;
+      }
     }
 
     // 非官方供应商必填校验：端点和 API Key
@@ -592,6 +814,11 @@ export function ProviderForm({
       websiteUrl: values.websiteUrl?.trim() ?? "",
       settingsConfig,
     };
+
+    // OpenCode: pass provider key for ID generation
+    if (appId === "opencode") {
+      payload.providerKey = opencodeProviderKey;
+    }
 
     if (activePreset) {
       payload.presetId = activePreset.id;
@@ -748,6 +975,15 @@ export function ProviderForm({
       if (appId === "gemini") {
         resetGeminiConfig({}, {});
       }
+      // OpenCode 自定义模式：重置为空配置
+      if (appId === "opencode") {
+        setOpencodeProviderKey("");
+        setOpencodeNpm("@ai-sdk/openai-compatible");
+        setOpencodeBaseUrl("");
+        setOpencodeApiKey("");
+        setOpencodeModels({});
+        setOpencodeExtraOptions({});
+      }
       return;
     }
 
@@ -801,6 +1037,42 @@ export function ProviderForm({
       return;
     }
 
+    // OpenCode preset handling
+    if (appId === "opencode") {
+      const preset = entry.preset as OpenCodeProviderPreset;
+      const config = preset.settingsConfig;
+
+      // Clear provider key (user must enter their own unique key)
+      setOpencodeProviderKey("");
+
+      // Update OpenCode-specific states
+      setOpencodeNpm(config.npm || "@ai-sdk/openai-compatible");
+      setOpencodeBaseUrl(config.options?.baseURL || "");
+      setOpencodeApiKey(config.options?.apiKey || "");
+      setOpencodeModels(config.models || {});
+
+      // Extract extra options from preset
+      const options = config.options || {};
+      const extra: Record<string, string> = {};
+      const knownKeys = ["baseURL", "apiKey", "headers"];
+      for (const [k, v] of Object.entries(options)) {
+        if (!knownKeys.includes(k)) {
+          extra[k] = typeof v === "string" ? v : JSON.stringify(v);
+        }
+      }
+      setOpencodeExtraOptions(extra);
+
+      // Update form fields
+      form.reset({
+        name: preset.name,
+        websiteUrl: preset.websiteUrl ?? "",
+        settingsConfig: JSON.stringify(config, null, 2),
+        icon: preset.icon ?? "",
+        iconColor: preset.iconColor ?? "",
+      });
+      return;
+    }
+
     const preset = entry.preset as ProviderPreset;
     const config = applyTemplateValues(
       preset.settingsConfig,
@@ -838,14 +1110,55 @@ export function ProviderForm({
         )}
 
         {/* 基础字段 */}
-        <BasicFormFields form={form} />
+        <BasicFormFields
+          form={form}
+          beforeNameSlot={
+            appId === "opencode" ? (
+              <div className="space-y-2">
+                <Label htmlFor="opencode-key">
+                  {t("opencode.providerKey")}
+                  <span className="text-destructive ml-1">*</span>
+                </Label>
+                <Input
+                  id="opencode-key"
+                  value={opencodeProviderKey}
+                  onChange={(e) => setOpencodeProviderKey(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  placeholder={t("opencode.providerKeyPlaceholder")}
+                  disabled={isEditMode}
+                  className={
+                    (existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode) ||
+                    (opencodeProviderKey.trim() !== "" && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey))
+                      ? "border-destructive"
+                      : ""
+                  }
+                />
+                {existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode && (
+                  <p className="text-xs text-destructive">
+                    {t("opencode.providerKeyDuplicate")}
+                  </p>
+                )}
+                {opencodeProviderKey.trim() !== "" && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey) && (
+                  <p className="text-xs text-destructive">
+                    {t("opencode.providerKeyInvalid")}
+                  </p>
+                )}
+                {!(existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode) &&
+                 (opencodeProviderKey.trim() === "" || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey)) && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("opencode.providerKeyHint")}
+                  </p>
+                )}
+              </div>
+            ) : undefined
+          }
+        />
 
         {/* Claude 专属字段 */}
         {appId === "claude" && (
           <ClaudeFormFields
             providerId={providerId}
             shouldShowApiKey={shouldShowApiKey(
-              form.watch("settingsConfig"),
+              form.getValues("settingsConfig"),
               isEditMode,
             )}
             apiKey={apiKey}
@@ -916,7 +1229,7 @@ export function ProviderForm({
           <GeminiFormFields
             providerId={providerId}
             shouldShowApiKey={shouldShowApiKey(
-              form.watch("settingsConfig"),
+              form.getValues("settingsConfig"),
               isEditMode,
             )}
             apiKey={geminiApiKey}
@@ -938,6 +1251,25 @@ export function ProviderForm({
             model={geminiModel}
             onModelChange={handleGeminiModelChange}
             speedTestEndpoints={speedTestEndpoints}
+          />
+        )}
+
+        {/* OpenCode 专属字段 */}
+        {appId === "opencode" && (
+          <OpenCodeFormFields
+            npm={opencodeNpm}
+            onNpmChange={handleOpencodeNpmChange}
+            apiKey={opencodeApiKey}
+            onApiKeyChange={handleOpencodeApiKeyChange}
+            category={category}
+            shouldShowApiKeyLink={false}
+            websiteUrl=""
+            baseUrl={opencodeBaseUrl}
+            onBaseUrlChange={handleOpencodeBaseUrlChange}
+            models={opencodeModels}
+            onModelsChange={handleOpencodeModelsChange}
+            extraOptions={opencodeExtraOptions}
+            onExtraOptionsChange={handleOpencodeExtraOptionsChange}
           />
         )}
 
@@ -1000,10 +1332,40 @@ export function ProviderForm({
               )}
             />
           </>
+        ) : appId === "opencode" ? (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="settingsConfig">{t("provider.configJson")}</Label>
+              <JsonEditor
+                value={form.getValues("settingsConfig")}
+                onChange={(config) => form.setValue("settingsConfig", config)}
+                placeholder={`{
+  "npm": "@ai-sdk/openai-compatible",
+  "options": {
+    "baseURL": "https://your-api-endpoint.com",
+    "apiKey": "your-api-key-here"
+  },
+  "models": {}
+}`}
+                rows={14}
+                showValidation={true}
+                language="json"
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="settingsConfig"
+              render={() => (
+                <FormItem className="space-y-0">
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </>
         ) : (
           <>
             <CommonConfigEditor
-              value={form.watch("settingsConfig")}
+              value={form.getValues("settingsConfig")}
               onChange={(value) => form.setValue("settingsConfig", value)}
               useCommonConfig={useCommonConfig}
               onCommonConfigToggle={handleCommonConfigToggle}
@@ -1047,4 +1409,5 @@ export type ProviderFormValues = ProviderFormData & {
   presetCategory?: ProviderCategory;
   isPartner?: boolean;
   meta?: ProviderMeta;
+  providerKey?: string; // OpenCode: user-defined provider key
 };
