@@ -573,17 +573,6 @@ export function OpenCodeFormFields({
                       </div>
                     ) : (
                       <>
-                        <div className="flex items-center justify-end">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleAddModelOption(key)}
-                            className="h-6 px-2 gap-1"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
                         {Object.entries(model.options || {}).map(
                           ([optKey, optValue]) => (
                             <div key={optKey} className="flex items-center gap-2">
@@ -634,6 +623,17 @@ export function OpenCodeFormFields({
                             </div>
                           )
                         )}
+                        <div className="flex items-center justify-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAddModelOption(key)}
+                            className="h-6 px-2 gap-1"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                       </>
                     )}
                   </div>
