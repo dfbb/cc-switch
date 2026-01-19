@@ -481,7 +481,15 @@
     "providerKeyHint": "配置文件中的唯一标识符，创建后无法修改，只能使用小写字母、数字和连字符",
     "providerKeyRequired": "请填写供应商标识",
     "providerKeyDuplicate": "此标识已被使用，请更换",
-    "providerKeyInvalid": "标识格式无效，只能使用小写字母、数字和连字符"
+    "providerKeyInvalid": "标识格式无效，只能使用小写字母、数字和连字符",
+    "extraOptions": "额外选项",
+    "extraOptionsHint": "配置额外的 SDK 选项，如 timeout、setCacheKey 等。值会自动解析类型（数字、布尔值等）。",
+    "addExtraOption": "添加",
+    "extraOptionKey": "键名",
+    "extraOptionValue": "值",
+    "extraOptionKeyPlaceholder": "timeout",
+    "extraOptionValuePlaceholder": "600000",
+    "noExtraOptions": "暂无额外选项"
   },
   "providerPreset": {
     "label": "预设供应商",

@@ -558,6 +558,26 @@ export function ProviderForm({
     }
   });
 
+  // OpenCode extra options state (e.g., timeout, setCacheKey)
+  const [opencodeExtraOptions, setOpencodeExtraOptions] = useState<Record<string, string>>(() => {
+    if (appId !== "opencode") return {};
+    try {
+      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      const options = config.options || {};
+      const extra: Record<string, string> = {};
+      const knownKeys = ["baseURL", "apiKey", "headers"];
+      for (const [k, v] of Object.entries(options)) {
+        if (!knownKeys.includes(k)) {
+          // Convert value to string for display
+          extra[k] = typeof v === "string" ? v : JSON.stringify(v);
+        }
+      }
+      return extra;
+    } catch {
+      return {};
+    }
+  });
+
   // OpenCode handlers - sync state to form
   const handleOpencodeNpmChange = useCallback(
     (npm: string) => {
@@ -609,6 +629,43 @@ export function ProviderForm({
       try {
         const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
         config.models = models;
+        form.setValue("settingsConfig", JSON.stringify(config, null, 2));
+      } catch {
+        // ignore
+      }
+    },
+    [form],
+  );
+
+  const handleOpencodeExtraOptionsChange = useCallback(
+    (options: Record<string, string>) => {
+      setOpencodeExtraOptions(options);
+      try {
+        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        if (!config.options) config.options = {};
+
+        // Remove old extra options (keep only known keys)
+        const knownKeys = ["baseURL", "apiKey", "headers"];
+        for (const k of Object.keys(config.options)) {
+          if (!knownKeys.includes(k)) {
+            delete config.options[k];
+          }
+        }
+
+        // Add new extra options (auto-parse value types)
+        for (const [k, v] of Object.entries(options)) {
+          const trimmedKey = k.trim();
+          if (trimmedKey && !trimmedKey.startsWith("option-")) {
+            try {
+              // Try to parse as JSON (number, boolean, object, array)
+              config.options[trimmedKey] = JSON.parse(v);
+            } catch {
+              // If parsing fails, keep as string
+              config.options[trimmedKey] = v;
+            }
+          }
+        }
+
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
       } catch {
         // ignore
@@ -925,6 +982,7 @@ export function ProviderForm({
         setOpencodeBaseUrl("");
         setOpencodeApiKey("");
         setOpencodeModels({});
+        setOpencodeExtraOptions({});
       }
       return;
     }
@@ -992,6 +1050,17 @@ export function ProviderForm({
       setOpencodeBaseUrl(config.options?.baseURL || "");
       setOpencodeApiKey(config.options?.apiKey || "");
       setOpencodeModels(config.models || {});
+
+      // Extract extra options from preset
+      const options = config.options || {};
+      const extra: Record<string, string> = {};
+      const knownKeys = ["baseURL", "apiKey", "headers"];
+      for (const [k, v] of Object.entries(options)) {
+        if (!knownKeys.includes(k)) {
+          extra[k] = typeof v === "string" ? v : JSON.stringify(v);
+        }
+      }
+      setOpencodeExtraOptions(extra);
 
       // Update form fields
       form.reset({
@@ -1199,6 +1268,8 @@ export function ProviderForm({
             onBaseUrlChange={handleOpencodeBaseUrlChange}
             models={opencodeModels}
             onModelsChange={handleOpencodeModelsChange}
+            extraOptions={opencodeExtraOptions}
+            onExtraOptionsChange={handleOpencodeExtraOptionsChange}
           />
         )}
 

@@ -52,6 +52,45 @@ function ModelIdInput({
   );
 }
 
+/**
+ * Extra option key input with local state to prevent focus loss.
+ * Same pattern as ModelIdInput - use local state during editing,
+ * only commit changes on blur.
+ */
+function ExtraOptionKeyInput({
+  optionKey,
+  onChange,
+  placeholder,
+}: {
+  optionKey: string;
+  onChange: (newKey: string) => void;
+  placeholder?: string;
+}) {
+  // For new options with placeholder keys like "option-123", show empty string
+  const displayValue = optionKey.startsWith("option-") ? "" : optionKey;
+  const [localValue, setLocalValue] = useState(displayValue);
+
+  // Sync when external key changes
+  useEffect(() => {
+    setLocalValue(optionKey.startsWith("option-") ? "" : optionKey);
+  }, [optionKey]);
+
+  return (
+    <Input
+      value={localValue}
+      onChange={(e) => setLocalValue(e.target.value)}
+      onBlur={() => {
+        const trimmed = localValue.trim();
+        if (trimmed && trimmed !== optionKey) {
+          onChange(trimmed);
+        }
+      }}
+      placeholder={placeholder}
+      className="flex-1"
+    />
+  );
+}
+
 interface OpenCodeFormFieldsProps {
   // NPM Package
   npm: string;
@@ -71,6 +110,10 @@ interface OpenCodeFormFieldsProps {
   // Models
   models: Record<string, OpenCodeModel>;
   onModelsChange: (models: Record<string, OpenCodeModel>) => void;
+
+  // Extra Options
+  extraOptions: Record<string, string>;
+  onExtraOptionsChange: (options: Record<string, string>) => void;
 }
 
 export function OpenCodeFormFields({
@@ -85,6 +128,8 @@ export function OpenCodeFormFields({
   onBaseUrlChange,
   models,
   onModelsChange,
+  extraOptions,
+  onExtraOptionsChange,
 }: OpenCodeFormFieldsProps) {
   const { t } = useTranslation();
 
@@ -123,6 +168,41 @@ export function OpenCodeFormFields({
     onModelsChange({
       ...models,
       [key]: { ...models[key], name },
+    });
+  };
+
+  // Extra Options handlers
+  const handleAddExtraOption = () => {
+    const newKey = `option-${Date.now()}`;
+    onExtraOptionsChange({
+      ...extraOptions,
+      [newKey]: "",
+    });
+  };
+
+  const handleRemoveExtraOption = (key: string) => {
+    const newOptions = { ...extraOptions };
+    delete newOptions[key];
+    onExtraOptionsChange(newOptions);
+  };
+
+  const handleExtraOptionKeyChange = (oldKey: string, newKey: string) => {
+    if (oldKey === newKey) return;
+    const newOptions: Record<string, string> = {};
+    for (const [k, v] of Object.entries(extraOptions)) {
+      if (k === oldKey) {
+        newOptions[newKey.trim() || oldKey] = v;
+      } else {
+        newOptions[k] = v;
+      }
+    }
+    onExtraOptionsChange(newOptions);
+  };
+
+  const handleExtraOptionValueChange = (key: string, value: string) => {
+    onExtraOptionsChange({
+      ...extraOptions,
+      [key]: value,
     });
   };
 
@@ -183,6 +263,80 @@ export function OpenCodeFormFields({
           {t("opencode.baseUrlHint", {
             defaultValue:
               "The base URL for the API endpoint. Leave empty to use the default endpoint for official SDKs.",
+          })}
+        </p>
+      </div>
+
+      {/* Extra Options Editor */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <FormLabel>
+            {t("opencode.extraOptions", { defaultValue: "额外选项" })}
+          </FormLabel>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleAddExtraOption}
+            className="h-7 gap-1"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t("opencode.addExtraOption", { defaultValue: "添加" })}
+          </Button>
+        </div>
+
+        {Object.keys(extraOptions).length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">
+            {t("opencode.noExtraOptions", {
+              defaultValue: "暂无额外选项",
+            })}
+          </p>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground px-1 mb-1">
+              <span className="flex-1">
+                {t("opencode.extraOptionKey", { defaultValue: "键名" })}
+              </span>
+              <span className="flex-1">
+                {t("opencode.extraOptionValue", { defaultValue: "值" })}
+              </span>
+              <span className="w-9" />
+            </div>
+            {Object.entries(extraOptions).map(([key, value]) => (
+              <div key={key} className="flex items-center gap-2">
+                <ExtraOptionKeyInput
+                  optionKey={key}
+                  onChange={(newKey) => handleExtraOptionKeyChange(key, newKey)}
+                  placeholder={t("opencode.extraOptionKeyPlaceholder", {
+                    defaultValue: "timeout",
+                  })}
+                />
+                <Input
+                  value={value}
+                  onChange={(e) => handleExtraOptionValueChange(key, e.target.value)}
+                  placeholder={t("opencode.extraOptionValuePlaceholder", {
+                    defaultValue: "600000",
+                  })}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveExtraOption(key)}
+                  className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <p className="text-xs text-muted-foreground">
+          {t("opencode.extraOptionsHint", {
+            defaultValue:
+              "配置额外的 SDK 选项，如 timeout、setCacheKey 等。值会自动解析类型（数字、布尔值等）。",
           })}
         </p>
       </div>

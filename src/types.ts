@@ -269,6 +269,8 @@ export interface OpenCodeProviderOptions {
   baseURL?: string;
   apiKey?: string;
   headers?: Record<string, string>;
+  // 支持额外选项（timeout, setCacheKey 等）
+  [key: string]: unknown;
 }
 
 // OpenCode 供应商配置（settings_config 结构）

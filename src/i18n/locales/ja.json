@@ -481,7 +481,15 @@
     "providerKeyHint": "設定ファイルの一意の識別子。作成後は変更できません。小文字、数字、ハイフンのみ使用できます。",
     "providerKeyRequired": "プロバイダーキーを入力してください",
     "providerKeyDuplicate": "このキーは既に使用されています",
-    "providerKeyInvalid": "無効な形式です。小文字、数字、ハイフンのみ使用できます。"
+    "providerKeyInvalid": "無効な形式です。小文字、数字、ハイフンのみ使用できます。",
+    "extraOptions": "追加オプション",
+    "extraOptionsHint": "timeout、setCacheKey などの SDK オプションを設定。値は自動的に適切な型（数値、真偽値など）に変換されます。",
+    "addExtraOption": "追加",
+    "extraOptionKey": "キー名",
+    "extraOptionValue": "値",
+    "extraOptionKeyPlaceholder": "timeout",
+    "extraOptionValuePlaceholder": "600000",
+    "noExtraOptions": "追加オプションはありません"
   },
   "providerPreset": {
     "label": "プロバイダータイプ",

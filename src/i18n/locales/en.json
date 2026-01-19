@@ -481,7 +481,15 @@
     "providerKeyHint": "Unique identifier in config file. Cannot be changed after creation. Use lowercase letters, numbers, and hyphens only.",
     "providerKeyRequired": "Provider key is required",
     "providerKeyDuplicate": "This key is already in use",
-    "providerKeyInvalid": "Invalid format. Use lowercase letters, numbers, and hyphens only."
+    "providerKeyInvalid": "Invalid format. Use lowercase letters, numbers, and hyphens only.",
+    "extraOptions": "Extra Options",
+    "extraOptionsHint": "Configure extra SDK options like timeout, setCacheKey, etc. Values are auto-parsed to appropriate types (number, boolean, etc.).",
+    "addExtraOption": "Add",
+    "extraOptionKey": "Key",
+    "extraOptionValue": "Value",
+    "extraOptionKeyPlaceholder": "timeout",
+    "extraOptionValuePlaceholder": "600000",
+    "noExtraOptions": "No extra options configured"
   },
   "providerPreset": {
     "label": "Provider Preset",

@@ -521,6 +521,11 @@ pub struct OpenCodeProviderOptions {
     /// 自定义请求头
     #[serde(skip_serializing_if = "Option::is_none")]
     pub headers: Option<HashMap<String, String>>,
+
+    /// 额外选项（timeout, setCacheKey 等）
+    /// 使用 flatten 捕获所有未明确定义的字段
+    #[serde(flatten, default, skip_serializing_if = "HashMap::is_empty")]
+    pub extra: HashMap<String, Value>,
 }
 
 /// OpenCode 模型定义
