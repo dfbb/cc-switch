@@ -41,16 +41,16 @@ export const opencodeNpmPackages = [
  * OpenCode 供应商预设列表
  */
 export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
-  
   // ========== 国产官方 ==========
   {
     name: "DeepSeek",
     websiteUrl: "https://platform.deepseek.com",
     apiKeyUrl: "https://platform.deepseek.com/api_keys",
     settingsConfig: {
-      npm: "@ai-sdk/deepseek",
+      npm: "@ai-sdk/openai-compatible",
       options: {
-        apiKey: "{env:DEEPSEEK_API_KEY}",
+        baseURL: "https://api.deepseek.com/v1",
+        apiKey: "",
       },
       models: {
         "deepseek-chat": { name: "DeepSeek V3.2" },
@@ -277,16 +277,17 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "KAT-Coder-Pro V1": { name: "KAT-Coder Pro V1" },
-        "KAT-Coder-Air V1": { name: "KAT-Coder Air V1" },
+        "KAT-Coder-Pro": { name: "KAT-Coder Pro" },
       },
     },
     category: "cn_official",
     templateValues: {
       baseURL: {
         label: "Base URL",
-        placeholder: "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/openai",
-        defaultValue: "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/openai",
+        placeholder:
+          "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/openai",
+        defaultValue:
+          "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/openai",
         editorValue: "",
       },
       ENDPOINT_ID: {
@@ -347,7 +348,6 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
       },
       models: {
         "MiniMax-M2.1": { name: "MiniMax M2.1" },
-        "MiniMax-Text-01": { name: "MiniMax Text 01" },
       },
     },
     category: "cn_official",
@@ -380,7 +380,6 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
       },
       models: {
         "MiniMax-M2.1": { name: "MiniMax M2.1" },
-        "MiniMax-Text-01": { name: "MiniMax Text 01" },
       },
     },
     category: "cn_official",
@@ -476,24 +475,21 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     },
   },
 
-
   // ========== 聚合网站 ==========
   {
     name: "AiHubMix",
     websiteUrl: "https://aihubmix.com",
     apiKeyUrl: "https://aihubmix.com",
     settingsConfig: {
-      npm: "@ai-sdk/openai-compatible",
+      npm: "@ai-sdk/anthropic",
       name: "AiHubMix",
       options: {
         baseURL: "https://aihubmix.com/v1",
         apiKey: "",
       },
       models: {
-        "gpt-4o": { name: "GPT-4o" },
-        "claude-sonnet-4-20250514": { name: "Claude Sonnet 4" },
-        "gemini-2.5-pro-preview": { name: "Gemini 2.5 Pro" },
-        "deepseek-chat": { name: "DeepSeek V3" },
+        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-opus-4-5-20251101": { name: "Claude Opus 4.5" },
       },
     },
     category: "aggregator",
@@ -512,16 +508,15 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     websiteUrl: "https://www.dmxapi.cn",
     apiKeyUrl: "https://www.dmxapi.cn",
     settingsConfig: {
-      npm: "@ai-sdk/openai-compatible",
+      npm: "@ai-sdk/anthropic",
       name: "DMXAPI",
       options: {
         baseURL: "https://www.dmxapi.cn/v1",
         apiKey: "",
       },
       models: {
-        "gpt-4o": { name: "GPT-4o" },
-        "claude-sonnet-4-20250514": { name: "Claude Sonnet 4" },
-        "deepseek-chat": { name: "DeepSeek V3" },
+        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-opus-4-5-20251101": { name: "Claude Opus 4.5" },
       },
     },
     category: "aggregator",
@@ -540,17 +535,15 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",
     settingsConfig: {
-      npm: "@ai-sdk/openai-compatible",
+      npm: "@ai-sdk/anthropic",
       name: "OpenRouter",
       options: {
         baseURL: "https://openrouter.ai/api/v1",
         apiKey: "",
       },
       models: {
-        "anthropic/claude-sonnet-4": { name: "Claude Sonnet 4" },
-        "openai/gpt-4o": { name: "GPT-4o" },
-        "google/gemini-2.5-pro-preview": { name: "Gemini 2.5 Pro" },
-        "deepseek/deepseek-chat": { name: "DeepSeek V3" },
+        "anthropic/claude-sonnet-4.5": { name: "Claude Sonnet 4.5" },
+        "anthropic/claude-opus-4.5": { name: "Claude Opus 4.5" },
       },
     },
     category: "aggregator",
@@ -571,16 +564,15 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     websiteUrl: "https://www.packyapi.com",
     apiKeyUrl: "https://www.packyapi.com/register?aff=cc-switch",
     settingsConfig: {
-      npm: "@ai-sdk/openai-compatible",
+      npm: "@ai-sdk/anthropic",
       name: "PackyCode",
       options: {
         baseURL: "https://www.packyapi.com/v1",
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-20250514": { name: "Claude Sonnet 4" },
-        "gpt-4o": { name: "GPT-4o" },
-        "gemini-2.5-pro": { name: "Gemini 2.5 Pro" },
+        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-opus-4-5-20251101": { name: "Claude Opus 4.5" },
       },
     },
     category: "third_party",
@@ -600,15 +592,15 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     websiteUrl: "https://cubence.com",
     apiKeyUrl: "https://cubence.com/signup?code=CCSWITCH&source=ccs",
     settingsConfig: {
-      npm: "@ai-sdk/openai-compatible",
+      npm: "@ai-sdk/anthropic",
       name: "Cubence",
       options: {
         baseURL: "https://api.cubence.com/v1",
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-20250514": { name: "Claude Sonnet 4" },
-        "gpt-4o": { name: "GPT-4o" },
+        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-opus-4-5-20251101": { name: "Claude Opus 4.5" },
       },
     },
     category: "third_party",
@@ -629,15 +621,15 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     websiteUrl: "https://aigocode.com",
     apiKeyUrl: "https://aigocode.com/invite/CC-SWITCH",
     settingsConfig: {
-      npm: "@ai-sdk/openai-compatible",
+      npm: "@ai-sdk/anthropic",
       name: "AIGoCode",
       options: {
         baseURL: "https://api.aigocode.com/v1",
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-20250514": { name: "Claude Sonnet 4" },
-        "gpt-4o": { name: "GPT-4o" },
+        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-opus-4-5-20251101": { name: "Claude Opus 4.5" },
       },
     },
     category: "third_party",
