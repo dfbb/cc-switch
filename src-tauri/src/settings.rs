@@ -16,6 +16,35 @@ pub struct CustomEndpoint {
     pub last_used: Option<i64>,
 }
 
+fn default_true() -> bool {
+    true
+}
+
+/// 主页面显示的应用配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VisibleApps {
+    #[serde(default = "default_true")]
+    pub claude: bool,
+    #[serde(default = "default_true")]
+    pub codex: bool,
+    #[serde(default = "default_true")]
+    pub gemini: bool,
+    #[serde(default = "default_true")]
+    pub opencode: bool,
+}
+
+impl Default for VisibleApps {
+    fn default() -> Self {
+        Self {
+            claude: true,
+            codex: true,
+            gemini: true,
+            opencode: true,
+        }
+    }
+}
+
 /// 应用设置结构
 ///
 /// 存储设备级别设置，保存在本地 `~/.cc-switch/settings.json`，不随数据库同步。
@@ -39,6 +68,10 @@ pub struct AppSettings {
     pub launch_on_startup: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
+
+    // ===== 主页面显示的应用 =====
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub visible_apps: Option<VisibleApps>,
 
     // ===== 设备级目录覆盖 =====
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -73,10 +106,6 @@ fn default_minimize_to_tray_on_close() -> bool {
     true
 }
 
-fn default_true() -> bool {
-    true
-}
-
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -86,6 +115,7 @@ impl Default for AppSettings {
             skip_claude_onboarding: true,
             launch_on_startup: false,
             language: None,
+            visible_apps: None,
             claude_config_dir: None,
             codex_config_dir: None,
             gemini_config_dir: None,

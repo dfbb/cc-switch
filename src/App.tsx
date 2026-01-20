@@ -17,9 +17,9 @@ import {
   Download,
   BarChart2,
 } from "lucide-react";
-import type { Provider } from "@/types";
+import type { Provider, VisibleApps } from "@/types";
 import type { EnvConflict } from "@/types/env";
-import { useProvidersQuery } from "@/lib/query";
+import { useProvidersQuery, useSettingsQuery } from "@/lib/query";
 import {
   providersApi,
   settingsApi,
@@ -77,6 +77,31 @@ function App() {
   const [currentView, setCurrentView] = useState<View>("providers");
   const [settingsDefaultTab, setSettingsDefaultTab] = useState("general");
   const [isAddOpen, setIsAddOpen] = useState(false);
+
+  // Get settings for visibleApps
+  const { data: settingsData } = useSettingsQuery();
+  const visibleApps: VisibleApps = settingsData?.visibleApps ?? {
+    claude: true,
+    codex: true,
+    gemini: true,
+    opencode: true,
+  };
+
+  // Get first visible app for fallback
+  const getFirstVisibleApp = (): AppId => {
+    if (visibleApps.claude) return "claude";
+    if (visibleApps.codex) return "codex";
+    if (visibleApps.gemini) return "gemini";
+    if (visibleApps.opencode) return "opencode";
+    return "claude"; // fallback
+  };
+
+  // If current active app is hidden, switch to first visible app
+  useEffect(() => {
+    if (!visibleApps[activeApp]) {
+      setActiveApp(getFirstVisibleApp());
+    }
+  }, [visibleApps, activeApp]);
 
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [usageProvider, setUsageProvider] = useState<Provider | null>(null);
@@ -864,7 +889,7 @@ function App() {
                   </>
                 )}
 
-                <AppSwitcher activeApp={activeApp} onSwitch={setActiveApp} />
+                <AppSwitcher activeApp={activeApp} onSwitch={setActiveApp} visibleApps={visibleApps} />
 
                 <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
                   <Button
