@@ -3,8 +3,11 @@
 //! 提供支持全局代理配置的 HTTP 客户端。
 //! 所有需要发送 HTTP 请求的模块都应使用此模块提供的客户端。
 
+use crate::provider::ProviderProxyConfig;
 use once_cell::sync::OnceCell;
 use reqwest::Client;
+use std::env;
+use std::net::IpAddr;
 use std::sync::RwLock;
 use std::time::Duration;
 
@@ -155,23 +158,15 @@ pub fn update_proxy(proxy_url: Option<&str>) -> Result<(), String> {
 
 /// 获取全局 HTTP 客户端
 ///
-/// 返回配置了代理的客户端（如果已配置代理），否则返回直连客户端。
+/// 返回配置了代理的客户端（如果已配置代理），否则返回跟随系统代理的客户端。
 pub fn get() -> Client {
     GLOBAL_CLIENT
         .get()
         .and_then(|lock| lock.read().ok())
         .map(|c| c.clone())
         .unwrap_or_else(|| {
-            // 如果还没初始化，创建一个默认客户端（配置与 build_client 一致）
             log::warn!("[GlobalProxy] [GP-004] Client not initialized, using fallback");
-            Client::builder()
-                .timeout(Duration::from_secs(600))
-                .connect_timeout(Duration::from_secs(30))
-                .pool_max_idle_per_host(10)
-                .tcp_keepalive(Duration::from_secs(60))
-                .no_proxy()
-                .build()
-                .unwrap_or_default()
+            build_client(None).unwrap_or_default()
         })
 }
 
@@ -199,7 +194,7 @@ fn build_client(proxy_url: Option<&str>) -> Result<Client, String> {
         .pool_max_idle_per_host(10)
         .tcp_keepalive(Duration::from_secs(60));
 
-    // 有代理地址则使用代理，否则直连
+    // 有代理地址则使用代理，否则跟随系统代理
     if let Some(url) = proxy_url {
         // 先验证 URL 格式和 scheme
         let parsed = url::Url::parse(url)
@@ -219,13 +214,65 @@ fn build_client(proxy_url: Option<&str>) -> Result<Client, String> {
         builder = builder.proxy(proxy);
         log::debug!("[GlobalProxy] Proxy configured: {}", mask_url(url));
     } else {
-        builder = builder.no_proxy();
-        log::debug!("[GlobalProxy] Direct connection (no proxy)");
+        // 未设置全局代理时，让 reqwest 自动检测系统代理（环境变量）
+        // 若系统代理指向本机，禁用系统代理避免自环
+        if system_proxy_points_to_loopback() {
+            builder = builder.no_proxy();
+            log::warn!(
+                "[GlobalProxy] System proxy points to localhost, bypassing to avoid recursion"
+            );
+        } else {
+            log::debug!("[GlobalProxy] Following system proxy (no explicit proxy configured)");
+        }
     }
 
     builder
         .build()
         .map_err(|e| format!("Failed to build HTTP client: {e}"))
+}
+
+fn system_proxy_points_to_loopback() -> bool {
+    const KEYS: [&str; 6] = [
+        "HTTP_PROXY",
+        "http_proxy",
+        "HTTPS_PROXY",
+        "https_proxy",
+        "ALL_PROXY",
+        "all_proxy",
+    ];
+
+    KEYS.iter()
+        .filter_map(|key| env::var(key).ok())
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+        .any(|value| proxy_points_to_loopback(&value))
+}
+
+fn proxy_points_to_loopback(value: &str) -> bool {
+    fn host_is_loopback(host: &str) -> bool {
+        if host.eq_ignore_ascii_case("localhost") {
+            return true;
+        }
+        host.parse::<IpAddr>()
+            .map(|ip| ip.is_loopback())
+            .unwrap_or(false)
+    }
+
+    if let Ok(parsed) = url::Url::parse(value) {
+        if let Some(host) = parsed.host_str() {
+            return host_is_loopback(host);
+        }
+        return false;
+    }
+
+    let with_scheme = format!("http://{value}");
+    if let Ok(parsed) = url::Url::parse(&with_scheme) {
+        if let Some(host) = parsed.host_str() {
+            return host_is_loopback(host);
+        }
+    }
+
+    false
 }
 
 /// 隐藏 URL 中的敏感信息（用于日志）
@@ -247,9 +294,109 @@ pub fn mask_url(url: &str) -> String {
     }
 }
 
+/// 根据供应商单独代理配置构建代理 URL
+///
+/// 将 ProviderProxyConfig 转换为代理 URL 字符串
+fn build_proxy_url_from_config(config: &ProviderProxyConfig) -> Option<String> {
+    let proxy_type = config.proxy_type.as_deref().unwrap_or("http");
+    let host = config.proxy_host.as_deref()?;
+    let port = config.proxy_port?;
+
+    // 构建带认证的代理 URL
+    if let (Some(username), Some(password)) = (&config.proxy_username, &config.proxy_password) {
+        if !username.is_empty() && !password.is_empty() {
+            return Some(format!(
+                "{proxy_type}://{username}:{password}@{host}:{port}"
+            ));
+        }
+    }
+
+    Some(format!("{proxy_type}://{host}:{port}"))
+}
+
+/// 根据供应商单独代理配置构建 HTTP 客户端
+///
+/// 如果供应商配置了单独代理（enabled = true），则使用该代理构建客户端；
+/// 否则返回 None，调用方应使用全局客户端。
+///
+/// # Arguments
+/// * `proxy_config` - 供应商的代理配置
+///
+/// # Returns
+/// 如果配置有效则返回 Some(Client)，否则返回 None
+pub fn build_client_for_provider(proxy_config: Option<&ProviderProxyConfig>) -> Option<Client> {
+    let config = proxy_config.filter(|c| c.enabled)?;
+
+    let proxy_url = build_proxy_url_from_config(config)?;
+
+    log::debug!(
+        "[ProviderProxy] Building client with proxy: {}",
+        mask_url(&proxy_url)
+    );
+
+    // 构建带代理的客户端
+    let proxy = match reqwest::Proxy::all(&proxy_url) {
+        Ok(p) => p,
+        Err(e) => {
+            log::error!(
+                "[ProviderProxy] Failed to create proxy from '{}': {}",
+                mask_url(&proxy_url),
+                e
+            );
+            return None;
+        }
+    };
+
+    match Client::builder()
+        .timeout(Duration::from_secs(600))
+        .connect_timeout(Duration::from_secs(30))
+        .pool_max_idle_per_host(10)
+        .tcp_keepalive(Duration::from_secs(60))
+        .proxy(proxy)
+        .build()
+    {
+        Ok(client) => {
+            log::info!(
+                "[ProviderProxy] Client built with proxy: {}",
+                mask_url(&proxy_url)
+            );
+            Some(client)
+        }
+        Err(e) => {
+            log::error!("[ProviderProxy] Failed to build client: {e}");
+            None
+        }
+    }
+}
+
+/// 获取供应商专用的 HTTP 客户端
+///
+/// 优先使用供应商单独代理配置，如果未启用则返回全局客户端。
+///
+/// # Arguments
+/// * `proxy_config` - 供应商的代理配置
+///
+/// # Returns
+/// 返回适合该供应商的 HTTP 客户端
+pub fn get_for_provider(proxy_config: Option<&ProviderProxyConfig>) -> Client {
+    // 优先使用供应商单独代理
+    if let Some(client) = build_client_for_provider(proxy_config) {
+        return client;
+    }
+
+    // 回退到全局客户端
+    get()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
 
     #[test]
     fn test_mask_url() {
@@ -297,5 +444,41 @@ mod tests {
         // 使用明确无效的 scheme 来触发错误
         let result = build_client(Some("invalid-scheme://127.0.0.1:7890"));
         assert!(result.is_err(), "Should reject invalid proxy scheme");
+    }
+
+    #[test]
+    fn test_proxy_points_to_loopback() {
+        assert!(proxy_points_to_loopback("http://127.0.0.1:7890"));
+        assert!(proxy_points_to_loopback("socks5://localhost:1080"));
+        assert!(proxy_points_to_loopback("127.0.0.1:7890"));
+        assert!(!proxy_points_to_loopback("http://192.168.1.10:7890"));
+    }
+
+    #[test]
+    fn test_system_proxy_points_to_loopback() {
+        let _guard = env_lock().lock().unwrap();
+
+        let keys = [
+            "HTTP_PROXY",
+            "http_proxy",
+            "HTTPS_PROXY",
+            "https_proxy",
+            "ALL_PROXY",
+            "all_proxy",
+        ];
+
+        for key in &keys {
+            std::env::remove_var(key);
+        }
+
+        std::env::set_var("HTTP_PROXY", "http://127.0.0.1:7890");
+        assert!(system_proxy_points_to_loopback());
+
+        std::env::set_var("HTTP_PROXY", "http://10.0.0.2:7890");
+        assert!(!system_proxy_points_to_loopback());
+
+        for key in &keys {
+            std::env::remove_var(key);
+        }
     }
 }

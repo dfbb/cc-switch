@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Search,
   Download,
+  BarChart2,
 } from "lucide-react";
 import type { Provider } from "@/types";
 import type { EnvConflict } from "@/types/env";
@@ -42,6 +43,7 @@ import { SettingsPage } from "@/components/settings/SettingsPage";
 import { UpdateBadge } from "@/components/UpdateBadge";
 import { EnvWarningBanner } from "@/components/env/EnvWarningBanner";
 import { ProxyToggle } from "@/components/proxy/ProxyToggle";
+import { FailoverToggle } from "@/components/proxy/FailoverToggle";
 import UsageScriptModal from "@/components/UsageScriptModal";
 import UnifiedMcpPanel from "@/components/mcp/UnifiedMcpPanel";
 import PromptPanel from "@/components/prompts/PromptPanel";
@@ -376,7 +378,10 @@ function App() {
   };
 
   // Generate a unique provider key for OpenCode duplication
-  const generateUniqueOpencodeKey = (originalKey: string, existingKeys: string[]): string => {
+  const generateUniqueOpencodeKey = (
+    originalKey: string,
+    existingKeys: string[],
+  ): string => {
     const baseKey = `${originalKey}-copy`;
 
     if (!existingKeys.includes(baseKey)) {
@@ -397,7 +402,9 @@ function App() {
     const newSortIndex =
       provider.sortIndex !== undefined ? provider.sortIndex + 1 : undefined;
 
-    const duplicatedProvider: Omit<Provider, "id" | "createdAt"> & { providerKey?: string } = {
+    const duplicatedProvider: Omit<Provider, "id" | "createdAt"> & {
+      providerKey?: string;
+    } = {
       name: `${provider.name} copy`,
       settingsConfig: JSON.parse(JSON.stringify(provider.settingsConfig)), // 深拷贝
       websiteUrl: provider.websiteUrl,
@@ -413,7 +420,10 @@ function App() {
     // OpenCode: generate unique provider key (used as ID)
     if (activeApp === "opencode") {
       const existingKeys = Object.keys(providers);
-      duplicatedProvider.providerKey = generateUniqueOpencodeKey(provider.id, existingKeys);
+      duplicatedProvider.providerKey = generateUniqueOpencodeKey(
+        provider.id,
+        existingKeys,
+      );
     }
 
     // 2️⃣ 如果原供应商有 sortIndex，需要将后续所有供应商的 sortIndex +1
@@ -522,7 +532,12 @@ function App() {
             />
           );
         case "skillsDiscovery":
-          return <SkillsPage ref={skillsPageRef} initialApp={activeApp === "opencode" ? "claude" : activeApp} />;
+          return (
+            <SkillsPage
+              ref={skillsPageRef}
+              initialApp={activeApp === "opencode" ? "claude" : activeApp}
+            />
+          );
         case "mcp":
           return (
             <UnifiedMcpPanel
@@ -656,7 +671,7 @@ function App() {
         }
       >
         <div
-          className="flex h-full items-center justify-between gap-2 px-6"
+          className="mx-auto flex h-full max-w-[56rem] items-center justify-between gap-2 px-4"
           data-tauri-drag-region
           style={{ WebkitAppRegion: "drag" } as any}
         >
@@ -695,8 +710,8 @@ function App() {
                 </h1>
               </div>
             ) : (
-              <>
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <div className="relative inline-flex items-center">
                   <a
                     href="https://github.com/farion1231/cc-switch"
                     target="_blank"
@@ -710,31 +725,48 @@ function App() {
                   >
                     CC Switch
                   </a>
+                  <UpdateBadge
+                    onClick={() => {
+                      setSettingsDefaultTab("about");
+                      setCurrentView("settings");
+                    }}
+                    className="absolute -top-4 -right-4"
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSettingsDefaultTab("general");
+                    setCurrentView("settings");
+                  }}
+                  title={t("common.settings")}
+                  className="hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+                {isCurrentAppTakeoverActive && (
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={() => {
-                      setSettingsDefaultTab("general");
+                      setSettingsDefaultTab("usage");
                       setCurrentView("settings");
                     }}
-                    title={t("common.settings")}
+                    title={t("settings.usage.title", {
+                      defaultValue: "使用统计",
+                    })}
                     className="hover:bg-black/5 dark:hover:bg-white/5"
                   >
-                    <Settings className="w-4 h-4" />
+                    <BarChart2 className="w-4 h-4" />
                   </Button>
-                </div>
-                <UpdateBadge
-                  onClick={() => {
-                    setSettingsDefaultTab("about");
-                    setCurrentView("settings");
-                  }}
-                />
-              </>
+                )}
+              </div>
             )}
           </div>
 
           <div
-            className="flex items-center gap-2 h-[32px]"
+            className="flex items-center gap-1.5 h-[32px]"
             style={{ WebkitAppRegion: "no-drag" } as any}
           >
             {currentView === "prompts" && (
@@ -817,7 +849,19 @@ function App() {
             {currentView === "providers" && (
               <>
                 {activeApp !== "opencode" && (
-                  <ProxyToggle activeApp={activeApp} />
+                  <>
+                    <ProxyToggle activeApp={activeApp} />
+                    <div
+                      className={cn(
+                        "transition-all duration-300 ease-in-out overflow-hidden",
+                        isCurrentAppTakeoverActive
+                          ? "opacity-100 max-w-[100px] scale-100"
+                          : "opacity-0 max-w-0 scale-75 pointer-events-none",
+                      )}
+                    >
+                      <FailoverToggle activeApp={activeApp} />
+                    </div>
+                  </>
                 )}
 
                 <AppSwitcher activeApp={activeApp} onSwitch={setActiveApp} />

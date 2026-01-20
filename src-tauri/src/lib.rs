@@ -266,33 +266,41 @@ pub fn run() {
                     log::warn!("初始化 Updater 插件失败，已跳过：{e}");
                 }
             }
-            // 初始化日志（Debug 和 Release 模式都启用 Info 级别）
-            // 日志同时输出到控制台和文件（<app_config_dir>/logs/；若设置了覆盖则使用覆盖目录）
+            // 初始化日志（单文件输出到 <app_config_dir>/logs/cc-switch.log）
             {
                 use tauri_plugin_log::{RotationStrategy, Target, TargetKind, TimezoneStrategy};
 
                 let log_dir = panic_hook::get_log_dir();
 
+                // 确保日志目录存在
+                if let Err(e) = std::fs::create_dir_all(&log_dir) {
+                    eprintln!("创建日志目录失败: {e}");
+                }
+
+                // 启动时删除旧日志文件，实现单文件覆盖效果
+                let log_file_path = log_dir.join("cc-switch.log");
+                let _ = std::fs::remove_file(&log_file_path);
+
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
-                        .level(log::LevelFilter::Info)
+                        // 初始化为 Trace，允许后续通过 log::set_max_level() 动态调整级别
+                        .level(log::LevelFilter::Trace)
                         .targets([
-                            // 输出到控制台
                             Target::new(TargetKind::Stdout),
-                            // 输出到日志文件
                             Target::new(TargetKind::Folder {
                                 path: log_dir,
                                 file_name: Some("cc-switch".into()),
                             }),
                         ])
-                        .rotation_strategy(RotationStrategy::KeepAll)
-                        .max_file_size(5_000_000) // 5MB 单文件上限
+                        // 单文件模式：启动时删除旧文件，达到大小时轮转
+                        // 注意：KeepSome(n) 内部会做 n-2 运算，n=1 会导致 usize 下溢
+                        // KeepSome(2) 是最小安全值，表示不保留轮转文件
+                        .rotation_strategy(RotationStrategy::KeepSome(2))
+                        // 单文件大小限制 1GB
+                        .max_file_size(1024 * 1024 * 1024)
                         .timezone_strategy(TimezoneStrategy::UseLocal)
                         .build(),
                 )?;
-
-                // 清理旧日志文件，只保留最近 2 个
-                panic_hook::cleanup_old_logs();
             }
 
             // 初始化数据库
@@ -660,6 +668,19 @@ pub fn run() {
             // 将同一个实例注入到全局状态，避免重复创建导致的不一致
             app.manage(app_state);
 
+            // 从数据库加载日志配置并应用
+            {
+                let db = &app.state::<AppState>().db;
+                if let Ok(log_config) = db.get_log_config() {
+                    log::set_max_level(log_config.to_level_filter());
+                    log::info!(
+                        "已加载日志配置: enabled={}, level={}",
+                        log_config.enabled,
+                        log_config.level
+                    );
+                }
+            }
+
             // 初始化 SkillService
             let skill_service = SkillService::new();
             app.manage(commands::skill::SkillServiceState(Arc::new(skill_service)));
@@ -757,6 +778,8 @@ pub fn run() {
             commands::save_settings,
             commands::get_rectifier_config,
             commands::set_rectifier_config,
+            commands::get_log_config,
+            commands::set_log_config,
             commands::restart_app,
             commands::check_for_updates,
             commands::is_portable_mode,

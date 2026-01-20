@@ -8,7 +8,12 @@ import { Form, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { providerSchema, type ProviderFormData } from "@/lib/schemas/provider";
 import type { AppId } from "@/lib/api";
-import type { ProviderCategory, ProviderMeta } from "@/types";
+import type {
+  ProviderCategory,
+  ProviderMeta,
+  ProviderTestConfig,
+  ProviderProxyConfig,
+} from "@/types";
 import {
   providerPresets,
   type ProviderPreset,
@@ -41,6 +46,7 @@ import { BasicFormFields } from "./BasicFormFields";
 import { ClaudeFormFields } from "./ClaudeFormFields";
 import { CodexFormFields } from "./CodexFormFields";
 import { GeminiFormFields } from "./GeminiFormFields";
+import { ProviderAdvancedConfig } from "./ProviderAdvancedConfig";
 import {
   useProviderCategory,
   useApiKeyState,
@@ -87,7 +93,11 @@ const OPENCODE_DEFAULT_CONFIG = JSON.stringify(
 
 type PresetEntry = {
   id: string;
-  preset: ProviderPreset | CodexProviderPreset | GeminiProviderPreset | OpenCodeProviderPreset;
+  preset:
+    | ProviderPreset
+    | CodexProviderPreset
+    | GeminiProviderPreset
+    | OpenCodeProviderPreset;
 };
 
 interface ProviderFormProps {
@@ -151,6 +161,14 @@ export function ProviderForm({
     () => initialData?.meta?.endpointAutoSelect ?? true,
   );
 
+  // 高级配置：模型测试和代理配置
+  const [testConfig, setTestConfig] = useState<ProviderTestConfig>(
+    () => initialData?.meta?.testConfig ?? { enabled: false },
+  );
+  const [proxyConfig, setProxyConfig] = useState<ProviderProxyConfig>(
+    () => initialData?.meta?.proxyConfig ?? { enabled: false },
+  );
+
   // 使用 category hook
   const { category } = useProviderCategory({
     appId,
@@ -168,6 +186,8 @@ export function ProviderForm({
       setDraftCustomEndpoints([]);
     }
     setEndpointAutoSelect(initialData?.meta?.endpointAutoSelect ?? true);
+    setTestConfig(initialData?.meta?.testConfig ?? { enabled: false });
+    setProxyConfig(initialData?.meta?.proxyConfig ?? { enabled: false });
   }, [appId, initialData]);
 
   const defaultValues: ProviderFormData = useMemo(
@@ -506,7 +526,7 @@ export function ProviderForm({
     if (!opencodeProvidersData?.providers) return [];
     // Exclude current provider ID when in edit mode
     return Object.keys(opencodeProvidersData.providers).filter(
-      (k) => k !== providerId
+      (k) => k !== providerId,
     );
   }, [opencodeProvidersData?.providers, providerId]);
 
@@ -521,7 +541,11 @@ export function ProviderForm({
   const [opencodeNpm, setOpencodeNpm] = useState<string>(() => {
     if (appId !== "opencode") return "@ai-sdk/openai-compatible";
     try {
-      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      const config = JSON.parse(
+        initialData?.settingsConfig
+          ? JSON.stringify(initialData.settingsConfig)
+          : OPENCODE_DEFAULT_CONFIG,
+      );
       return config.npm || "@ai-sdk/openai-compatible";
     } catch {
       return "@ai-sdk/openai-compatible";
@@ -531,7 +555,11 @@ export function ProviderForm({
   const [opencodeApiKey, setOpencodeApiKey] = useState<string>(() => {
     if (appId !== "opencode") return "";
     try {
-      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      const config = JSON.parse(
+        initialData?.settingsConfig
+          ? JSON.stringify(initialData.settingsConfig)
+          : OPENCODE_DEFAULT_CONFIG,
+      );
       return config.options?.apiKey || "";
     } catch {
       return "";
@@ -541,17 +569,27 @@ export function ProviderForm({
   const [opencodeBaseUrl, setOpencodeBaseUrl] = useState<string>(() => {
     if (appId !== "opencode") return "";
     try {
-      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      const config = JSON.parse(
+        initialData?.settingsConfig
+          ? JSON.stringify(initialData.settingsConfig)
+          : OPENCODE_DEFAULT_CONFIG,
+      );
       return config.options?.baseURL || "";
     } catch {
       return "";
     }
   });
 
-  const [opencodeModels, setOpencodeModels] = useState<Record<string, OpenCodeModel>>(() => {
+  const [opencodeModels, setOpencodeModels] = useState<
+    Record<string, OpenCodeModel>
+  >(() => {
     if (appId !== "opencode") return {};
     try {
-      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      const config = JSON.parse(
+        initialData?.settingsConfig
+          ? JSON.stringify(initialData.settingsConfig)
+          : OPENCODE_DEFAULT_CONFIG,
+      );
       return config.models || {};
     } catch {
       return {};
@@ -559,10 +597,16 @@ export function ProviderForm({
   });
 
   // OpenCode extra options state (e.g., timeout, setCacheKey)
-  const [opencodeExtraOptions, setOpencodeExtraOptions] = useState<Record<string, string>>(() => {
+  const [opencodeExtraOptions, setOpencodeExtraOptions] = useState<
+    Record<string, string>
+  >(() => {
     if (appId !== "opencode") return {};
     try {
-      const config = JSON.parse(initialData?.settingsConfig ? JSON.stringify(initialData.settingsConfig) : OPENCODE_DEFAULT_CONFIG);
+      const config = JSON.parse(
+        initialData?.settingsConfig
+          ? JSON.stringify(initialData.settingsConfig)
+          : OPENCODE_DEFAULT_CONFIG,
+      );
       const options = config.options || {};
       const extra: Record<string, string> = {};
       const knownKeys = ["baseURL", "apiKey", "headers"];
@@ -583,7 +627,9 @@ export function ProviderForm({
     (npm: string) => {
       setOpencodeNpm(npm);
       try {
-        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(
+          form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG,
+        );
         config.npm = npm;
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
       } catch {
@@ -597,7 +643,9 @@ export function ProviderForm({
     (apiKey: string) => {
       setOpencodeApiKey(apiKey);
       try {
-        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(
+          form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG,
+        );
         if (!config.options) config.options = {};
         config.options.apiKey = apiKey;
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -612,7 +660,9 @@ export function ProviderForm({
     (baseUrl: string) => {
       setOpencodeBaseUrl(baseUrl);
       try {
-        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(
+          form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG,
+        );
         if (!config.options) config.options = {};
         config.options.baseURL = baseUrl.trim().replace(/\/+$/, "");
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
@@ -627,7 +677,9 @@ export function ProviderForm({
     (models: Record<string, OpenCodeModel>) => {
       setOpencodeModels(models);
       try {
-        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(
+          form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG,
+        );
         config.models = models;
         form.setValue("settingsConfig", JSON.stringify(config, null, 2));
       } catch {
@@ -641,7 +693,9 @@ export function ProviderForm({
     (options: Record<string, string>) => {
       setOpencodeExtraOptions(options);
       try {
-        const config = JSON.parse(form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG);
+        const config = JSON.parse(
+          form.getValues("settingsConfig") || OPENCODE_DEFAULT_CONFIG,
+        );
         if (!config.options) config.options = {};
 
         // Remove old extra options (keep only known keys)
@@ -883,6 +937,9 @@ export function ProviderForm({
     payload.meta = {
       ...(baseMeta ?? {}),
       endpointAutoSelect,
+      // 添加高级配置
+      testConfig: testConfig.enabled ? testConfig : undefined,
+      proxyConfig: proxyConfig.enabled ? proxyConfig : undefined,
     };
 
     onSubmit(payload);
@@ -1122,32 +1179,44 @@ export function ProviderForm({
                 <Input
                   id="opencode-key"
                   value={opencodeProviderKey}
-                  onChange={(e) => setOpencodeProviderKey(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  onChange={(e) =>
+                    setOpencodeProviderKey(
+                      e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                    )
+                  }
                   placeholder={t("opencode.providerKeyPlaceholder")}
                   disabled={isEditMode}
                   className={
-                    (existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode) ||
-                    (opencodeProviderKey.trim() !== "" && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey))
+                    (existingOpencodeKeys.includes(opencodeProviderKey) &&
+                      !isEditMode) ||
+                    (opencodeProviderKey.trim() !== "" &&
+                      !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey))
                       ? "border-destructive"
                       : ""
                   }
                 />
-                {existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode && (
-                  <p className="text-xs text-destructive">
-                    {t("opencode.providerKeyDuplicate")}
-                  </p>
-                )}
-                {opencodeProviderKey.trim() !== "" && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey) && (
-                  <p className="text-xs text-destructive">
-                    {t("opencode.providerKeyInvalid")}
-                  </p>
-                )}
-                {!(existingOpencodeKeys.includes(opencodeProviderKey) && !isEditMode) &&
-                 (opencodeProviderKey.trim() === "" || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey)) && (
-                  <p className="text-xs text-muted-foreground">
-                    {t("opencode.providerKeyHint")}
-                  </p>
-                )}
+                {existingOpencodeKeys.includes(opencodeProviderKey) &&
+                  !isEditMode && (
+                    <p className="text-xs text-destructive">
+                      {t("opencode.providerKeyDuplicate")}
+                    </p>
+                  )}
+                {opencodeProviderKey.trim() !== "" &&
+                  !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey) && (
+                    <p className="text-xs text-destructive">
+                      {t("opencode.providerKeyInvalid")}
+                    </p>
+                  )}
+                {!(
+                  existingOpencodeKeys.includes(opencodeProviderKey) &&
+                  !isEditMode
+                ) &&
+                  (opencodeProviderKey.trim() === "" ||
+                    /^[a-z0-9]+(-[a-z0-9]+)*$/.test(opencodeProviderKey)) && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("opencode.providerKeyHint")}
+                    </p>
+                  )}
               </div>
             ) : undefined
           }
@@ -1390,6 +1459,14 @@ export function ProviderForm({
             />
           </>
         )}
+
+        {/* 高级配置：模型测试和代理配置 */}
+        <ProviderAdvancedConfig
+          testConfig={testConfig}
+          proxyConfig={proxyConfig}
+          onTestConfigChange={setTestConfig}
+          onProxyConfigChange={setProxyConfig}
+        />
 
         {showButtons && (
           <div className="flex justify-end gap-2">
