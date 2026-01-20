@@ -893,7 +893,10 @@ function App() {
                   activeApp={activeApp}
                   onSwitch={setActiveApp}
                   visibleApps={visibleApps}
-                  compact={isCurrentAppTakeoverActive && Object.values(visibleApps).filter(Boolean).length >= 3}
+                  compact={
+                    isCurrentAppTakeoverActive &&
+                    Object.values(visibleApps).filter(Boolean).length >= 3
+                  }
                 />
 
                 <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">

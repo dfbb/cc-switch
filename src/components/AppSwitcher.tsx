@@ -11,7 +11,12 @@ interface AppSwitcherProps {
 
 const ALL_APPS: AppId[] = ["claude", "codex", "gemini", "opencode"];
 
-export function AppSwitcher({ activeApp, onSwitch, visibleApps, compact }: AppSwitcherProps) {
+export function AppSwitcher({
+  activeApp,
+  onSwitch,
+  visibleApps,
+  compact,
+}: AppSwitcherProps) {
   const handleSwitch = (app: AppId) => {
     if (app === activeApp) return;
     onSwitch(app);

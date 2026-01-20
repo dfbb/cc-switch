@@ -605,8 +605,7 @@ exec bash --norc --noprofile
         script_file = script_file.display()
     );
 
-    std::fs::write(&script_file, &script_content)
-        .map_err(|e| format!("写入启动脚本失败: {e}"))?;
+    std::fs::write(&script_file, &script_content).map_err(|e| format!("写入启动脚本失败: {e}"))?;
 
     // Make script executable
     std::fs::set_permissions(&script_file, std::fs::Permissions::from_mode(0o755))
@@ -675,8 +674,7 @@ exec bash --norc --noprofile
         script_file = script_file.display()
     );
 
-    std::fs::write(&script_file, &script_content)
-        .map_err(|e| format!("写入启动脚本失败: {e}"))?;
+    std::fs::write(&script_file, &script_content).map_err(|e| format!("写入启动脚本失败: {e}"))?;
 
     std::fs::set_permissions(&script_file, std::fs::Permissions::from_mode(0o755))
         .map_err(|e| format!("设置脚本权限失败: {e}"))?;
