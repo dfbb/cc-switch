@@ -45,6 +45,18 @@ impl Default for VisibleApps {
     }
 }
 
+impl VisibleApps {
+    /// Check if the specified app is visible
+    pub fn is_visible(&self, app: &AppType) -> bool {
+        match app {
+            AppType::Claude => self.claude,
+            AppType::Codex => self.codex,
+            AppType::Gemini => self.gemini,
+            AppType::OpenCode => self.opencode,
+        }
+    }
+}
+
 /// 应用设置结构
 ///
 /// 存储设备级别设置，保存在本地 `~/.cc-switch/settings.json`，不随数据库同步。
