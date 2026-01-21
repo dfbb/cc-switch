@@ -65,3 +65,5 @@ export function getIcon(name: string): string {
 export function hasIcon(name: string): boolean {
   return name.toLowerCase() in icons;
 }
+
+export { getIconMetadata } from "./metadata";
