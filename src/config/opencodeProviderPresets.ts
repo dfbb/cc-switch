@@ -302,6 +302,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         editorValue: "",
       },
     },
+    icon: "catcoder",
   },
   {
     name: "Longcat",
