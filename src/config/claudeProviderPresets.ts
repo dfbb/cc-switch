@@ -459,9 +459,7 @@ export const providerPresets: ProviderPreset[] = [
         ANTHROPIC_AUTH_TOKEN: "",
       },
     },
-    category: "third_party",
-    icon: "rc",
-    iconColor: "#E96B2C",
+    category: "third_party"
   },
   {
     name: "OpenRouter",
