@@ -895,7 +895,7 @@ function App() {
                   visibleApps={visibleApps}
                   compact={
                     isCurrentAppTakeoverActive &&
-                    Object.values(visibleApps).filter(Boolean).length >= 3
+                    Object.values(visibleApps).filter(Boolean).length >= 4
                   }
                 />
 
