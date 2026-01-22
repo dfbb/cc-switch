@@ -28,16 +28,6 @@ export function WindowSettings({ settings, onChange }: WindowSettingsProps) {
         />
 
         <ToggleRow
-          icon={<AppWindow className="h-4 w-4 text-blue-500" />}
-          title={t("settings.minimizeToTray")}
-          description={t("settings.minimizeToTrayDescription")}
-          checked={settings.minimizeToTrayOnClose}
-          onCheckedChange={(value) =>
-            onChange({ minimizeToTrayOnClose: value })
-          }
-        />
-
-        <ToggleRow
           icon={<MonitorUp className="h-4 w-4 text-purple-500" />}
           title={t("settings.enableClaudePluginIntegration")}
           description={t("settings.enableClaudePluginIntegrationDescription")}
@@ -53,6 +43,16 @@ export function WindowSettings({ settings, onChange }: WindowSettingsProps) {
           description={t("settings.skipClaudeOnboardingDescription")}
           checked={!!settings.skipClaudeOnboarding}
           onCheckedChange={(value) => onChange({ skipClaudeOnboarding: value })}
+        />
+
+        <ToggleRow
+          icon={<AppWindow className="h-4 w-4 text-blue-500" />}
+          title={t("settings.minimizeToTray")}
+          description={t("settings.minimizeToTrayDescription")}
+          checked={settings.minimizeToTrayOnClose}
+          onCheckedChange={(value) =>
+            onChange({ minimizeToTrayOnClose: value })
+          }
         />
       </div>
     </section>

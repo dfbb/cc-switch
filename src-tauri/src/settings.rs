@@ -73,7 +73,7 @@ pub struct AppSettings {
     #[serde(default)]
     pub enable_claude_plugin_integration: bool,
     /// 是否跳过 Claude Code 初次安装确认
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub skip_claude_onboarding: bool,
     /// 是否开机自启
     #[serde(default)]
@@ -124,7 +124,7 @@ impl Default for AppSettings {
             show_in_tray: true,
             minimize_to_tray_on_close: true,
             enable_claude_plugin_integration: false,
-            skip_claude_onboarding: true,
+            skip_claude_onboarding: false,
             launch_on_startup: false,
             language: None,
             visible_apps: None,

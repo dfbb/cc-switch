@@ -83,7 +83,7 @@ export function useSettingsForm(): UseSettingsFormResult {
       minimizeToTrayOnClose: data.minimizeToTrayOnClose ?? true,
       enableClaudePluginIntegration:
         data.enableClaudePluginIntegration ?? false,
-      skipClaudeOnboarding: data.skipClaudeOnboarding ?? true,
+      skipClaudeOnboarding: data.skipClaudeOnboarding ?? false,
       claudeConfigDir: sanitizeDir(data.claudeConfigDir),
       codexConfigDir: sanitizeDir(data.codexConfigDir),
       language: normalizedLanguage,
@@ -103,7 +103,7 @@ export function useSettingsForm(): UseSettingsFormResult {
             showInTray: true,
             minimizeToTrayOnClose: true,
             enableClaudePluginIntegration: false,
-            skipClaudeOnboarding: true,
+            skipClaudeOnboarding: false,
             language: readPersistedLanguage(),
           } as SettingsFormState);
 
@@ -138,7 +138,7 @@ export function useSettingsForm(): UseSettingsFormResult {
         minimizeToTrayOnClose: serverData.minimizeToTrayOnClose ?? true,
         enableClaudePluginIntegration:
           serverData.enableClaudePluginIntegration ?? false,
-        skipClaudeOnboarding: serverData.skipClaudeOnboarding ?? true,
+        skipClaudeOnboarding: serverData.skipClaudeOnboarding ?? false,
         claudeConfigDir: sanitizeDir(serverData.claudeConfigDir),
         codexConfigDir: sanitizeDir(serverData.codexConfigDir),
         language: normalizedLanguage,
