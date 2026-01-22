@@ -42,21 +42,10 @@ pub fn get_opencode_dir() -> PathBuf {
         return override_dir;
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        // Windows: %APPDATA%\opencode
-        dirs::data_dir()
-            .map(|d| d.join("opencode"))
-            .unwrap_or_else(|| PathBuf::from(".config").join("opencode"))
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    {
-        // Unix: ~/.config/opencode
-        dirs::home_dir()
-            .map(|h| h.join(".config").join("opencode"))
-            .unwrap_or_else(|| PathBuf::from(".config").join("opencode"))
-    }
+    // 所有平台统一使用 ~/.config/opencode
+    dirs::home_dir()
+        .map(|h| h.join(".config").join("opencode"))
+        .unwrap_or_else(|| PathBuf::from(".config").join("opencode"))
 }
 
 /// 获取 OpenCode 配置文件路径
