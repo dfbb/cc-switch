@@ -142,7 +142,7 @@ const UnifiedMcpPanel = React.forwardRef<
   };
 
   return (
-    <div className="px-4 max-w-[56rem] mx-auto flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
+    <div className="px-6 flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
       {/* Info Section */}
       <div className="flex-shrink-0 py-4 glass rounded-xl border border-white/10 mb-4 px-6">
         <div className="text-sm text-muted-foreground">

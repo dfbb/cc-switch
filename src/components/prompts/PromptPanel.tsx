@@ -96,7 +96,7 @@ const PromptPanel = React.forwardRef<PromptPanelHandle, PromptPanelProps>(
     const enabledPrompt = promptEntries.find(([_, p]) => p.enabled);
 
     return (
-      <div className="flex flex-col h-[calc(100vh-8rem)] px-4 max-w-[56rem] mx-auto">
+      <div className="flex flex-col h-[calc(100vh-8rem)] px-6">
         <div className="flex-shrink-0 py-4 glass rounded-xl border border-white/10 mb-4 px-6">
           <div className="text-sm text-muted-foreground">
             {t("prompts.count", { count: promptEntries.length })} ·{" "}

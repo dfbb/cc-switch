@@ -696,7 +696,7 @@ function App() {
         }
       >
         <div
-          className="mx-auto flex h-full max-w-[56rem] items-center justify-between gap-2 px-4"
+          className="flex h-full items-center justify-between gap-2 px-6"
           data-tauri-drag-region
           style={{ WebkitAppRegion: "drag" } as any}
         >
