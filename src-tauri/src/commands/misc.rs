@@ -729,19 +729,16 @@ echo {}
 claude --settings \"{}\"
 del \"{}\" >nul 2>&1
 del \"%~f0\" >nul 2>&1
-if errorlevel 1 (
-    echo.
-    echo Press any key to close...
-    pause >nul
-)",
+",
         config_path_for_batch, config_path_for_batch, config_path_for_batch
     );
 
     std::fs::write(&bat_file, content).map_err(|e| format!("写入批处理文件失败: {e}"))?;
 
     // Use output() to capture errors from the start command
+    // Use /K instead of /C to keep the window open after execution
     let output = Command::new("cmd")
-        .args(["/C", "start", "cmd", "/C", &bat_file.to_string_lossy()])
+        .args(["/C", "start", "cmd", "/K", &bat_file.to_string_lossy()])
         .creation_flags(CREATE_NO_WINDOW)
         .output()
         .map_err(|e| format!("执行 cmd 失败: {e}"))?;
