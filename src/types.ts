@@ -310,6 +310,8 @@ export interface OpenCodeModel {
     output?: number;
   };
   options?: Record<string, unknown>; // 模型级别额外选项（provider 路由等）
+  // 支持任意额外字段（cost、modalities、thinking、variants 等）
+  [key: string]: unknown;
 }
 
 // OpenCode 供应商选项
