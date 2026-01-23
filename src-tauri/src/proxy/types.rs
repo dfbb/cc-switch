@@ -199,20 +199,20 @@ pub struct AppProxyConfig {
 #[serde(rename_all = "camelCase")]
 pub struct RectifierConfig {
     /// 总开关：是否启用整流器
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub enabled: bool,
     /// 请求整流：启用 thinking 签名整流器
     ///
     /// 处理错误：Invalid 'signature' in 'thinking' block
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub request_thinking_signature: bool,
 }
 
 impl Default for RectifierConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
-            request_thinking_signature: true,
+            enabled: false,
+            request_thinking_signature: false,
         }
     }
 }
@@ -270,33 +270,32 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_rectifier_config_default_enabled() {
-        // 验证 RectifierConfig::default() 返回全启用状态
-        // 防止回归：#[derive(Default)] 会使 bool 默认为 false
+    fn test_rectifier_config_default_disabled() {
+        // 验证 RectifierConfig::default() 返回全禁用状态
         let config = RectifierConfig::default();
-        assert!(config.enabled, "整流器总开关默认应为 true");
+        assert!(!config.enabled, "整流器总开关默认应为 false");
         assert!(
-            config.request_thinking_signature,
-            "thinking 签名整流器默认应为 true"
+            !config.request_thinking_signature,
+            "thinking 签名整流器默认应为 false"
         );
     }
 
     #[test]
     fn test_rectifier_config_serde_default() {
-        // 验证反序列化缺字段时使用 default_true
+        // 验证反序列化缺字段时使用默认值 false
         let json = "{}";
-        let config: RectifierConfig = serde_json::from_str(json).unwrap();
-        assert!(config.enabled);
-        assert!(config.request_thinking_signature);
-    }
-
-    #[test]
-    fn test_rectifier_config_serde_explicit_false() {
-        // 验证显式设置 false 时正确反序列化
-        let json = r#"{"enabled": false, "requestThinkingSignature": false}"#;
         let config: RectifierConfig = serde_json::from_str(json).unwrap();
         assert!(!config.enabled);
         assert!(!config.request_thinking_signature);
+    }
+
+    #[test]
+    fn test_rectifier_config_serde_explicit_true() {
+        // 验证显式设置 true 时正确反序列化
+        let json = r#"{"enabled": true, "requestThinkingSignature": true}"#;
+        let config: RectifierConfig = serde_json::from_str(json).unwrap();
+        assert!(config.enabled);
+        assert!(config.request_thinking_signature);
     }
 
     #[test]
