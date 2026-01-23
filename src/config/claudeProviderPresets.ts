@@ -452,7 +452,7 @@ export const providerPresets: ProviderPreset[] = [
   {
     name: "RightCode",
     websiteUrl: "https://www.right.codes",
-    apiKeyUrl: "https://www.right.codes/register?aff=0bdf9bfa",
+    apiKeyUrl: "https://www.right.codes/register?aff=CCSWITCH",
     settingsConfig: {
       env: {
         ANTHROPIC_BASE_URL: "https://www.right.codes/claude",
@@ -460,6 +460,8 @@ export const providerPresets: ProviderPreset[] = [
       },
     },
     category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "rightcode",
     icon: "rc",
     iconColor: "#E96B2C",
   },

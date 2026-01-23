@@ -649,7 +649,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
   {
     name: "RightCode",
     websiteUrl: "https://www.right.codes",
-    apiKeyUrl: "https://www.right.codes/register?aff=0bdf9bfa",
+    apiKeyUrl: "https://www.right.codes/register?aff=CCSWITCH",
     settingsConfig: {
       npm: "@ai-sdk/openai",
       name: "RightCode",
@@ -663,6 +663,8 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
       },
     },
     category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "rightcode",
     icon: "rc",
     iconColor: "#E96B2C",
     templateValues: {
