@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.10.1] - 2026-01-23
+
+### Patch Release
+
+This maintenance release includes important bug fixes for Windows platform, UI improvements, and code quality enhancements.
+
+### Added
+
+- **Provider Icons**: Updated RightCode provider icon with improved visual design
+
+### Changed
+
+- **Proxy Rectifier**: Changed rectifier default state to disabled for better stability
+- **Window Settings**: Reordered window settings and updated default values for improved UX
+- **UI Layout**: Increased app icon collapse threshold from 3 to 4 icons
+- **Code Quality**: Simplified `RectifierConfig` implementation using `#[derive(Default)]`
+
+### Fixed
+
+- **Windows Platform**:
+  - Fixed terminal window closing immediately after execution on Windows
+  - Corrected OpenCode config path resolution on Windows
+- **UI Improvements**:
+  - Fixed ProviderIcon color validation to prevent black icons from appearing
+  - Unified layout padding across all panels for consistent spacing
+  - Fixed panel content alignment with header constraints
+- **Code Quality**: Resolved Rust Clippy warnings and applied consistent formatting
+
+---
+
 ## [3.10.0] - 2026-01-21
 
 ### Feature Release

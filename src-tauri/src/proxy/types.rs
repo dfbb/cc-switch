@@ -195,7 +195,7 @@ pub struct AppProxyConfig {
 /// 整流器配置
 ///
 /// 存储在 settings 表中
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct RectifierConfig {
     /// 总开关：是否启用整流器
@@ -206,15 +206,6 @@ pub struct RectifierConfig {
     /// 处理错误：Invalid 'signature' in 'thinking' block
     #[serde(default)]
     pub request_thinking_signature: bool,
-}
-
-impl Default for RectifierConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            request_thinking_signature: false,
-        }
-    }
 }
 
 fn default_true() -> bool {

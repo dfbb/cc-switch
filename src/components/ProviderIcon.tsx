@@ -42,7 +42,7 @@ export const ProviderIcon: React.FC<ProviderIconProps> = ({
   // 获取有效颜色：优先使用传入的有效 color，否则从元数据获取 defaultColor
   const effectiveColor = useMemo(() => {
     // 只有当 color 是有效的非空字符串时才使用
-    if (color && typeof color === 'string' && color.trim() !== '') {
+    if (color && typeof color === "string" && color.trim() !== "") {
       return color;
     }
     // 否则从元数据获取 defaultColor
