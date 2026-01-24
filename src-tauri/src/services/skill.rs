@@ -21,6 +21,19 @@ use crate::error::format_skill_error;
 
 // ========== 数据结构 ==========
 
+/// Skill 同步方式
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum SyncMethod {
+    /// 自动选择：优先 symlink，失败时回退到 copy
+    #[default]
+    Auto,
+    /// 符号链接（推荐，节省磁盘空间）
+    Symlink,
+    /// 文件复制（兼容模式）
+    Copy,
+}
+
 /// 可发现的技能（来自仓库）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoverableSkill {
@@ -305,7 +318,7 @@ impl SkillService {
         db.save_skill(&installed_skill)?;
 
         // 同步到当前应用目录
-        Self::copy_to_app(&install_name, current_app)?;
+        Self::sync_to_app_dir(&install_name, current_app)?;
 
         log::info!(
             "Skill {} 安装成功，已启用 {:?}",
@@ -368,7 +381,7 @@ impl SkillService {
 
         // 同步文件
         if enabled {
-            Self::copy_to_app(&skill.directory, app)?;
+            Self::sync_to_app_dir(&skill.directory, app)?;
         } else {
             Self::remove_from_app(&skill.directory, app)?;
         }
@@ -566,8 +579,41 @@ impl SkillService {
 
     // ========== 文件同步方法 ==========
 
-    /// 复制 Skill 到应用目录
-    pub fn copy_to_app(directory: &str, app: &AppType) -> Result<()> {
+    /// 创建符号链接（跨平台）
+    ///
+    /// - Unix: 使用 std::os::unix::fs::symlink
+    /// - Windows: 使用 std::os::windows::fs::symlink_dir
+    #[cfg(unix)]
+    fn create_symlink(src: &Path, dest: &Path) -> Result<()> {
+        std::os::unix::fs::symlink(src, dest)
+            .with_context(|| format!("创建符号链接失败: {} -> {}", src.display(), dest.display()))
+    }
+
+    #[cfg(windows)]
+    fn create_symlink(src: &Path, dest: &Path) -> Result<()> {
+        std::os::windows::fs::symlink_dir(src, dest)
+            .with_context(|| format!("创建符号链接失败: {} -> {}", src.display(), dest.display()))
+    }
+
+    /// 检查路径是否为符号链接
+    fn is_symlink(path: &Path) -> bool {
+        path.symlink_metadata()
+            .map(|m| m.file_type().is_symlink())
+            .unwrap_or(false)
+    }
+
+    /// 获取当前同步方式配置
+    fn get_sync_method() -> SyncMethod {
+        crate::settings::get_skill_sync_method()
+    }
+
+    /// 同步 Skill 到应用目录（使用 symlink 或 copy）
+    ///
+    /// 根据配置和平台选择最佳同步方式：
+    /// - Auto: 优先尝试 symlink，失败时回退到 copy
+    /// - Symlink: 仅使用 symlink
+    /// - Copy: 仅使用文件复制
+    pub fn sync_to_app_dir(directory: &str, app: &AppType) -> Result<()> {
         let ssot_dir = Self::get_ssot_dir()?;
         let source = ssot_dir.join(directory);
 
@@ -580,25 +626,77 @@ impl SkillService {
 
         let dest = app_dir.join(directory);
 
-        // 如果已存在则先删除
-        if dest.exists() {
-            fs::remove_dir_all(&dest)?;
+        // 如果已存在则先删除（无论是 symlink 还是真实目录）
+        if dest.exists() || Self::is_symlink(&dest) {
+            Self::remove_path(&dest)?;
         }
 
-        Self::copy_dir_recursive(&source, &dest)?;
+        let sync_method = Self::get_sync_method();
 
-        log::debug!("Skill {directory} 已复制到 {app:?}");
+        match sync_method {
+            SyncMethod::Auto => {
+                // 优先尝试 symlink
+                match Self::create_symlink(&source, &dest) {
+                    Ok(()) => {
+                        log::debug!("Skill {directory} 已通过 symlink 同步到 {app:?}");
+                        return Ok(());
+                    }
+                    Err(err) => {
+                        log::warn!(
+                            "Symlink 创建失败，将回退到文件复制: {} -> {}. 错误: {err:#}",
+                            source.display(),
+                            dest.display()
+                        );
+                    }
+                }
+                // Fallback 到 copy
+                Self::copy_dir_recursive(&source, &dest)?;
+                log::debug!("Skill {directory} 已通过复制同步到 {app:?}");
+            }
+            SyncMethod::Symlink => {
+                Self::create_symlink(&source, &dest)?;
+                log::debug!("Skill {directory} 已通过 symlink 同步到 {app:?}");
+            }
+            SyncMethod::Copy => {
+                Self::copy_dir_recursive(&source, &dest)?;
+                log::debug!("Skill {directory} 已通过复制同步到 {app:?}");
+            }
+        }
 
         Ok(())
     }
 
-    /// 从应用目录删除 Skill
+    /// 复制 Skill 到应用目录（保留用于向后兼容）
+    #[deprecated(note = "请使用 sync_to_app_dir() 代替")]
+    pub fn copy_to_app(directory: &str, app: &AppType) -> Result<()> {
+        Self::sync_to_app_dir(directory, app)
+    }
+
+    /// 删除路径（支持 symlink 和真实目录）
+    fn remove_path(path: &Path) -> Result<()> {
+        if Self::is_symlink(path) {
+            // 符号链接：仅删除链接本身，不影响源文件
+            #[cfg(unix)]
+            fs::remove_file(path)?;
+            #[cfg(windows)]
+            fs::remove_dir(path)?; // Windows 的目录 symlink 需要用 remove_dir
+        } else if path.is_dir() {
+            // 真实目录：递归删除
+            fs::remove_dir_all(path)?;
+        } else if path.exists() {
+            // 普通文件
+            fs::remove_file(path)?;
+        }
+        Ok(())
+    }
+
+    /// 从应用目录删除 Skill（支持 symlink 和真实目录）
     pub fn remove_from_app(directory: &str, app: &AppType) -> Result<()> {
         let app_dir = Self::get_app_skills_dir(app)?;
         let skill_path = app_dir.join(directory);
 
-        if skill_path.exists() {
-            fs::remove_dir_all(&skill_path)?;
+        if skill_path.exists() || Self::is_symlink(&skill_path) {
+            Self::remove_path(&skill_path)?;
             log::debug!("Skill {directory} 已从 {app:?} 删除");
         }
 
@@ -611,7 +709,7 @@ impl SkillService {
 
         for skill in skills.values() {
             if skill.apps.is_enabled_for(app) {
-                Self::copy_to_app(&skill.directory, app)?;
+                Self::sync_to_app_dir(&skill.directory, app)?;
             }
         }
 

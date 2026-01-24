@@ -137,6 +137,9 @@ export interface ProviderMeta {
   proxyConfig?: ProviderProxyConfig;
 }
 
+// Skill 同步方式
+export type SkillSyncMethod = "auto" | "symlink" | "copy";
+
 // 主页面显示的应用配置
 export interface VisibleApps {
   claude: boolean;
@@ -182,6 +185,10 @@ export interface Settings {
   currentProviderCodex?: string;
   // 当前 Gemini 供应商 ID（优先于数据库 is_current）
   currentProviderGemini?: string;
+
+  // ===== Skill 同步设置 =====
+  // Skill 同步方式：auto（默认，优先 symlink）、symlink、copy
+  skillSyncMethod?: SkillSyncMethod;
 }
 
 // MCP 服务器连接参数（宽松：允许扩展字段）

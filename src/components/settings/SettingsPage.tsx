@@ -35,6 +35,7 @@ import { LanguageSettings } from "@/components/settings/LanguageSettings";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { WindowSettings } from "@/components/settings/WindowSettings";
 import { AppVisibilitySettings } from "@/components/settings/AppVisibilitySettings";
+import { SkillSyncMethodSettings } from "@/components/settings/SkillSyncMethodSettings";
 import { DirectorySettings } from "@/components/settings/DirectorySettings";
 import { ImportExportSection } from "@/components/settings/ImportExportSection";
 import { AboutSection } from "@/components/settings/AboutSection";
@@ -248,6 +249,12 @@ export function SettingsPage({
                   <WindowSettings
                     settings={settings}
                     onChange={handleAutoSave}
+                  />
+                  <SkillSyncMethodSettings
+                    value={settings.skillSyncMethod ?? "auto"}
+                    onChange={(method) =>
+                      handleAutoSave({ skillSyncMethod: method })
+                    }
                   />
                 </motion.div>
               ) : null}

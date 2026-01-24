@@ -5,6 +5,7 @@ use std::sync::{OnceLock, RwLock};
 
 use crate::app_config::AppType;
 use crate::error::AppError;
+use crate::services::skill::SyncMethod;
 
 /// 自定义端点配置（历史兼容，实际存储在 provider.meta.custom_endpoints）
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -108,6 +109,11 @@ pub struct AppSettings {
     /// 当前 OpenCode 供应商 ID（本地存储，对 OpenCode 可能无意义，但保持结构一致）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_provider_opencode: Option<String>,
+
+    // ===== Skill 同步设置 =====
+    /// Skill 同步方式：auto（默认，优先 symlink）、symlink、copy
+    #[serde(default)]
+    pub skill_sync_method: SyncMethod,
 }
 
 fn default_show_in_tray() -> bool {
@@ -136,6 +142,7 @@ impl Default for AppSettings {
             current_provider_codex: None,
             current_provider_gemini: None,
             current_provider_opencode: None,
+            skill_sync_method: SyncMethod::default(),
         }
     }
 }
@@ -381,4 +388,17 @@ pub fn get_effective_current_provider(
 
     // Fallback 到数据库的 is_current
     db.get_current_provider(app_type.as_str())
+}
+
+// ===== Skill 同步方式管理函数 =====
+
+/// 获取 Skill 同步方式配置
+pub fn get_skill_sync_method() -> SyncMethod {
+    settings_store()
+        .read()
+        .unwrap_or_else(|e| {
+            log::warn!("设置锁已毒化，使用恢复值: {e}");
+            e.into_inner()
+        })
+        .skill_sync_method
 }
