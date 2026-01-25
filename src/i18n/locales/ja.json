@@ -289,6 +289,33 @@
       "copy": "ファイルコピー",
       "symlinkHint": "シンボリックリンクはディスク容量を節約し、リアルタイム同期を有効にします。注意：Windowsでは管理者権限または開発者モードが必要な場合があります"
     },
+    "terminal": {
+      "title": "優先ターミナル",
+      "description": "ターミナルボタンをクリックした時に使用するターミナルアプリを選択",
+      "fallbackHint": "選択したターミナルが利用できない場合、システムのデフォルトが使用されます",
+      "options": {
+        "macos": {
+          "terminal": "Terminal.app",
+          "iterm2": "iTerm2",
+          "alacritty": "Alacritty",
+          "kitty": "Kitty",
+          "ghostty": "Ghostty"
+        },
+        "windows": {
+          "cmd": "コマンドプロンプト",
+          "powershell": "PowerShell",
+          "wt": "Windows Terminal"
+        },
+        "linux": {
+          "gnomeTerminal": "GNOME Terminal",
+          "konsole": "Konsole",
+          "xfce4Terminal": "Xfce4 Terminal",
+          "alacritty": "Alacritty",
+          "kitty": "Kitty",
+          "ghostty": "Ghostty"
+        }
+      }
+    },
     "configDirectoryOverride": "設定ディレクトリの上書き（詳細）",
     "configDirectoryDescription": "WSL などで Claude Code や Codex を使う場合、ここで設定ディレクトリを WSL 側に合わせるとデータを揃えられます。",
     "appConfigDir": "CC Switch 設定ディレクトリ",

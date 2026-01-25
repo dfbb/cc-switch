@@ -191,6 +191,13 @@ export interface Settings {
   // ===== Skill 同步设置 =====
   // Skill 同步方式：auto（默认，优先 symlink）、symlink、copy
   skillSyncMethod?: SkillSyncMethod;
+
+  // ===== 终端设置 =====
+  // 首选终端应用（可选，默认使用系统默认终端）
+  // macOS: "terminal" | "iterm2" | "warp" | "alacritty" | "kitty" | "ghostty"
+  // Windows: "cmd" | "powershell" | "wt"
+  // Linux: "gnome-terminal" | "konsole" | "xfce4-terminal" | "alacritty" | "kitty" | "ghostty"
+  preferredTerminal?: string;
 }
 
 // MCP 服务器连接参数（宽松：允许扩展字段）

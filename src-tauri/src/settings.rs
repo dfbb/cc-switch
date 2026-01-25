@@ -117,6 +117,14 @@ pub struct AppSettings {
     /// Skill 同步方式：auto（默认，优先 symlink）、symlink、copy
     #[serde(default)]
     pub skill_sync_method: SyncMethod,
+
+    // ===== 终端设置 =====
+    /// 首选终端应用（可选，默认使用系统默认终端）
+    /// - macOS: "terminal" | "iterm2" | "warp" | "alacritty" | "kitty" | "ghostty"
+    /// - Windows: "cmd" | "powershell" | "wt" (Windows Terminal)
+    /// - Linux: "gnome-terminal" | "konsole" | "xfce4-terminal" | "alacritty" | "kitty" | "ghostty"
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preferred_terminal: Option<String>,
 }
 
 fn default_show_in_tray() -> bool {
@@ -147,6 +155,7 @@ impl Default for AppSettings {
             current_provider_gemini: None,
             current_provider_opencode: None,
             skill_sync_method: SyncMethod::default(),
+            preferred_terminal: None,
         }
     }
 }
@@ -416,4 +425,18 @@ pub fn get_skill_sync_method() -> SyncMethod {
             e.into_inner()
         })
         .skill_sync_method
+}
+
+// ===== 终端设置管理函数 =====
+
+/// 获取首选终端应用
+pub fn get_preferred_terminal() -> Option<String> {
+    settings_store()
+        .read()
+        .unwrap_or_else(|e| {
+            log::warn!("设置锁已毒化，使用恢复值: {e}");
+            e.into_inner()
+        })
+        .preferred_terminal
+        .clone()
 }

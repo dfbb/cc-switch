@@ -289,6 +289,33 @@
       "copy": "Copy Files",
       "symlinkHint": "Symlinks save disk space and enable real-time sync. Note: May require admin privileges or Developer Mode on Windows"
     },
+    "terminal": {
+      "title": "Preferred Terminal",
+      "description": "Choose which terminal app to use when clicking the terminal button",
+      "fallbackHint": "If the selected terminal is unavailable, the system default will be used",
+      "options": {
+        "macos": {
+          "terminal": "Terminal.app",
+          "iterm2": "iTerm2",
+          "alacritty": "Alacritty",
+          "kitty": "Kitty",
+          "ghostty": "Ghostty"
+        },
+        "windows": {
+          "cmd": "Command Prompt",
+          "powershell": "PowerShell",
+          "wt": "Windows Terminal"
+        },
+        "linux": {
+          "gnomeTerminal": "GNOME Terminal",
+          "konsole": "Konsole",
+          "xfce4Terminal": "Xfce4 Terminal",
+          "alacritty": "Alacritty",
+          "kitty": "Kitty",
+          "ghostty": "Ghostty"
+        }
+      }
+    },
     "configDirectoryOverride": "Configuration Directory Override (Advanced)",
     "configDirectoryDescription": "When using Claude Code or Codex in environments like WSL, you can manually specify the configuration directory to the one in WSL to keep provider data consistent with the main environment.",
     "appConfigDir": "CC Switch Configuration Directory",
