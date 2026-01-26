@@ -307,6 +307,7 @@ export function SettingsPage({
                           claudeDir={settings.claudeConfigDir}
                           codexDir={settings.codexConfigDir}
                           geminiDir={settings.geminiConfigDir}
+                          opencodeDir={settings.opencodeConfigDir}
                           onDirectoryChange={updateDirectory}
                           onBrowseDirectory={browseDirectory}
                           onResetDirectory={resetDirectory}
