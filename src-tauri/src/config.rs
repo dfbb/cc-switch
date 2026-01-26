@@ -6,7 +6,10 @@ use std::path::{Path, PathBuf};
 use crate::error::AppError;
 
 /// 获取用户主目录，带回退和日志
-fn get_home_dir() -> PathBuf {
+///
+/// On Windows, respects the `HOME` environment variable (if set) to support
+/// test isolation. Falls back to `dirs::home_dir()` otherwise.
+pub fn get_home_dir() -> PathBuf {
     #[cfg(windows)]
     if let Ok(home) = std::env::var("HOME") {
         let trimmed = home.trim();

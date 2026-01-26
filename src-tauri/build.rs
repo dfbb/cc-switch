@@ -1,6 +1,16 @@
 fn main() {
     tauri_build::build();
 
+    // Windows: Embed Common Controls v6 manifest for test binaries
+    //
+    // When running `cargo test`, the generated test executables don't include
+    // the standard Tauri application manifest. Without Common Controls v6,
+    // `tauri::test` calls fail with STATUS_ENTRYPOINT_NOT_FOUND.
+    //
+    // This workaround:
+    // 1. Embeds the manifest into test binaries via /MANIFEST:EMBED
+    // 2. Uses /MANIFEST:NO for the main binary to avoid duplicate resources
+    //    (Tauri already handles manifest embedding for the app binary)
     #[cfg(target_os = "windows")]
     {
         let manifest_path = std::path::PathBuf::from(
