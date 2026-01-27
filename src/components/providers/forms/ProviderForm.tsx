@@ -13,6 +13,7 @@ import type {
   ProviderMeta,
   ProviderTestConfig,
   ProviderProxyConfig,
+  ClaudeApiFormat,
 } from "@/types";
 import {
   providerPresets,
@@ -284,45 +285,31 @@ export function ProviderForm({
     onConfigChange: (config) => form.setValue("settingsConfig", config),
   });
 
-  const isOpenRouterProvider = useMemo(() => {
-    if (appId !== "claude") return false;
-    const normalized = baseUrl.trim().toLowerCase();
-    if (normalized.includes("openrouter.ai")) {
-      return true;
-    }
+  // Claude API Format state
+  // Read initial value from settingsConfig.api_format, default to "anthropic"
+  const apiFormat = useMemo<ClaudeApiFormat>(() => {
+    if (appId !== "claude") return "anthropic";
     try {
       const config = JSON.parse(settingsConfigValue || "{}");
-      const envUrl = config?.env?.ANTHROPIC_BASE_URL;
-      return typeof envUrl === "string" && envUrl.includes("openrouter.ai");
-    } catch {
-      return false;
-    }
-  }, [appId, baseUrl, settingsConfigValue]);
-
-  const openRouterCompatEnabled = useMemo(() => {
-    if (!isOpenRouterProvider) return false;
-    try {
-      const config = JSON.parse(settingsConfigValue || "{}");
-      const raw = config?.openrouter_compat_mode;
-      if (typeof raw === "boolean") return raw;
-      if (typeof raw === "number") return raw !== 0;
-      if (typeof raw === "string") {
-        const normalized = raw.trim().toLowerCase();
-        return normalized === "true" || normalized === "1";
-      }
+      const format = config?.api_format;
+      if (format === "openai_chat") return "openai_chat";
+      // Backward compatibility: if old openrouter_compat_mode is true, treat as openai_chat
+      if (config?.openrouter_compat_mode === true) return "openai_chat";
     } catch {
       // ignore
     }
-    return false; // OpenRouter now supports Claude Code compatible API, no need for transform
-  }, [isOpenRouterProvider, settingsConfigValue]);
+    return "anthropic";
+  }, [appId, settingsConfigValue]);
 
-  const handleOpenRouterCompatChange = useCallback(
-    (enabled: boolean) => {
+  const handleApiFormatChange = useCallback(
+    (format: ClaudeApiFormat) => {
       try {
         const currentConfig = JSON.parse(
           form.getValues("settingsConfig") || "{}",
         );
-        currentConfig.openrouter_compat_mode = enabled;
+        currentConfig.api_format = format;
+        // Clean up legacy field
+        delete currentConfig.openrouter_compat_mode;
         form.setValue("settingsConfig", JSON.stringify(currentConfig, null, 2));
       } catch {
         // ignore
@@ -1294,9 +1281,8 @@ export function ProviderForm({
             defaultOpusModel={defaultOpusModel}
             onModelChange={handleModelChange}
             speedTestEndpoints={speedTestEndpoints}
-            showOpenRouterCompatToggle={false}
-            openRouterCompatEnabled={openRouterCompatEnabled}
-            onOpenRouterCompatChange={handleOpenRouterCompatChange}
+            apiFormat={apiFormat}
+            onApiFormatChange={handleApiFormatChange}
           />
         )}
 

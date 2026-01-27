@@ -1,11 +1,15 @@
 //! Claude (Anthropic) Provider Adapter
 //!
-//! 支持透传模式和 OpenRouter 兼容模式
+//! 支持透传模式和 OpenAI Chat Completions 格式转换模式
+//!
+//! ## API 格式
+//! - **anthropic** (默认): Anthropic Messages API 格式，直接透传
+//! - **openai_chat**: OpenAI Chat Completions 格式，需要 Anthropic ↔ OpenAI 转换
 //!
 //! ## 认证模式
 //! - **Claude**: Anthropic 官方 API (x-api-key + anthropic-version)
 //! - **ClaudeAuth**: 中转服务 (仅 Bearer 认证，无 x-api-key)
-//! - **OpenRouter**: 已支持 Claude Code 兼容接口，默认透传（保留旧转换逻辑备用）
+//! - **OpenRouter**: 已支持 Claude Code 兼容接口，默认透传
 
 use super::{AuthInfo, AuthStrategy, ProviderAdapter, ProviderType};
 use crate::provider::Provider;
@@ -48,23 +52,44 @@ impl ClaudeAdapter {
         false
     }
 
-    /// 检测 OpenRouter 是否启用兼容模式
-    fn is_openrouter_compat_enabled(&self, provider: &Provider) -> bool {
-        if !self.is_openrouter(provider) {
-            return false;
+    /// 获取 API 格式
+    ///
+    /// 从 settings_config.api_format 读取格式设置：
+    /// - "anthropic" (默认): Anthropic Messages API 格式，直接透传
+    /// - "openai_chat": OpenAI Chat Completions 格式，需要格式转换
+    ///
+    /// 为了向后兼容，如果存在旧的 openrouter_compat_mode=true，也会启用 openai_chat 格式
+    fn get_api_format(&self, provider: &Provider) -> &'static str {
+        // 1. 首先检查新的 api_format 字段
+        if let Some(api_format) = provider
+            .settings_config
+            .get("api_format")
+            .and_then(|v| v.as_str())
+        {
+            return match api_format {
+                "openai_chat" => "openai_chat",
+                _ => "anthropic",
+            };
         }
 
+        // 2. 向后兼容：检查旧的 openrouter_compat_mode 字段
         let raw = provider.settings_config.get("openrouter_compat_mode");
-        match raw {
+        let is_compat_enabled = match raw {
             Some(serde_json::Value::Bool(enabled)) => *enabled,
             Some(serde_json::Value::Number(num)) => num.as_i64().unwrap_or(0) != 0,
             Some(serde_json::Value::String(value)) => {
                 let normalized = value.trim().to_lowercase();
                 normalized == "true" || normalized == "1"
             }
-            // OpenRouter now supports Claude Code compatible API, default to passthrough
             _ => false,
+        };
+
+        if is_compat_enabled {
+            return "openai_chat";
         }
+
+        // 3. 默认使用 Anthropic 原生格式
+        "anthropic"
     }
 
     /// 检测是否为仅 Bearer 认证模式
@@ -253,13 +278,11 @@ impl ProviderAdapter for ClaudeAdapter {
         }
     }
 
-    fn needs_transform(&self, _provider: &Provider) -> bool {
-        // NOTE:
-        // OpenRouter 已推出 Claude Code 兼容接口（可直接处理 `/v1/messages`），默认不再启用
-        // Anthropic ↔ OpenAI 的格式转换。
-        //
-        // 如果未来需要回退到旧的 OpenAI Chat Completions 方案，可恢复下面这行：
-        self.is_openrouter_compat_enabled(_provider)
+    fn needs_transform(&self, provider: &Provider) -> bool {
+        // 根据 api_format 配置决定是否需要格式转换
+        // - "anthropic" (默认): 直接透传，无需转换
+        // - "openai_chat": 需要 Anthropic ↔ OpenAI 格式转换
+        self.get_api_format(provider) == "openai_chat"
     }
 
     fn transform_request(
@@ -459,6 +482,7 @@ mod tests {
     fn test_needs_transform() {
         let adapter = ClaudeAdapter::new();
 
+        // Default: no transform (anthropic format)
         let anthropic_provider = create_provider(json!({
             "env": {
                 "ANTHROPIC_BASE_URL": "https://api.anthropic.com"
@@ -466,29 +490,50 @@ mod tests {
         }));
         assert!(!adapter.needs_transform(&anthropic_provider));
 
-        // OpenRouter provider without explicit setting now defaults to passthrough (no transform)
-        let openrouter_provider = create_provider(json!({
+        // Explicit anthropic format: no transform
+        let explicit_anthropic = create_provider(json!({
             "env": {
-                "ANTHROPIC_BASE_URL": "https://openrouter.ai/api"
-            }
+                "ANTHROPIC_BASE_URL": "https://api.example.com"
+            },
+            "api_format": "anthropic"
         }));
-        assert!(!adapter.needs_transform(&openrouter_provider));
+        assert!(!adapter.needs_transform(&explicit_anthropic));
 
-        // OpenRouter provider with explicit compat mode enabled should transform
-        let openrouter_enabled = create_provider(json!({
+        // OpenAI Chat format: needs transform
+        let openai_chat_provider = create_provider(json!({
             "env": {
-                "ANTHROPIC_BASE_URL": "https://openrouter.ai/api"
+                "ANTHROPIC_BASE_URL": "https://api.example.com"
+            },
+            "api_format": "openai_chat"
+        }));
+        assert!(adapter.needs_transform(&openai_chat_provider));
+
+        // Backward compatibility: openrouter_compat_mode=true should enable transform
+        let legacy_compat_enabled = create_provider(json!({
+            "env": {
+                "ANTHROPIC_BASE_URL": "https://api.example.com"
             },
             "openrouter_compat_mode": true
         }));
-        assert!(adapter.needs_transform(&openrouter_enabled));
+        assert!(adapter.needs_transform(&legacy_compat_enabled));
 
-        let openrouter_disabled = create_provider(json!({
+        // Backward compatibility: openrouter_compat_mode=false should not enable transform
+        let legacy_compat_disabled = create_provider(json!({
             "env": {
-                "ANTHROPIC_BASE_URL": "https://openrouter.ai/api"
+                "ANTHROPIC_BASE_URL": "https://api.example.com"
             },
             "openrouter_compat_mode": false
         }));
-        assert!(!adapter.needs_transform(&openrouter_disabled));
+        assert!(!adapter.needs_transform(&legacy_compat_disabled));
+
+        // api_format takes precedence over openrouter_compat_mode
+        let format_precedence = create_provider(json!({
+            "env": {
+                "ANTHROPIC_BASE_URL": "https://api.example.com"
+            },
+            "api_format": "anthropic",
+            "openrouter_compat_mode": true
+        }));
+        assert!(!adapter.needs_transform(&format_precedence));
     }
 }
