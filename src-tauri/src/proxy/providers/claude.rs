@@ -517,6 +517,24 @@ mod tests {
         }));
         assert!(adapter.needs_transform(&legacy_compat_enabled));
 
+        // Backward compatibility: openrouter_compat_mode=1 should enable transform
+        let legacy_compat_enabled_num = create_provider(json!({
+            "env": {
+                "ANTHROPIC_BASE_URL": "https://api.example.com"
+            },
+            "openrouter_compat_mode": 1
+        }));
+        assert!(adapter.needs_transform(&legacy_compat_enabled_num));
+
+        // Backward compatibility: openrouter_compat_mode="true" should enable transform
+        let legacy_compat_enabled_str = create_provider(json!({
+            "env": {
+                "ANTHROPIC_BASE_URL": "https://api.example.com"
+            },
+            "openrouter_compat_mode": "true"
+        }));
+        assert!(adapter.needs_transform(&legacy_compat_enabled_str));
+
         // Backward compatibility: openrouter_compat_mode=false should not enable transform
         let legacy_compat_disabled = create_provider(json!({
             "env": {

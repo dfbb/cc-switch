@@ -292,9 +292,19 @@ export function ProviderForm({
     try {
       const config = JSON.parse(settingsConfigValue || "{}");
       const format = config?.api_format;
-      if (format === "openai_chat") return "openai_chat";
-      // Backward compatibility: if old openrouter_compat_mode is true, treat as openai_chat
-      if (config?.openrouter_compat_mode === true) return "openai_chat";
+      if (typeof format === "string") {
+        return format === "openai_chat" ? "openai_chat" : "anthropic";
+      }
+
+      // Backward compatibility: old openrouter_compat_mode (bool/number/string)
+      const raw = config?.openrouter_compat_mode;
+      if (typeof raw === "boolean") return raw ? "openai_chat" : "anthropic";
+      if (typeof raw === "number") return raw !== 0 ? "openai_chat" : "anthropic";
+      if (typeof raw === "string") {
+        const normalized = raw.trim().toLowerCase();
+        if (normalized === "true" || normalized === "1") return "openai_chat";
+        return "anthropic";
+      }
     } catch {
       // ignore
     }
