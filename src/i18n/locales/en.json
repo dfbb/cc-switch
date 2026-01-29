@@ -475,7 +475,7 @@
     "apiFormat": "API Format",
     "apiFormatHint": "Select the input format for the provider's API",
     "apiFormatAnthropic": "Anthropic Messages (Native)",
-    "apiFormatOpenAIChat": "OpenAI Chat Completions (Requires conversion)",
+    "apiFormatOpenAIChat": "OpenAI Chat Completions (Requires proxy)",
     "anthropicDefaultHaikuModel": "Default Haiku Model",
     "anthropicDefaultSonnetModel": "Default Sonnet Model",
     "anthropicDefaultOpusModel": "Default Opus Model",

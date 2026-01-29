@@ -475,7 +475,7 @@
     "apiFormat": "API フォーマット",
     "apiFormatHint": "プロバイダー API の入力フォーマットを選択",
     "apiFormatAnthropic": "Anthropic Messages（ネイティブ）",
-    "apiFormatOpenAIChat": "OpenAI Chat Completions（変換が必要）",
+    "apiFormatOpenAIChat": "OpenAI Chat Completions（プロキシが必要）",
     "anthropicDefaultHaikuModel": "既定 Haiku モデル",
     "anthropicDefaultSonnetModel": "既定 Sonnet モデル",
     "anthropicDefaultOpusModel": "既定 Opus モデル",

@@ -475,7 +475,7 @@
     "apiFormat": "API 格式",
     "apiFormatHint": "选择供应商 API 的输入格式",
     "apiFormatAnthropic": "Anthropic Messages (原生)",
-    "apiFormatOpenAIChat": "OpenAI Chat Completions (需转换)",
+    "apiFormatOpenAIChat": "OpenAI Chat Completions (需开启代理)",
     "anthropicDefaultHaikuModel": "Haiku 默认模型",
     "anthropicDefaultSonnetModel": "Sonnet 默认模型",
     "anthropicDefaultOpusModel": "Opus 默认模型",
