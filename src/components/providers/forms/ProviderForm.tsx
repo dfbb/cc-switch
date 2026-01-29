@@ -245,8 +245,6 @@ export function ProviderForm({
     mode: "onSubmit",
   });
 
-  const settingsConfigValue = form.getValues("settingsConfig");
-
   // 使用 API Key hook
   const {
     apiKey,
@@ -285,48 +283,16 @@ export function ProviderForm({
     onConfigChange: (config) => form.setValue("settingsConfig", config),
   });
 
-  // Claude API Format state
-  // Read initial value from settingsConfig.api_format, default to "anthropic"
-  const apiFormat = useMemo<ClaudeApiFormat>(() => {
+  // Claude API Format state - stored in meta, not settingsConfig
+  // Read initial value from meta.apiFormat, default to "anthropic"
+  const [localApiFormat, setLocalApiFormat] = useState<ClaudeApiFormat>(() => {
     if (appId !== "claude") return "anthropic";
-    try {
-      const config = JSON.parse(settingsConfigValue || "{}");
-      const format = config?.api_format;
-      if (typeof format === "string") {
-        return format === "openai_chat" ? "openai_chat" : "anthropic";
-      }
+    return initialData?.meta?.apiFormat ?? "anthropic";
+  });
 
-      // Backward compatibility: old openrouter_compat_mode (bool/number/string)
-      const raw = config?.openrouter_compat_mode;
-      if (typeof raw === "boolean") return raw ? "openai_chat" : "anthropic";
-      if (typeof raw === "number") return raw !== 0 ? "openai_chat" : "anthropic";
-      if (typeof raw === "string") {
-        const normalized = raw.trim().toLowerCase();
-        if (normalized === "true" || normalized === "1") return "openai_chat";
-        return "anthropic";
-      }
-    } catch {
-      // ignore
-    }
-    return "anthropic";
-  }, [appId, settingsConfigValue]);
-
-  const handleApiFormatChange = useCallback(
-    (format: ClaudeApiFormat) => {
-      try {
-        const currentConfig = JSON.parse(
-          form.getValues("settingsConfig") || "{}",
-        );
-        currentConfig.api_format = format;
-        // Clean up legacy field
-        delete currentConfig.openrouter_compat_mode;
-        form.setValue("settingsConfig", JSON.stringify(currentConfig, null, 2));
-      } catch {
-        // ignore
-      }
-    },
-    [form],
-  );
+  const handleApiFormatChange = useCallback((format: ClaudeApiFormat) => {
+    setLocalApiFormat(format);
+  }, []);
 
   // 使用 Codex 配置 hook (仅 Codex 模式)
   const {
@@ -972,6 +938,11 @@ export function ProviderForm({
         pricingConfig.enabled && pricingConfig.pricingModelSource !== "inherit"
           ? pricingConfig.pricingModelSource
           : undefined,
+      // Claude API 格式（仅非官方 Claude 供应商使用）
+      apiFormat:
+        appId === "claude" && category !== "official"
+          ? localApiFormat
+          : undefined,
     };
 
     onSubmit(payload);
@@ -1291,7 +1262,7 @@ export function ProviderForm({
             defaultOpusModel={defaultOpusModel}
             onModelChange={handleModelChange}
             speedTestEndpoints={speedTestEndpoints}
-            apiFormat={apiFormat}
+            apiFormat={localApiFormat}
             onApiFormatChange={handleApiFormatChange}
           />
         )}

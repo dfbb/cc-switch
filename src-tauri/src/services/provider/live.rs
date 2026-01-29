@@ -19,6 +19,18 @@ use super::gemini_auth::{
 };
 use super::normalize_claude_models_in_value;
 
+pub(crate) fn sanitize_claude_settings_for_live(settings: &Value) -> Value {
+    let mut v = settings.clone();
+    if let Some(obj) = v.as_object_mut() {
+        // Internal-only fields - never write to Claude Code settings.json
+        obj.remove("api_format");
+        obj.remove("apiFormat");
+        obj.remove("openrouter_compat_mode");
+        obj.remove("openrouterCompatMode");
+    }
+    v
+}
+
 /// Live configuration snapshot for backup/restore
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -97,7 +109,8 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
     match app_type {
         AppType::Claude => {
             let path = get_claude_settings_path();
-            write_json_file(&path, &provider.settings_config)?;
+            let settings = sanitize_claude_settings_for_live(&provider.settings_config);
+            write_json_file(&path, &settings)?;
         }
         AppType::Codex => {
             let obj = provider

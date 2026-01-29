@@ -54,28 +54,38 @@ impl ClaudeAdapter {
 
     /// 获取 API 格式
     ///
-    /// 从 settings_config.api_format 读取格式设置：
+    /// 从 provider.meta.api_format 读取格式设置：
     /// - "anthropic" (默认): Anthropic Messages API 格式，直接透传
     /// - "openai_chat": OpenAI Chat Completions 格式，需要格式转换
-    ///
-    /// 为了向后兼容，如果存在旧的 openrouter_compat_mode=true，也会启用 openai_chat 格式
     fn get_api_format(&self, provider: &Provider) -> &'static str {
-        // 1. 首先检查新的 api_format 字段
+        // 1) Preferred: meta.apiFormat (SSOT, never written to Claude Code config)
+        if let Some(meta) = provider.meta.as_ref() {
+            if let Some(api_format) = meta.api_format.as_deref() {
+                return if api_format == "openai_chat" {
+                    "openai_chat"
+                } else {
+                    "anthropic"
+                };
+            }
+        }
+
+        // 2) Backward compatibility: legacy settings_config.api_format
         if let Some(api_format) = provider
             .settings_config
             .get("api_format")
             .and_then(|v| v.as_str())
         {
-            return match api_format {
-                "openai_chat" => "openai_chat",
-                _ => "anthropic",
+            return if api_format == "openai_chat" {
+                "openai_chat"
+            } else {
+                "anthropic"
             };
         }
 
-        // 2. 向后兼容：检查旧的 openrouter_compat_mode 字段
+        // 3) Backward compatibility: legacy openrouter_compat_mode (bool/number/string)
         let raw = provider.settings_config.get("openrouter_compat_mode");
-        let is_compat_enabled = match raw {
-            Some(serde_json::Value::Bool(enabled)) => *enabled,
+        let enabled = match raw {
+            Some(serde_json::Value::Bool(v)) => *v,
             Some(serde_json::Value::Number(num)) => num.as_i64().unwrap_or(0) != 0,
             Some(serde_json::Value::String(value)) => {
                 let normalized = value.trim().to_lowercase();
@@ -84,12 +94,11 @@ impl ClaudeAdapter {
             _ => false,
         };
 
-        if is_compat_enabled {
-            return "openai_chat";
+        if enabled {
+            "openai_chat"
+        } else {
+            "anthropic"
         }
-
-        // 3. 默认使用 Anthropic 原生格式
-        "anthropic"
     }
 
     /// 检测是否为仅 Bearer 认证模式
@@ -301,6 +310,7 @@ impl ProviderAdapter for ClaudeAdapter {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::provider::ProviderMeta;
     use serde_json::json;
 
     fn create_provider(config: serde_json::Value) -> Provider {
@@ -314,6 +324,23 @@ mod tests {
             sort_index: None,
             notes: None,
             meta: None,
+            icon: None,
+            icon_color: None,
+            in_failover_queue: false,
+        }
+    }
+
+    fn create_provider_with_meta(config: serde_json::Value, meta: ProviderMeta) -> Provider {
+        Provider {
+            id: "test".to_string(),
+            name: "Test Claude".to_string(),
+            settings_config: config,
+            website_url: None,
+            category: Some("claude".to_string()),
+            created_at: None,
+            sort_index: None,
+            notes: None,
+            meta: Some(meta),
             icon: None,
             icon_color: None,
             in_failover_queue: false,
@@ -482,7 +509,7 @@ mod tests {
     fn test_needs_transform() {
         let adapter = ClaudeAdapter::new();
 
-        // Default: no transform (anthropic format)
+        // Default: no transform (anthropic format) - no meta
         let anthropic_provider = create_provider(json!({
             "env": {
                 "ANTHROPIC_BASE_URL": "https://api.anthropic.com"
@@ -490,68 +517,96 @@ mod tests {
         }));
         assert!(!adapter.needs_transform(&anthropic_provider));
 
-        // Explicit anthropic format: no transform
-        let explicit_anthropic = create_provider(json!({
-            "env": {
-                "ANTHROPIC_BASE_URL": "https://api.example.com"
+        // Explicit anthropic format in meta: no transform
+        let explicit_anthropic = create_provider_with_meta(
+            json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://api.example.com"
+                }
+            }),
+            ProviderMeta {
+                api_format: Some("anthropic".to_string()),
+                ..Default::default()
             },
-            "api_format": "anthropic"
-        }));
+        );
         assert!(!adapter.needs_transform(&explicit_anthropic));
 
-        // OpenAI Chat format: needs transform
-        let openai_chat_provider = create_provider(json!({
+        // Legacy settings_config.api_format: openai_chat should enable transform
+        let legacy_settings_api_format = create_provider(json!({
             "env": {
                 "ANTHROPIC_BASE_URL": "https://api.example.com"
             },
             "api_format": "openai_chat"
         }));
-        assert!(adapter.needs_transform(&openai_chat_provider));
+        assert!(adapter.needs_transform(&legacy_settings_api_format));
 
-        // Backward compatibility: openrouter_compat_mode=true should enable transform
-        let legacy_compat_enabled = create_provider(json!({
+        // Legacy openrouter_compat_mode: bool/number/string should enable transform
+        let legacy_openrouter_bool = create_provider(json!({
             "env": {
                 "ANTHROPIC_BASE_URL": "https://api.example.com"
             },
             "openrouter_compat_mode": true
         }));
-        assert!(adapter.needs_transform(&legacy_compat_enabled));
+        assert!(adapter.needs_transform(&legacy_openrouter_bool));
 
-        // Backward compatibility: openrouter_compat_mode=1 should enable transform
-        let legacy_compat_enabled_num = create_provider(json!({
+        let legacy_openrouter_num = create_provider(json!({
             "env": {
                 "ANTHROPIC_BASE_URL": "https://api.example.com"
             },
             "openrouter_compat_mode": 1
         }));
-        assert!(adapter.needs_transform(&legacy_compat_enabled_num));
+        assert!(adapter.needs_transform(&legacy_openrouter_num));
 
-        // Backward compatibility: openrouter_compat_mode="true" should enable transform
-        let legacy_compat_enabled_str = create_provider(json!({
+        let legacy_openrouter_str = create_provider(json!({
             "env": {
                 "ANTHROPIC_BASE_URL": "https://api.example.com"
             },
             "openrouter_compat_mode": "true"
         }));
-        assert!(adapter.needs_transform(&legacy_compat_enabled_str));
+        assert!(adapter.needs_transform(&legacy_openrouter_str));
 
-        // Backward compatibility: openrouter_compat_mode=false should not enable transform
-        let legacy_compat_disabled = create_provider(json!({
-            "env": {
-                "ANTHROPIC_BASE_URL": "https://api.example.com"
+        // OpenAI Chat format in meta: needs transform
+        let openai_chat_provider = create_provider_with_meta(
+            json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://api.example.com"
+                }
+            }),
+            ProviderMeta {
+                api_format: Some("openai_chat".to_string()),
+                ..Default::default()
             },
-            "openrouter_compat_mode": false
-        }));
-        assert!(!adapter.needs_transform(&legacy_compat_disabled));
+        );
+        assert!(adapter.needs_transform(&openai_chat_provider));
 
-        // api_format takes precedence over openrouter_compat_mode
-        let format_precedence = create_provider(json!({
-            "env": {
-                "ANTHROPIC_BASE_URL": "https://api.example.com"
+        // meta takes precedence over legacy settings_config fields
+        let meta_precedence_over_settings = create_provider_with_meta(
+            json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://api.example.com"
+                },
+                "api_format": "openai_chat",
+                "openrouter_compat_mode": true
+            }),
+            ProviderMeta {
+                api_format: Some("anthropic".to_string()),
+                ..Default::default()
             },
-            "api_format": "anthropic",
-            "openrouter_compat_mode": true
-        }));
-        assert!(!adapter.needs_transform(&format_precedence));
+        );
+        assert!(!adapter.needs_transform(&meta_precedence_over_settings));
+
+        // Unknown format in meta: default to anthropic (no transform)
+        let unknown_format = create_provider_with_meta(
+            json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://api.example.com"
+                }
+            }),
+            ProviderMeta {
+                api_format: Some("unknown".to_string()),
+                ..Default::default()
+            },
+        );
+        assert!(!adapter.needs_transform(&unknown_format));
     }
 }
