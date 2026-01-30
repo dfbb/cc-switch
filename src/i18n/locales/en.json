@@ -155,7 +155,8 @@
     "deleteSuccess": "Provider deleted",
     "deleteFailed": "Failed to delete provider: {{error}}",
     "settingsSaved": "Settings saved",
-    "settingsSaveFailed": "Failed to save settings: {{error}}"
+    "settingsSaveFailed": "Failed to save settings: {{error}}",
+    "openAIChatFormatHint": "This provider uses OpenAI Chat format and requires the proxy service to be enabled"
   },
   "confirm": {
     "deleteProvider": "Delete Provider",

@@ -155,7 +155,8 @@
     "deleteSuccess": "供应商已删除",
     "deleteFailed": "删除供应商失败：{{error}}",
     "settingsSaved": "设置已保存",
-    "settingsSaveFailed": "保存设置失败：{{error}}"
+    "settingsSaveFailed": "保存设置失败：{{error}}",
+    "openAIChatFormatHint": "此供应商使用 OpenAI Chat 格式，需要开启代理服务才能正常使用"
   },
   "confirm": {
     "deleteProvider": "删除供应商",

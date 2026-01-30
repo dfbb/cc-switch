@@ -155,7 +155,8 @@
     "deleteSuccess": "プロバイダーを削除しました",
     "deleteFailed": "プロバイダーの削除に失敗しました: {{error}}",
     "settingsSaved": "設定を保存しました",
-    "settingsSaveFailed": "設定の保存に失敗しました: {{error}}"
+    "settingsSaveFailed": "設定の保存に失敗しました: {{error}}",
+    "openAIChatFormatHint": "このプロバイダーは OpenAI Chat フォーマットを使用しており、プロキシサービスの有効化が必要です"
   },
   "confirm": {
     "deleteProvider": "プロバイダーを削除",
