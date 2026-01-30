@@ -558,6 +558,32 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
       },
     },
   },
+  {
+    name: "Nvidia",
+    websiteUrl: "https://build.nvidia.com",
+    apiKeyUrl: "https://build.nvidia.com/settings/api-keys",
+    settingsConfig: {
+      npm: "@ai-sdk/openai-compatible",
+      name: "Nvidia",
+      options: {
+        baseURL: "https://integrate.api.nvidia.com/v1",
+        apiKey: "",
+      },
+      models: {
+        "moonshotai/kimi-k2.5": { name: "Kimi K2.5" },
+      },
+    },
+    category: "aggregator",
+    icon: "nvidia",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+  },
 
   // ========== 第三方合作伙伴 ==========
   {

@@ -485,6 +485,25 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#6566F1",
   },
   {
+    name: "Nvidia",
+    websiteUrl: "https://build.nvidia.com",
+    apiKeyUrl: "https://build.nvidia.com/settings/api-keys",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://integrate.api.nvidia.com",
+        ANTHROPIC_AUTH_TOKEN: "",
+        ANTHROPIC_MODEL: "moonshotai/kimi-k2.5",
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: "moonshotai/kimi-k2.5",
+        ANTHROPIC_DEFAULT_SONNET_MODEL: "moonshotai/kimi-k2.5",
+        ANTHROPIC_DEFAULT_OPUS_MODEL: "moonshotai/kimi-k2.5",
+      },
+    },
+    category: "aggregator",
+    apiFormat: "openai_chat",
+    icon: "nvidia",
+    iconColor: "#000000",
+  },
+  {
     name: "Xiaomi MiMo",
     websiteUrl: "https://platform.xiaomimimo.com",
     apiKeyUrl: "https://platform.xiaomimimo.com/#/console/api-keys",
