@@ -352,7 +352,7 @@
     "viewReleaseNotes": "このバージョンのリリースノートを見る",
     "viewCurrentReleaseNotes": "現在のバージョンのリリースノートを見る",
     "oneClickInstall": "ワンクリックインストール",
-    "oneClickInstallHint": "Claude Code / Codex / Gemini CLI をインストール",
+    "oneClickInstallHint": "Claude Code / Codex / Gemini CLI / OpenCode をインストール",
     "localEnvCheck": "ローカル環境チェック",
     "installCommandsCopied": "インストールコマンドをコピーしました",
     "installCommandsCopyFailed": "コピーに失敗しました。手動でコピーしてください。",
