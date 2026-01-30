@@ -3,25 +3,11 @@
 //! 实现 Anthropic ↔ OpenAI 格式转换，用于 OpenRouter 支持
 //! 参考: anthropic-proxy-rs
 
-use crate::provider::Provider;
 use crate::proxy::error::ProxyError;
 use serde_json::{json, Value};
 
-fn extract_base_url_from_provider(provider: &Provider) -> Option<&str> {
-    let settings = &provider.settings_config;
-
-    settings
-        .get("env")
-        .and_then(|env| env.get("ANTHROPIC_BASE_URL"))
-        .and_then(|v| v.as_str())
-        .or_else(|| settings.get("base_url").and_then(|v| v.as_str()))
-        .or_else(|| settings.get("baseURL").and_then(|v| v.as_str()))
-        .or_else(|| settings.get("apiBaseUrl").and_then(|v| v.as_str()))
-        .or_else(|| settings.get("apiEndpoint").and_then(|v| v.as_str()))
-}
-
 /// Anthropic 请求 → OpenAI 请求
-pub fn anthropic_to_openai(body: Value, provider: &Provider) -> Result<Value, ProxyError> {
+pub fn anthropic_to_openai(body: Value) -> Result<Value, ProxyError> {
     let mut result = json!({});
 
     // NOTE: 模型映射由上游统一处理（proxy::model_mapper），格式转换层只做结构转换。
@@ -60,30 +46,7 @@ pub fn anthropic_to_openai(body: Value, provider: &Provider) -> Result<Value, Pr
 
     // 转换参数
     if let Some(v) = body.get("max_tokens") {
-        // DeepSeek OpenAI Compatible API: max_tokens must be within [1, 8192]
-        // Ref: upstream error "the valid range of max_tokens is [1, 8192]"
-        const DEEPSEEK_MAX_TOKENS_MIN: u64 = 1;
-        const DEEPSEEK_MAX_TOKENS_MAX: u64 = 8192;
-
-        let is_deepseek = extract_base_url_from_provider(provider)
-            .unwrap_or_default()
-            .contains("deepseek.com");
-
-        match (is_deepseek, v.as_u64()) {
-            (true, Some(max_tokens)) => {
-                let clamped = max_tokens.clamp(DEEPSEEK_MAX_TOKENS_MIN, DEEPSEEK_MAX_TOKENS_MAX);
-                if clamped != max_tokens {
-                    log::warn!(
-                        "[Transform] DeepSeek max_tokens 超出范围，已自动调整: {max_tokens} → {clamped}"
-                    );
-                }
-                result["max_tokens"] = json!(clamped);
-            }
-            _ => {
-                // 非 DeepSeek / 非数字类型：保持原样，让上游自行处理
-                result["max_tokens"] = v.clone();
-            }
-        }
+        result["max_tokens"] = v.clone();
     }
     if let Some(v) = body.get("temperature") {
         result["temperature"] = v.clone();
@@ -357,43 +320,15 @@ pub fn openai_to_anthropic(body: Value) -> Result<Value, ProxyError> {
 mod tests {
     use super::*;
 
-    fn create_provider(env_config: Value) -> Provider {
-        Provider {
-            id: "test".to_string(),
-            name: "Test Provider".to_string(),
-            settings_config: json!({"env": env_config}),
-            website_url: None,
-            category: None,
-            created_at: None,
-            sort_index: None,
-            notes: None,
-            meta: None,
-            icon: None,
-            icon_color: None,
-            in_failover_queue: false,
-        }
-    }
-
-    fn create_openrouter_provider() -> Provider {
-        create_provider(json!({
-            "ANTHROPIC_BASE_URL": "https://openrouter.ai/api",
-            "ANTHROPIC_MODEL": "anthropic/claude-sonnet-4.5",
-            "ANTHROPIC_DEFAULT_HAIKU_MODEL": "anthropic/claude-haiku-4.5",
-            "ANTHROPIC_DEFAULT_SONNET_MODEL": "anthropic/claude-sonnet-4.5",
-            "ANTHROPIC_DEFAULT_OPUS_MODEL": "anthropic/claude-opus-4.5"
-        }))
-    }
-
     #[test]
     fn test_anthropic_to_openai_simple() {
-        let provider = create_openrouter_provider();
         let input = json!({
             "model": "claude-3-opus",
             "max_tokens": 1024,
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
-        let result = anthropic_to_openai(input, &provider).unwrap();
+        let result = anthropic_to_openai(input).unwrap();
         assert_eq!(result["model"], "claude-3-opus");
         assert_eq!(result["max_tokens"], 1024);
         assert_eq!(result["messages"][0]["role"], "user");
@@ -402,7 +337,6 @@ mod tests {
 
     #[test]
     fn test_anthropic_to_openai_with_system() {
-        let provider = create_openrouter_provider();
         let input = json!({
             "model": "claude-3-sonnet",
             "max_tokens": 1024,
@@ -410,7 +344,7 @@ mod tests {
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
-        let result = anthropic_to_openai(input, &provider).unwrap();
+        let result = anthropic_to_openai(input).unwrap();
         assert_eq!(result["messages"][0]["role"], "system");
         assert_eq!(
             result["messages"][0]["content"],
@@ -421,7 +355,6 @@ mod tests {
 
     #[test]
     fn test_anthropic_to_openai_with_tools() {
-        let provider = create_openrouter_provider();
         let input = json!({
             "model": "claude-3-opus",
             "max_tokens": 1024,
@@ -433,14 +366,13 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_openai(input, &provider).unwrap();
+        let result = anthropic_to_openai(input).unwrap();
         assert_eq!(result["tools"][0]["type"], "function");
         assert_eq!(result["tools"][0]["function"]["name"], "get_weather");
     }
 
     #[test]
     fn test_anthropic_to_openai_tool_use() {
-        let provider = create_openrouter_provider();
         let input = json!({
             "model": "claude-3-opus",
             "max_tokens": 1024,
@@ -453,7 +385,7 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_openai(input, &provider).unwrap();
+        let result = anthropic_to_openai(input).unwrap();
         let msg = &result["messages"][0];
         assert_eq!(msg["role"], "assistant");
         assert!(msg.get("tool_calls").is_some());
@@ -462,7 +394,6 @@ mod tests {
 
     #[test]
     fn test_anthropic_to_openai_tool_result() {
-        let provider = create_openrouter_provider();
         let input = json!({
             "model": "claude-3-opus",
             "max_tokens": 1024,
@@ -474,7 +405,7 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_openai(input, &provider).unwrap();
+        let result = anthropic_to_openai(input).unwrap();
         let msg = &result["messages"][0];
         assert_eq!(msg["role"], "tool");
         assert_eq!(msg["tool_call_id"], "call_123");
@@ -538,36 +469,15 @@ mod tests {
     }
 
     #[test]
-    fn test_model_mapping_from_provider() {
-        let provider = create_provider(json!({
-            "ANTHROPIC_MODEL": "gpt-4o-mini",
-            "ANTHROPIC_DEFAULT_SONNET_MODEL": "gpt-4o"
-        }));
-
-        // 回归：格式转换层不能再二次做模型映射，否则会把已映射的 model 覆盖成默认模型
+    fn test_model_passthrough() {
+        // 格式转换层只做结构转换，模型映射由上游 proxy::model_mapper 处理
         let input = json!({
             "model": "gpt-4o",
             "max_tokens": 1024,
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
-        let result = anthropic_to_openai(input, &provider).unwrap();
+        let result = anthropic_to_openai(input).unwrap();
         assert_eq!(result["model"], "gpt-4o");
-    }
-
-    #[test]
-    fn test_deepseek_max_tokens_clamp() {
-        let provider = create_provider(json!({
-            "ANTHROPIC_BASE_URL": "https://api.deepseek.com/v1",
-        }));
-
-        let input = json!({
-            "model": "deepseek-chat",
-            "max_tokens": 20000,
-            "messages": [{"role": "user", "content": "Hello"}]
-        });
-
-        let result = anthropic_to_openai(input, &provider).unwrap();
-        assert_eq!(result["max_tokens"], 8192);
     }
 }

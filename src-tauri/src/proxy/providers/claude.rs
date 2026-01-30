@@ -305,9 +305,9 @@ impl ProviderAdapter for ClaudeAdapter {
     fn transform_request(
         &self,
         body: serde_json::Value,
-        provider: &Provider,
+        _provider: &Provider,
     ) -> Result<serde_json::Value, ProxyError> {
-        super::transform::anthropic_to_openai(body, provider)
+        super::transform::anthropic_to_openai(body)
     }
 
     fn transform_response(&self, body: serde_json::Value) -> Result<serde_json::Value, ProxyError> {
