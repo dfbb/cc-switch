@@ -1139,6 +1139,14 @@ export function ProviderForm({
       preset.templateValues,
     );
 
+    // Sync preset's apiFormat to local state (for Claude providers)
+    if (preset.apiFormat) {
+      setLocalApiFormat(preset.apiFormat);
+    } else {
+      // Reset to default if preset doesn't specify apiFormat
+      setLocalApiFormat("anthropic");
+    }
+
     form.reset({
       name: preset.name,
       websiteUrl: preset.websiteUrl ?? "",

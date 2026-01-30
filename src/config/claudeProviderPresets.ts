@@ -43,6 +43,11 @@ export interface ProviderPreset {
   // 图标配置
   icon?: string; // 图标名称
   iconColor?: string; // 图标颜色
+
+  // Claude API 格式（仅 Claude 供应商使用）
+  // - "anthropic" (默认): Anthropic Messages API 格式，直接透传
+  // - "openai_chat": OpenAI Chat Completions 格式，需要格式转换
+  apiFormat?: "anthropic" | "openai_chat";
 }
 
 export const providerPresets: ProviderPreset[] = [
