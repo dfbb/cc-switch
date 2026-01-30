@@ -7,73 +7,26 @@ use crate::provider::Provider;
 use crate::proxy::error::ProxyError;
 use serde_json::{json, Value};
 
-/// 从 Provider 配置中获取模型映射
-fn get_model_from_provider(model: &str, provider: &Provider, body: &Value) -> String {
-    let env = provider.settings_config.get("env");
-    let model_lower = model.to_lowercase();
+fn extract_base_url_from_provider(provider: &Provider) -> Option<&str> {
+    let settings = &provider.settings_config;
 
-    // 检测 thinking 参数
-    let has_thinking = body
-        .get("thinking")
-        .and_then(|v| v.as_object())
-        .and_then(|o| o.get("type"))
-        .and_then(|t| t.as_str())
-        == Some("enabled");
-
-    if let Some(env) = env {
-        // 如果启用 thinking，优先使用推理模型
-        if has_thinking {
-            if let Some(m) = env
-                .get("ANTHROPIC_REASONING_MODEL")
-                .and_then(|v| v.as_str())
-            {
-                log::debug!("[Transform] 使用推理模型: {m}");
-                return m.to_string();
-            }
-        }
-
-        // 根据模型类型选择配置模型
-        if model_lower.contains("haiku") {
-            if let Some(m) = env
-                .get("ANTHROPIC_DEFAULT_HAIKU_MODEL")
-                .and_then(|v| v.as_str())
-            {
-                return m.to_string();
-            }
-        }
-        if model_lower.contains("opus") {
-            if let Some(m) = env
-                .get("ANTHROPIC_DEFAULT_OPUS_MODEL")
-                .and_then(|v| v.as_str())
-            {
-                return m.to_string();
-            }
-        }
-        if model_lower.contains("sonnet") {
-            if let Some(m) = env
-                .get("ANTHROPIC_DEFAULT_SONNET_MODEL")
-                .and_then(|v| v.as_str())
-            {
-                return m.to_string();
-            }
-        }
-        // 默认使用 ANTHROPIC_MODEL
-        if let Some(m) = env.get("ANTHROPIC_MODEL").and_then(|v| v.as_str()) {
-            return m.to_string();
-        }
-    }
-
-    model.to_string()
+    settings
+        .get("env")
+        .and_then(|env| env.get("ANTHROPIC_BASE_URL"))
+        .and_then(|v| v.as_str())
+        .or_else(|| settings.get("base_url").and_then(|v| v.as_str()))
+        .or_else(|| settings.get("baseURL").and_then(|v| v.as_str()))
+        .or_else(|| settings.get("apiBaseUrl").and_then(|v| v.as_str()))
+        .or_else(|| settings.get("apiEndpoint").and_then(|v| v.as_str()))
 }
 
 /// Anthropic 请求 → OpenAI 请求
 pub fn anthropic_to_openai(body: Value, provider: &Provider) -> Result<Value, ProxyError> {
     let mut result = json!({});
 
-    // 模型映射：使用 Provider 配置中的模型（支持 thinking 参数）
+    // NOTE: 模型映射由上游统一处理（proxy::model_mapper），格式转换层只做结构转换。
     if let Some(model) = body.get("model").and_then(|m| m.as_str()) {
-        let mapped_model = get_model_from_provider(model, provider, &body);
-        result["model"] = json!(mapped_model);
+        result["model"] = json!(model);
     }
 
     let mut messages = Vec::new();
@@ -107,7 +60,30 @@ pub fn anthropic_to_openai(body: Value, provider: &Provider) -> Result<Value, Pr
 
     // 转换参数
     if let Some(v) = body.get("max_tokens") {
-        result["max_tokens"] = v.clone();
+        // DeepSeek OpenAI Compatible API: max_tokens must be within [1, 8192]
+        // Ref: upstream error "the valid range of max_tokens is [1, 8192]"
+        const DEEPSEEK_MAX_TOKENS_MIN: u64 = 1;
+        const DEEPSEEK_MAX_TOKENS_MAX: u64 = 8192;
+
+        let is_deepseek = extract_base_url_from_provider(provider)
+            .unwrap_or_default()
+            .contains("deepseek.com");
+
+        match (is_deepseek, v.as_u64()) {
+            (true, Some(max_tokens)) => {
+                let clamped = max_tokens.clamp(DEEPSEEK_MAX_TOKENS_MIN, DEEPSEEK_MAX_TOKENS_MAX);
+                if clamped != max_tokens {
+                    log::warn!(
+                        "[Transform] DeepSeek max_tokens 超出范围，已自动调整: {max_tokens} → {clamped}"
+                    );
+                }
+                result["max_tokens"] = json!(clamped);
+            }
+            _ => {
+                // 非 DeepSeek / 非数字类型：保持原样，让上游自行处理
+                result["max_tokens"] = v.clone();
+            }
+        }
     }
     if let Some(v) = body.get("temperature") {
         result["temperature"] = v.clone();
@@ -418,8 +394,7 @@ mod tests {
         });
 
         let result = anthropic_to_openai(input, &provider).unwrap();
-        // opus 模型映射到配置的 ANTHROPIC_DEFAULT_OPUS_MODEL
-        assert_eq!(result["model"], "anthropic/claude-opus-4.5");
+        assert_eq!(result["model"], "claude-3-opus");
         assert_eq!(result["max_tokens"], 1024);
         assert_eq!(result["messages"][0]["role"], "user");
         assert_eq!(result["messages"][0]["content"], "Hello");
@@ -564,77 +539,35 @@ mod tests {
 
     #[test]
     fn test_model_mapping_from_provider() {
-        let provider = create_openrouter_provider();
-        let body = json!({"model": "test"});
+        let provider = create_provider(json!({
+            "ANTHROPIC_MODEL": "gpt-4o-mini",
+            "ANTHROPIC_DEFAULT_SONNET_MODEL": "gpt-4o"
+        }));
 
-        // sonnet 模型
-        assert_eq!(
-            get_model_from_provider("claude-sonnet-4-5-20250929", &provider, &body),
-            "anthropic/claude-sonnet-4.5"
-        );
-
-        // haiku 模型
-        assert_eq!(
-            get_model_from_provider("claude-haiku-4-5-20250929", &provider, &body),
-            "anthropic/claude-haiku-4.5"
-        );
-
-        // opus 模型
-        assert_eq!(
-            get_model_from_provider("claude-opus-4-5", &provider, &body),
-            "anthropic/claude-opus-4.5"
-        );
-    }
-
-    #[test]
-    fn test_anthropic_to_openai_model_mapping() {
-        let provider = create_openrouter_provider();
+        // 回归：格式转换层不能再二次做模型映射，否则会把已映射的 model 覆盖成默认模型
         let input = json!({
-            "model": "claude-sonnet-4-5-20250929",
+            "model": "gpt-4o",
             "max_tokens": 1024,
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
         let result = anthropic_to_openai(input, &provider).unwrap();
-        assert_eq!(result["model"], "anthropic/claude-sonnet-4.5");
+        assert_eq!(result["model"], "gpt-4o");
     }
 
     #[test]
-    fn test_thinking_parameter_detection() {
-        let mut provider = create_openrouter_provider();
-        // 添加推理模型配置
-        if let Some(env) = provider.settings_config.get_mut("env") {
-            env["ANTHROPIC_REASONING_MODEL"] = json!("anthropic/claude-sonnet-4.5:extended");
-        }
+    fn test_deepseek_max_tokens_clamp() {
+        let provider = create_provider(json!({
+            "ANTHROPIC_BASE_URL": "https://api.deepseek.com/v1",
+        }));
 
         let input = json!({
-            "model": "claude-sonnet-4-5",
-            "max_tokens": 1024,
-            "thinking": {"type": "enabled"},
-            "messages": [{"role": "user", "content": "Solve this problem"}]
-        });
-
-        let result = anthropic_to_openai(input, &provider).unwrap();
-        // 应该使用推理模型
-        assert_eq!(result["model"], "anthropic/claude-sonnet-4.5:extended");
-    }
-
-    #[test]
-    fn test_thinking_parameter_disabled() {
-        let mut provider = create_openrouter_provider();
-        if let Some(env) = provider.settings_config.get_mut("env") {
-            env["ANTHROPIC_REASONING_MODEL"] = json!("anthropic/claude-sonnet-4.5:extended");
-        }
-
-        let input = json!({
-            "model": "claude-sonnet-4-5",
-            "max_tokens": 1024,
-            "thinking": {"type": "disabled"},
+            "model": "deepseek-chat",
+            "max_tokens": 20000,
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
         let result = anthropic_to_openai(input, &provider).unwrap();
-        // 应该使用普通模型
-        assert_eq!(result["model"], "anthropic/claude-sonnet-4.5");
+        assert_eq!(result["max_tokens"], 8192);
     }
 }

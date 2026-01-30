@@ -252,15 +252,23 @@ impl ProviderAdapter for ClaudeAdapter {
         // 现在 OpenRouter 已推出 Claude Code 兼容接口，因此默认直接透传 endpoint。
         // 如需回退旧逻辑，可在 forwarder 中根据 needs_transform 改写 endpoint。
 
-        let base = format!(
+        let mut base = format!(
             "{}/{}",
             base_url.trim_end_matches('/'),
             endpoint.trim_start_matches('/')
         );
 
-        // 为 /v1/messages 端点添加 ?beta=true 参数
+        // 去除重复的 /v1/v1（可能由 base_url 与 endpoint 都带版本导致）
+        while base.contains("/v1/v1") {
+            base = base.replace("/v1/v1", "/v1");
+        }
+
+        // 为 Claude 相关端点添加 ?beta=true 参数
         // 这是某些上游服务（如 DuckCoding）验证请求来源的关键参数
-        if endpoint.contains("/v1/messages") && !endpoint.contains("?") {
+        // 注：openai_chat 模式下会转发到 /v1/chat/completions，此处也需要保持一致
+        if (endpoint.contains("/v1/messages") || endpoint.contains("/v1/chat/completions"))
+            && !endpoint.contains('?')
+        {
             format!("{base}?beta=true")
         } else {
             base
