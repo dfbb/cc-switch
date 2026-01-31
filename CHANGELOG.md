@@ -17,6 +17,8 @@ This release introduces a generic API format selector, pricing configuration enh
 
 ### Added
 
+- **API Key Link for OpenCode**: API key link support for OpenCode provider form, enabling quick access to provider key management pages
+- **AICodeMirror Partner Preset**: Added AICodeMirror partner preset for all apps (Claude, Codex, Gemini, OpenCode)
 - **API Format Selector**: Generic API format chooser for Claude providers, replacing the OpenRouter-specific toggle. Supports Anthropic Messages (native) and OpenAI Chat Completions format
 - **API Format Presets**: Allow preset providers to specify API format (anthropic or openai_chat) for third-party proxy services
 - **Proxy Hint**: Display info toast when switching to OpenAI Chat format provider, reminding users to enable proxy

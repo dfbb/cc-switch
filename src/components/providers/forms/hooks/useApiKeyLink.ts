@@ -8,7 +8,11 @@ import type { OpenCodeProviderPreset } from "@/config/opencodeProviderPresets";
 
 type PresetEntry = {
   id: string;
-  preset: ProviderPreset | CodexProviderPreset | GeminiProviderPreset | OpenCodeProviderPreset;
+  preset:
+    | ProviderPreset
+    | CodexProviderPreset
+    | GeminiProviderPreset
+    | OpenCodeProviderPreset;
 };
 
 interface UseApiKeyLinkProps {
@@ -75,7 +79,10 @@ export function useApiKeyLink({
 
   return {
     shouldShowApiKeyLink:
-      appId === "claude" || appId === "codex" || appId === "gemini" || appId === "opencode"
+      appId === "claude" ||
+      appId === "codex" ||
+      appId === "gemini" ||
+      appId === "opencode"
         ? shouldShowApiKeyLink
         : false,
     websiteUrl: getWebsiteUrl,
