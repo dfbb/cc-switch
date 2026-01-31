@@ -31,6 +31,7 @@ This release introduces a generic API format selector, pricing configuration enh
 - **NVIDIA NIM Preset**: New provider preset for Claude and OpenCode with nvidia.svg icon
 - **n1n.ai Preset**: New provider preset (#667)
 - **Update Badge Icon**: Replace update badge dot with ArrowUpCircle icon
+- **Linux ARM64**: CI build support for Linux ARM64 architecture
 
 ### Changed
 
@@ -52,6 +53,7 @@ This release introduces a generic API format selector, pricing configuration enh
 - **Duplicate Skills**: Prevent duplicate skill installation from different repos (#778)
 - **Windows Tests**: Stabilize test environment (#644)
 - **i18n**: Update apiFormatOpenAIChat label to mention proxy requirement
+- **Error Display**: Use extractErrorMessage for complete error display in mutations
 - **Sponsors**: Add AICodeMirror and reorder sponsor list
 
 ---
