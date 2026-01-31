@@ -1010,6 +1010,20 @@ export function ProviderForm({
     formWebsiteUrl: form.watch("websiteUrl") || "",
   });
 
+  // 使用 API Key 链接 hook (OpenCode)
+  const {
+    shouldShowApiKeyLink: shouldShowOpencodeApiKeyLink,
+    websiteUrl: opencodeWebsiteUrl,
+    isPartner: isOpencodePartner,
+    partnerPromotionKey: opencodePartnerPromotionKey,
+  } = useApiKeyLink({
+    appId: "opencode",
+    category,
+    selectedPresetId,
+    presetEntries,
+    formWebsiteUrl: form.watch("websiteUrl") || "",
+  });
+
   // 使用端点测速候选 hook
   const speedTestEndpoints = useSpeedTestEndpoints({
     appId,
@@ -1341,8 +1355,10 @@ export function ProviderForm({
             apiKey={opencodeApiKey}
             onApiKeyChange={handleOpencodeApiKeyChange}
             category={category}
-            shouldShowApiKeyLink={false}
-            websiteUrl=""
+            shouldShowApiKeyLink={shouldShowOpencodeApiKeyLink}
+            websiteUrl={opencodeWebsiteUrl}
+            isPartner={isOpencodePartner}
+            partnerPromotionKey={opencodePartnerPromotionKey}
             baseUrl={opencodeBaseUrl}
             onBaseUrlChange={handleOpencodeBaseUrlChange}
             models={opencodeModels}
