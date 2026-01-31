@@ -467,6 +467,26 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#E96B2C",
   },
   {
+    name: "AICodeMirror",
+    websiteUrl: "https://www.aicodemirror.com",
+    apiKeyUrl: "https://www.aicodemirror.com/register?invitecode=9915W3",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://api.aicodemirror.com/api/claudecode",
+        ANTHROPIC_AUTH_TOKEN: "",
+      },
+    },
+    endpointCandidates: [
+      "https://api.aicodemirror.com/api/claudecode",
+      "https://api.claudecode.net.cn/api/claudecode",
+    ],
+    category: "third_party",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "aicodemirror", // 促销信息 i18n key
+    icon: "aicodemirror",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

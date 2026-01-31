@@ -701,6 +701,35 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
       },
     },
   },
+  {
+    name: "AICodeMirror",
+    websiteUrl: "https://www.aicodemirror.com",
+    apiKeyUrl: "https://www.aicodemirror.com/register?invitecode=9915W3",
+    settingsConfig: {
+      npm: "@ai-sdk/anthropic",
+      name: "AICodeMirror",
+      options: {
+        baseURL: "https://api.aicodemirror.com/api/claudecode",
+        apiKey: "",
+      },
+      models: {
+        "claude-sonnet-4.5": { name: "Claude Sonnet 4.5" },
+        "claude-opus-4.5": { name: "Claude Opus 4.5" },
+      },
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "aicodemirror",
+    icon: "aicodemirror",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+  },
 
   // ========== 自定义模板 ==========
   {
