@@ -478,7 +478,8 @@
     "claude": "Claude",
     "codex": "Codex",
     "gemini": "Gemini",
-    "opencode": "OpenCode"
+    "opencode": "OpenCode",
+    "openclaw": "OpenClaw"
   },
   "sessionManager": {
     "title": "セッション管理",
@@ -926,7 +927,8 @@
         "claude": "Claude",
         "codex": "Codex",
         "gemini": "Gemini",
-        "opencode": "OpenCode"
+        "opencode": "OpenCode",
+        "openclaw": "OpenClaw"
       }
     },
     "userLevelPath": "ユーザーレベルの MCP パス",
@@ -1239,7 +1241,8 @@
       "claude": "Claude",
       "codex": "Codex",
       "gemini": "Gemini",
-      "opencode": "OpenCode"
+      "opencode": "OpenCode",
+      "openclaw": "OpenClaw"
     },
     "installFromZip": {
       "button": "ZIP からインストール",
