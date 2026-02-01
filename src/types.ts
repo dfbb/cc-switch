@@ -160,6 +160,7 @@ export interface VisibleApps {
   codex: boolean;
   gemini: boolean;
   opencode: boolean;
+  openclaw: boolean;
 }
 
 // WebDAV v2 同步状态
@@ -287,6 +288,7 @@ export interface McpApps {
   codex: boolean;
   gemini: boolean;
   opencode: boolean;
+  openclaw: boolean;
 }
 
 // MCP 服务器条目（v3.7.0 统一结构）
@@ -423,4 +425,23 @@ export interface OpenCodeMcpServerSpec {
   headers?: Record<string, string>;
   // 通用字段
   enabled?: boolean;
+}
+
+// ============================================================================
+// OpenClaw 专属配置（v3.11.0+）
+// ============================================================================
+
+// OpenClaw 模型配置
+export interface OpenClawModel {
+  id: string;
+  name: string;
+}
+
+// OpenClaw 供应商配置（settings_config 结构）
+// 对应 OpenClaw 的 models.providers.<provider-id> 配置
+export interface OpenClawProviderConfig {
+  baseUrl?: string; // API 端点
+  apiKey?: string; // API 密钥
+  api?: string; // API 协议类型（如 "openai-completions"、"anthropic"）
+  models?: OpenClawModel[]; // 可用模型列表
 }
