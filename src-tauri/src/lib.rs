@@ -14,6 +14,7 @@ mod gemini_mcp;
 mod init_status;
 mod mcp;
 mod opencode_config;
+mod openclaw_config;
 mod panic_hook;
 mod prompt;
 mod prompt_files;
@@ -525,6 +526,17 @@ pub fn run() {
                 }
             }
 
+            // 2.3 OpenClaw 供应商导入（累加式模式，需特殊处理）
+            // OpenClaw 与 OpenCode 类似：配置文件中可同时存在多个供应商
+            // 需要遍历 models.providers 字段下的每个供应商并导入
+            match crate::services::provider::import_openclaw_providers_from_live(&app_state) {
+                Ok(count) if count > 0 => {
+                    log::info!("✓ Imported {count} OpenClaw provider(s) from live config");
+                }
+                Ok(_) => log::debug!("○ No OpenClaw providers found to import"),
+                Err(e) => log::debug!("○ Failed to import OpenClaw providers: {e}"),
+            }
+
             // 3. 导入 MCP 服务器配置（表空时触发）
             if app_state.db.is_mcp_table_empty().unwrap_or(false) {
                 log::info!("MCP table empty, importing from live configurations...");
@@ -992,6 +1004,9 @@ pub fn run() {
             // OpenCode specific
             commands::import_opencode_providers_from_live,
             commands::get_opencode_live_provider_ids,
+            // OpenClaw specific
+            commands::import_openclaw_providers_from_live,
+            commands::get_openclaw_live_provider_ids,
             // Global upstream proxy
             commands::get_global_proxy_url,
             commands::set_global_proxy_url,

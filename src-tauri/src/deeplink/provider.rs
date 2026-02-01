@@ -146,6 +146,7 @@ pub(crate) fn build_provider_from_request(
         AppType::Codex => build_codex_settings(request),
         AppType::Gemini => build_gemini_settings(request),
         AppType::OpenCode => build_opencode_settings(request),
+        AppType::OpenClaw => build_openclaw_settings(request),
     };
 
     // Build usage script configuration if provided
@@ -389,6 +390,35 @@ fn build_opencode_settings(request: &DeepLinkImportRequest) -> serde_json::Value
         "options": options,
         "models": models
     })
+}
+
+fn build_openclaw_settings(request: &DeepLinkImportRequest) -> serde_json::Value {
+    let endpoint = get_primary_endpoint(request);
+
+    // Build OpenClaw provider config
+    // Format: { baseUrl, apiKey, api, models }
+    let mut config = serde_json::Map::new();
+
+    if !endpoint.is_empty() {
+        config.insert("baseUrl".to_string(), json!(endpoint));
+    }
+
+    if let Some(api_key) = &request.api_key {
+        config.insert("apiKey".to_string(), json!(api_key));
+    }
+
+    // Default to OpenAI-compatible API
+    config.insert("api".to_string(), json!("openai-completions"));
+
+    // Build models array
+    if let Some(model) = &request.model {
+        config.insert(
+            "models".to_string(),
+            json!([{ "id": model, "name": model }]),
+        );
+    }
+
+    json!(config)
 }
 
 // =============================================================================
