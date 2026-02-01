@@ -70,14 +70,6 @@ pub fn get_openclaw_config_path() -> PathBuf {
     get_openclaw_dir().join("openclaw.json")
 }
 
-/// 获取 OpenClaw Skills 目录路径
-///
-/// 返回 `~/.openclaw/skills/`
-#[allow(dead_code)]
-pub fn get_openclaw_skills_dir() -> PathBuf {
-    get_openclaw_dir().join("skills")
-}
-
 // ============================================================================
 // Type Definitions
 // ============================================================================
@@ -261,66 +253,4 @@ pub fn get_typed_providers() -> Result<IndexMap<String, OpenClawProviderConfig>,
 pub fn set_typed_provider(id: &str, config: &OpenClawProviderConfig) -> Result<(), AppError> {
     let value = serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })?;
     set_provider(id, value)
-}
-
-// ============================================================================
-// Environment Variables
-// ============================================================================
-
-/// 获取环境变量配置
-#[allow(dead_code)]
-pub fn get_env_vars() -> Result<Map<String, Value>, AppError> {
-    let config = read_openclaw_config()?;
-    Ok(config
-        .get("env")
-        .and_then(|v| v.as_object())
-        .cloned()
-        .unwrap_or_default())
-}
-
-/// 设置环境变量
-#[allow(dead_code)]
-pub fn set_env_var(key: &str, value: &str) -> Result<(), AppError> {
-    let mut config = read_openclaw_config()?;
-
-    if config.get("env").is_none() {
-        config["env"] = json!({});
-    }
-
-    if let Some(env) = config.get_mut("env").and_then(|v| v.as_object_mut()) {
-        env.insert(key.to_string(), Value::String(value.to_string()));
-    }
-
-    write_openclaw_config(&config)
-}
-
-// ============================================================================
-// MCP Functions (Reserved for future use)
-// ============================================================================
-
-/// 获取所有 MCP 服务器配置
-///
-/// OpenClaw MCP 配置在 `agents.list[].mcp.servers`
-/// 由于 OpenClaw MCP 支持仍在开发中（Issue #4834），暂时返回空
-#[allow(dead_code)]
-pub fn get_mcp_servers() -> Result<Map<String, Value>, AppError> {
-    // OpenClaw MCP support is under development
-    // Return empty for now
-    Ok(Map::new())
-}
-
-/// 设置 MCP 服务器配置
-#[allow(dead_code)]
-pub fn set_mcp_server(_id: &str, _config: Value) -> Result<(), AppError> {
-    // OpenClaw MCP support is under development
-    log::warn!("OpenClaw MCP support is not yet implemented");
-    Ok(())
-}
-
-/// 删除 MCP 服务器配置
-#[allow(dead_code)]
-pub fn remove_mcp_server(_id: &str) -> Result<(), AppError> {
-    // OpenClaw MCP support is under development
-    log::warn!("OpenClaw MCP support is not yet implemented");
-    Ok(())
 }
