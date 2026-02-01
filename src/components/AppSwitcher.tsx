@@ -29,12 +29,14 @@ export function AppSwitcher({
     codex: "openai",
     gemini: "gemini",
     opencode: "opencode",
+    openclaw: "openclaw",
   };
   const appDisplayName: Record<AppId, string> = {
     claude: "Claude",
     codex: "Codex",
     gemini: "Gemini",
     opencode: "OpenCode",
+    openclaw: "OpenClaw",
   };
 
   // Filter apps based on visibility settings (default all visible)
