@@ -191,6 +191,45 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
                 }
             }
         }
+        AppType::OpenClaw => {
+            // OpenClaw uses additive mode - write provider to config
+            use crate::openclaw_config;
+            use crate::openclaw_config::OpenClawProviderConfig;
+
+            // Convert settings_config to OpenClawProviderConfig
+            let openclaw_config_result =
+                serde_json::from_value::<OpenClawProviderConfig>(provider.settings_config.clone());
+
+            match openclaw_config_result {
+                Ok(config) => {
+                    openclaw_config::set_typed_provider(&provider.id, &config)?;
+                    log::info!("OpenClaw provider '{}' written to live config", provider.id);
+                }
+                Err(e) => {
+                    log::warn!(
+                        "Failed to parse OpenClaw provider config for '{}': {}",
+                        provider.id,
+                        e
+                    );
+                    // Try to write as raw JSON if it looks valid
+                    if provider.settings_config.get("baseUrl").is_some()
+                        || provider.settings_config.get("api").is_some()
+                        || provider.settings_config.get("models").is_some()
+                    {
+                        openclaw_config::set_provider(&provider.id, provider.settings_config.clone())?;
+                        log::info!(
+                            "OpenClaw provider '{}' written as raw JSON to live config",
+                            provider.id
+                        );
+                    } else {
+                        log::error!(
+                            "OpenClaw provider '{}' has invalid config structure, skipping write",
+                            provider.id
+                        );
+                    }
+                }
+            }
+        }
     }
     Ok(())
 }
@@ -340,6 +379,21 @@ pub fn read_live_settings(app_type: AppType) -> Result<Value, AppError> {
             let config = read_opencode_config()?;
             Ok(config)
         }
+        AppType::OpenClaw => {
+            use crate::openclaw_config::{get_openclaw_config_path, read_openclaw_config};
+
+            let config_path = get_openclaw_config_path();
+            if !config_path.exists() {
+                return Err(AppError::localized(
+                    "openclaw.config.missing",
+                    "OpenClaw 配置文件不存在",
+                    "OpenClaw configuration file not found",
+                ));
+            }
+
+            let config = read_openclaw_config()?;
+            Ok(config)
+        }
     }
 }
 
@@ -432,6 +486,23 @@ pub fn import_default_config(state: &AppState, app_type: AppType) -> Result<bool
             // For OpenCode, we return the full config - but note that OpenCode
             // uses additive mode, so importing defaults works differently
             read_opencode_config()?
+        }
+        AppType::OpenClaw => {
+            // OpenClaw uses additive mode - import from live is not the same pattern
+            use crate::openclaw_config::{get_openclaw_config_path, read_openclaw_config};
+
+            let config_path = get_openclaw_config_path();
+            if !config_path.exists() {
+                return Err(AppError::localized(
+                    "openclaw.live.missing",
+                    "OpenClaw 配置文件不存在",
+                    "OpenClaw configuration file is missing",
+                ));
+            }
+
+            // For OpenClaw, we return the full config - but note that OpenClaw
+            // uses additive mode, so importing defaults works differently
+            read_openclaw_config()?
         }
     };
 
@@ -608,4 +679,72 @@ pub fn import_opencode_providers_from_live(state: &AppState) -> Result<usize, Ap
     }
 
     Ok(imported)
+}
+
+/// Import all providers from OpenClaw live config to database
+///
+/// This imports existing providers from ~/.openclaw/openclaw.json
+/// into the CC Switch database. Each provider found will be added to the
+/// database with is_current set to false.
+pub fn import_openclaw_providers_from_live(state: &AppState) -> Result<usize, AppError> {
+    use crate::openclaw_config;
+
+    let providers = openclaw_config::get_typed_providers()?;
+    if providers.is_empty() {
+        return Ok(0);
+    }
+
+    let mut imported = 0;
+    let existing = state.db.get_all_providers("openclaw")?;
+
+    for (id, config) in providers {
+        // Skip if already exists in database
+        if existing.contains_key(&id) {
+            log::debug!("OpenClaw provider '{id}' already exists in database, skipping");
+            continue;
+        }
+
+        // Convert to Value for settings_config
+        let settings_config = match serde_json::to_value(&config) {
+            Ok(v) => v,
+            Err(e) => {
+                log::warn!("Failed to serialize OpenClaw provider '{id}': {e}");
+                continue;
+            }
+        };
+
+        // Determine display name: use first model name if available, otherwise use id
+        let display_name = config
+            .models
+            .first()
+            .and_then(|m| m.name.clone())
+            .unwrap_or_else(|| id.clone());
+
+        // Create provider
+        let provider = Provider::with_id(id.clone(), display_name, settings_config, None);
+
+        // Save to database
+        if let Err(e) = state.db.save_provider("openclaw", &provider) {
+            log::warn!("Failed to import OpenClaw provider '{id}': {e}");
+            continue;
+        }
+
+        imported += 1;
+        log::info!("Imported OpenClaw provider '{id}' from live config");
+    }
+
+    Ok(imported)
+}
+
+/// Remove an OpenClaw provider from live config
+///
+/// This removes a specific provider from ~/.openclaw/openclaw.json
+/// without affecting other providers in the file.
+pub fn remove_openclaw_provider_from_live(provider_id: &str) -> Result<(), AppError> {
+    use crate::openclaw_config;
+
+    openclaw_config::remove_provider(provider_id)?;
+    log::info!("OpenClaw provider '{provider_id}' removed from live config");
+
+    Ok(())
 }

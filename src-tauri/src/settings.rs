@@ -34,6 +34,8 @@ pub struct VisibleApps {
     pub gemini: bool,
     #[serde(default = "default_true")]
     pub opencode: bool,
+    #[serde(default = "default_true")]
+    pub openclaw: bool,
 }
 
 impl Default for VisibleApps {
@@ -43,6 +45,7 @@ impl Default for VisibleApps {
             codex: true,
             gemini: true,
             opencode: true,
+            openclaw: true,
         }
     }
 }
@@ -55,6 +58,7 @@ impl VisibleApps {
             AppType::Codex => self.codex,
             AppType::Gemini => self.gemini,
             AppType::OpenCode => self.opencode,
+            AppType::OpenClaw => self.openclaw,
         }
     }
 }
@@ -194,6 +198,8 @@ pub struct AppSettings {
     pub gemini_config_dir: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub opencode_config_dir: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub openclaw_config_dir: Option<String>,
 
     // ===== 当前供应商 ID（设备级）=====
     /// 当前 Claude 供应商 ID（本地存储，优先于数据库 is_current）
@@ -208,6 +214,9 @@ pub struct AppSettings {
     /// 当前 OpenCode 供应商 ID（本地存储，对 OpenCode 可能无意义，但保持结构一致）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_provider_opencode: Option<String>,
+    /// 当前 OpenClaw 供应商 ID（本地存储，对 OpenClaw 可能无意义，但保持结构一致）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_provider_openclaw: Option<String>,
 
     // ===== Skill 同步设置 =====
     /// Skill 同步方式：auto（默认，优先 symlink）、symlink、copy
@@ -254,10 +263,12 @@ impl Default for AppSettings {
             codex_config_dir: None,
             gemini_config_dir: None,
             opencode_config_dir: None,
+            openclaw_config_dir: None,
             current_provider_claude: None,
             current_provider_codex: None,
             current_provider_gemini: None,
             current_provider_opencode: None,
+            current_provider_openclaw: None,
             skill_sync_method: SyncMethod::default(),
             webdav_sync: None,
             webdav_backup: None,
@@ -300,6 +311,13 @@ impl AppSettings {
 
         self.opencode_config_dir = self
             .opencode_config_dir
+            .as_ref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string());
+
+        self.openclaw_config_dir = self
+            .openclaw_config_dir
             .as_ref()
             .map(|s| s.trim())
             .filter(|s| !s.is_empty())
@@ -497,6 +515,14 @@ pub fn get_opencode_override_dir() -> Option<PathBuf> {
         .map(|p| resolve_override_path(p))
 }
 
+pub fn get_openclaw_override_dir() -> Option<PathBuf> {
+    let settings = settings_store().read().ok()?;
+    settings
+        .openclaw_config_dir
+        .as_ref()
+        .map(|p| resolve_override_path(p))
+}
+
 // ===== 当前供应商管理函数 =====
 
 /// 获取指定应用类型的当前供应商 ID（从本地 settings 读取）
@@ -510,6 +536,7 @@ pub fn get_current_provider(app_type: &AppType) -> Option<String> {
         AppType::Codex => settings.current_provider_codex.clone(),
         AppType::Gemini => settings.current_provider_gemini.clone(),
         AppType::OpenCode => settings.current_provider_opencode.clone(),
+        AppType::OpenClaw => settings.current_provider_openclaw.clone(),
     }
 }
 
@@ -525,6 +552,7 @@ pub fn set_current_provider(app_type: &AppType, id: Option<&str>) -> Result<(), 
         AppType::Codex => settings.current_provider_codex = id.map(|s| s.to_string()),
         AppType::Gemini => settings.current_provider_gemini = id.map(|s| s.to_string()),
         AppType::OpenCode => settings.current_provider_opencode = id.map(|s| s.to_string()),
+        AppType::OpenClaw => settings.current_provider_openclaw = id.map(|s| s.to_string()),
     }
 
     update_settings(settings)
