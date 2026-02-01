@@ -288,7 +288,6 @@ export interface McpApps {
   codex: boolean;
   gemini: boolean;
   opencode: boolean;
-  openclaw: boolean;
 }
 
 // MCP 服务器条目（v3.7.0 统一结构）

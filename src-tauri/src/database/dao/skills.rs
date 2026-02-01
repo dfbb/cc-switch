@@ -22,7 +22,7 @@ impl Database {
         let mut stmt = conn
             .prepare(
                 "SELECT id, name, description, directory, repo_owner, repo_name, repo_branch,
-                        readme_url, enabled_claude, enabled_codex, enabled_gemini, enabled_opencode, enabled_openclaw, installed_at
+                        readme_url, enabled_claude, enabled_codex, enabled_gemini, enabled_opencode, installed_at
                  FROM skills ORDER BY name ASC",
             )
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -43,9 +43,8 @@ impl Database {
                         codex: row.get(9)?,
                         gemini: row.get(10)?,
                         opencode: row.get(11)?,
-                        openclaw: row.get(12)?,
                     },
-                    installed_at: row.get(13)?,
+                    installed_at: row.get(12)?,
                 })
             })
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -64,7 +63,7 @@ impl Database {
         let mut stmt = conn
             .prepare(
                 "SELECT id, name, description, directory, repo_owner, repo_name, repo_branch,
-                        readme_url, enabled_claude, enabled_codex, enabled_gemini, enabled_opencode, enabled_openclaw, installed_at
+                        readme_url, enabled_claude, enabled_codex, enabled_gemini, enabled_opencode, installed_at
                  FROM skills WHERE id = ?1",
             )
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -84,9 +83,8 @@ impl Database {
                     codex: row.get(9)?,
                     gemini: row.get(10)?,
                     opencode: row.get(11)?,
-                    openclaw: row.get(12)?,
                 },
-                installed_at: row.get(13)?,
+                installed_at: row.get(12)?,
             })
         });
 
@@ -103,8 +101,8 @@ impl Database {
         conn.execute(
             "INSERT OR REPLACE INTO skills
              (id, name, description, directory, repo_owner, repo_name, repo_branch,
-              readme_url, enabled_claude, enabled_codex, enabled_gemini, enabled_opencode, enabled_openclaw, installed_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+              readme_url, enabled_claude, enabled_codex, enabled_gemini, enabled_opencode, installed_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
                 skill.id,
                 skill.name,
@@ -118,7 +116,6 @@ impl Database {
                 skill.apps.codex,
                 skill.apps.gemini,
                 skill.apps.opencode,
-                skill.apps.openclaw,
                 skill.installed_at,
             ],
         )
@@ -148,8 +145,8 @@ impl Database {
         let conn = lock_conn!(self.conn);
         let affected = conn
             .execute(
-                "UPDATE skills SET enabled_claude = ?1, enabled_codex = ?2, enabled_gemini = ?3, enabled_opencode = ?4, enabled_openclaw = ?5 WHERE id = ?6",
-                params![apps.claude, apps.codex, apps.gemini, apps.opencode, apps.openclaw, id],
+                "UPDATE skills SET enabled_claude = ?1, enabled_codex = ?2, enabled_gemini = ?3, enabled_opencode = ?4 WHERE id = ?5",
+                params![apps.claude, apps.codex, apps.gemini, apps.opencode, id],
             )
             .map_err(|e| AppError::Database(e.to_string()))?;
         Ok(affected > 0)
