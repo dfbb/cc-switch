@@ -288,7 +288,7 @@ export function SessionManagerPage() {
                             <Search className="size-3.5" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>搜索会话</TooltipContent>
+                        <TooltipContent>{t("sessionManager.searchSessions")}</TooltipContent>
                       </Tooltip>
 
                       <Select
@@ -482,7 +482,7 @@ export function SessionManagerPage() {
                                   {selectedSession.projectDir}
                                 </p>
                                 <p className="text-muted-foreground mt-1">
-                                  点击复制路径
+                                  {t("sessionManager.clickToCopyPath")}
                                 </p>
                               </TooltipContent>
                             </Tooltip>
