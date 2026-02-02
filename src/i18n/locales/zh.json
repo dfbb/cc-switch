@@ -300,7 +300,8 @@
           "iterm2": "iTerm2",
           "alacritty": "Alacritty",
           "kitty": "Kitty",
-          "ghostty": "Ghostty"
+          "ghostty": "Ghostty",
+          "wezterm": "WezTerm"
         },
         "windows": {
           "cmd": "命令提示符",

@@ -652,6 +652,7 @@ exec bash --norc --noprofile
         "alacritty" => launch_macos_open_app("Alacritty", &script_file, true),
         "kitty" => launch_macos_open_app("kitty", &script_file, false),
         "ghostty" => launch_macos_open_app("Ghostty", &script_file, true),
+        "wezterm" => launch_macos_open_app("WezTerm", &script_file, true),
         _ => launch_macos_terminal_app(&script_file), // "terminal" or default
     };
 
