@@ -1726,5 +1726,34 @@
       "unspecifiedHigh": "未分類の高作業量タスクカテゴリ。他のカテゴリに該当せず作業量が大きいタスクに適用。デフォルトで Claude Opus 4.6 の max バリアントを使用。",
       "writing": "ライティングカテゴリ。ドキュメント、散文、技術文書に特化。デフォルトで Gemini 3 Flash 高速生成モデルを使用。"
     }
+  },
+  "openclawConfig": {
+    "defaultModel": {
+      "title": "デフォルトモデル",
+      "description": "OpenClaw のデフォルトのプライマリモデルとフォールバックモデルを設定します",
+      "primary": "プライマリモデル",
+      "primaryPlaceholder": "例: deepseek/deepseek-chat",
+      "fallbacks": "フォールバックモデル",
+      "fallbacksPlaceholder": "例: openrouter/anthropic/claude-sonnet-4.5",
+      "addFallback": "フォールバックモデルを追加",
+      "saved": "デフォルトモデル設定を保存しました",
+      "saveFailed": "デフォルトモデルの保存に失敗しました"
+    },
+    "modelCatalog": {
+      "title": "モデルカタログ",
+      "description": "モデルのエイリアスと許可リストを設定します",
+      "modelId": "モデル ID",
+      "modelIdPlaceholder": "例: deepseek/deepseek-chat",
+      "alias": "エイリアス",
+      "aliasPlaceholder": "例: DeepSeek",
+      "addEntry": "モデルを追加",
+      "removeEntry": "削除",
+      "saved": "モデルカタログを保存しました",
+      "saveFailed": "モデルカタログの保存に失敗しました",
+      "empty": "モデルカタログエントリがありません",
+      "emptyHint": "エイリアスを設定するにはカタログにモデルを追加してください"
+    },
+    "suggestedDefaults": "推奨デフォルト設定を適用",
+    "suggestedDefaultsHint": "このプリセットの推奨デフォルトモデル設定を使用します"
   }
 }

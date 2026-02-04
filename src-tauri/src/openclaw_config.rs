@@ -42,6 +42,7 @@ use crate::settings::get_openclaw_override_dir;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 // ============================================================================
@@ -101,6 +102,7 @@ pub struct OpenClawProviderConfig {
 
 /// OpenClaw 模型条目
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct OpenClawModelEntry {
     /// 模型 ID
     pub id: String,
@@ -109,9 +111,90 @@ pub struct OpenClawModelEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 
-    /// 其他自定义字段
+    /// 模型别名（用于快捷引用）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
+
+    /// 模型成本（输入/输出价格）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cost: Option<OpenClawModelCost>,
+
+    /// 上下文窗口大小
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<u32>,
+
+    /// 其他自定义字段（保留未知字段）
     #[serde(flatten)]
     pub extra: Map<String, Value>,
+}
+
+/// OpenClaw 模型成本配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenClawModelCost {
+    /// 输入价格（每百万 token）
+    pub input: f64,
+
+    /// 输出价格（每百万 token）
+    pub output: f64,
+
+    /// 其他自定义字段（保留未知字段）
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
+}
+
+/// OpenClaw 默认模型配置（agents.defaults.model）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenClawDefaultModel {
+    /// 主模型 ID（格式：provider/model）
+    pub primary: String,
+
+    /// 回退模型列表
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fallbacks: Vec<String>,
+
+    /// 其他自定义字段（保留未知字段）
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
+}
+
+/// OpenClaw 模型目录条目（agents.defaults.models 中的值）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenClawModelCatalogEntry {
+    /// 模型别名（用于 UI 显示）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub alias: Option<String>,
+
+    /// 其他自定义字段（保留未知字段）
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
+}
+
+/// OpenClaw agents.defaults 配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenClawAgentsDefaults {
+    /// 默认模型配置
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub model: Option<OpenClawDefaultModel>,
+
+    /// 模型目录/允许列表（键为 provider/model 格式）
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub models: Option<HashMap<String, OpenClawModelCatalogEntry>>,
+
+    /// 其他自定义字段（保留未知字段）
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
+}
+
+/// OpenClaw agents 顶层配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenClawAgents {
+    /// 默认配置
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub defaults: Option<OpenClawAgentsDefaults>,
+
+    /// 其他自定义字段（保留未知字段）
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
 }
 
 // ============================================================================
@@ -253,4 +336,87 @@ pub fn get_typed_providers() -> Result<IndexMap<String, OpenClawProviderConfig>,
 pub fn set_typed_provider(id: &str, config: &OpenClawProviderConfig) -> Result<(), AppError> {
     let value = serde_json::to_value(config).map_err(|e| AppError::JsonSerialize { source: e })?;
     set_provider(id, value)
+}
+
+// ============================================================================
+// Agents Configuration Functions
+// ============================================================================
+
+/// 读取默认模型配置（agents.defaults.model）
+pub fn get_default_model() -> Result<Option<OpenClawDefaultModel>, AppError> {
+    let config = read_openclaw_config()?;
+
+    let Some(model_value) = config
+        .get("agents")
+        .and_then(|a| a.get("defaults"))
+        .and_then(|d| d.get("model"))
+    else {
+        return Ok(None);
+    };
+
+    let model = serde_json::from_value(model_value.clone())
+        .map_err(|e| AppError::Config(format!("Failed to parse agents.defaults.model: {e}")))?;
+
+    Ok(Some(model))
+}
+
+/// 设置默认模型配置（agents.defaults.model）
+pub fn set_default_model(model: &OpenClawDefaultModel) -> Result<(), AppError> {
+    let mut config = read_openclaw_config()?;
+
+    // Ensure agents.defaults path exists, preserving unknown fields
+    ensure_agents_defaults_path(&mut config);
+
+    let model_value =
+        serde_json::to_value(model).map_err(|e| AppError::JsonSerialize { source: e })?;
+
+    config["agents"]["defaults"]["model"] = model_value;
+
+    write_openclaw_config(&config)
+}
+
+/// 读取模型目录/允许列表（agents.defaults.models）
+pub fn get_model_catalog() -> Result<Option<HashMap<String, OpenClawModelCatalogEntry>>, AppError> {
+    let config = read_openclaw_config()?;
+
+    let Some(models_value) = config
+        .get("agents")
+        .and_then(|a| a.get("defaults"))
+        .and_then(|d| d.get("models"))
+    else {
+        return Ok(None);
+    };
+
+    let catalog = serde_json::from_value(models_value.clone())
+        .map_err(|e| AppError::Config(format!("Failed to parse agents.defaults.models: {e}")))?;
+
+    Ok(Some(catalog))
+}
+
+/// 设置模型目录/允许列表（agents.defaults.models）
+pub fn set_model_catalog(
+    catalog: &HashMap<String, OpenClawModelCatalogEntry>,
+) -> Result<(), AppError> {
+    let mut config = read_openclaw_config()?;
+
+    // Ensure agents.defaults path exists, preserving unknown fields
+    ensure_agents_defaults_path(&mut config);
+
+    let catalog_value =
+        serde_json::to_value(catalog).map_err(|e| AppError::JsonSerialize { source: e })?;
+
+    config["agents"]["defaults"]["models"] = catalog_value;
+
+    write_openclaw_config(&config)
+}
+
+/// Ensure the `agents.defaults` path exists in the config,
+/// preserving any existing unknown fields.
+fn ensure_agents_defaults_path(config: &mut Value) {
+    if config.get("agents").is_none() {
+        config["agents"] = json!({});
+    }
+    if config["agents"].get("defaults").is_none() {
+        config["agents"]["defaults"] = json!({});
+    }
 }

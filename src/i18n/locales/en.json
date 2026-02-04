@@ -1745,5 +1745,34 @@
       "unspecifiedHigh": "Uncategorized high-effort task category for tasks that don't fit other categories with large workload. Defaults to Claude Opus 4.6 max variant.",
       "writing": "Writing category for documentation, prose and technical writing. Defaults to Gemini 3 Flash fast generation model."
     }
+  },
+  "openclawConfig": {
+    "defaultModel": {
+      "title": "Default Model",
+      "description": "Configure the default primary model and fallback models for OpenClaw",
+      "primary": "Primary Model",
+      "primaryPlaceholder": "e.g., deepseek/deepseek-chat",
+      "fallbacks": "Fallback Models",
+      "fallbacksPlaceholder": "e.g., openrouter/anthropic/claude-sonnet-4.5",
+      "addFallback": "Add Fallback Model",
+      "saved": "Default model configuration saved",
+      "saveFailed": "Failed to save default model"
+    },
+    "modelCatalog": {
+      "title": "Model Catalog",
+      "description": "Configure model aliases and allowlist",
+      "modelId": "Model ID",
+      "modelIdPlaceholder": "e.g., deepseek/deepseek-chat",
+      "alias": "Alias",
+      "aliasPlaceholder": "e.g., DeepSeek",
+      "addEntry": "Add Model",
+      "removeEntry": "Remove",
+      "saved": "Model catalog saved",
+      "saveFailed": "Failed to save model catalog",
+      "empty": "No model catalog entries",
+      "emptyHint": "Add models to the catalog to configure aliases"
+    },
+    "suggestedDefaults": "Apply Suggested Defaults",
+    "suggestedDefaultsHint": "Use this preset's recommended default model configuration"
   }
 }

@@ -1745,5 +1745,34 @@
       "unspecifiedHigh": "未归类高工作量任务类别，适用于不适合其他类别且工作量较大的任务，默认使用 Claude Opus 4.6 的最大变体。",
       "writing": "写作类别，专注于文档、散文和技术写作，默认使用 Gemini 3 Flash 快速生成模型。"
     }
+  },
+  "openclawConfig": {
+    "defaultModel": {
+      "title": "默认模型",
+      "description": "配置 OpenClaw 的默认主模型和回退模型",
+      "primary": "主模型",
+      "primaryPlaceholder": "例如: deepseek/deepseek-chat",
+      "fallbacks": "回退模型",
+      "fallbacksPlaceholder": "例如: openrouter/anthropic/claude-sonnet-4.5",
+      "addFallback": "添加回退模型",
+      "saved": "默认模型配置已保存",
+      "saveFailed": "保存默认模型失败"
+    },
+    "modelCatalog": {
+      "title": "模型目录",
+      "description": "配置可用模型的别名和允许列表",
+      "modelId": "模型 ID",
+      "modelIdPlaceholder": "例如: deepseek/deepseek-chat",
+      "alias": "别名",
+      "aliasPlaceholder": "例如: DeepSeek",
+      "addEntry": "添加模型",
+      "removeEntry": "移除",
+      "saved": "模型目录已保存",
+      "saveFailed": "保存模型目录失败",
+      "empty": "暂无模型目录配置",
+      "emptyHint": "添加模型到目录以配置别名"
+    },
+    "suggestedDefaults": "应用建议默认配置",
+    "suggestedDefaultsHint": "使用此预设推荐的默认模型配置"
   }
 }

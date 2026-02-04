@@ -342,3 +342,38 @@ pub fn get_openclaw_live_provider_ids() -> Result<Vec<String>, String> {
         .map(|providers| providers.keys().cloned().collect())
         .map_err(|e| e.to_string())
 }
+
+// ============================================================================
+// OpenClaw Agents Configuration Commands
+// ============================================================================
+
+/// 获取 OpenClaw 默认模型配置（agents.defaults.model）
+#[tauri::command]
+pub fn get_openclaw_default_model(
+) -> Result<Option<crate::openclaw_config::OpenClawDefaultModel>, String> {
+    crate::openclaw_config::get_default_model().map_err(|e| e.to_string())
+}
+
+/// 设置 OpenClaw 默认模型配置（agents.defaults.model）
+#[tauri::command]
+pub fn set_openclaw_default_model(
+    model: crate::openclaw_config::OpenClawDefaultModel,
+) -> Result<(), String> {
+    crate::openclaw_config::set_default_model(&model).map_err(|e| e.to_string())
+}
+
+/// 获取 OpenClaw 模型目录/允许列表（agents.defaults.models）
+#[tauri::command]
+pub fn get_openclaw_model_catalog(
+) -> Result<Option<std::collections::HashMap<String, crate::openclaw_config::OpenClawModelCatalogEntry>>, String>
+{
+    crate::openclaw_config::get_model_catalog().map_err(|e| e.to_string())
+}
+
+/// 设置 OpenClaw 模型目录/允许列表（agents.defaults.models）
+#[tauri::command]
+pub fn set_openclaw_model_catalog(
+    catalog: std::collections::HashMap<String, crate::openclaw_config::OpenClawModelCatalogEntry>,
+) -> Result<(), String> {
+    crate::openclaw_config::set_model_catalog(&catalog).map_err(|e| e.to_string())
+}

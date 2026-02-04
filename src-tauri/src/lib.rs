@@ -1007,6 +1007,10 @@ pub fn run() {
             // OpenClaw specific
             commands::import_openclaw_providers_from_live,
             commands::get_openclaw_live_provider_ids,
+            commands::get_openclaw_default_model,
+            commands::set_openclaw_default_model,
+            commands::get_openclaw_model_catalog,
+            commands::set_openclaw_model_catalog,
             // Global upstream proxy
             commands::get_global_proxy_url,
             commands::set_global_proxy_url,

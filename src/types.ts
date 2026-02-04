@@ -434,6 +434,20 @@ export interface OpenCodeMcpServerSpec {
 export interface OpenClawModel {
   id: string;
   name: string;
+  alias?: string;
+  cost?: { input: number; output: number };
+  contextWindow?: number;
+}
+
+// OpenClaw 默认模型配置（agents.defaults.model）
+export interface OpenClawDefaultModel {
+  primary: string;
+  fallbacks?: string[];
+}
+
+// OpenClaw 模型目录条目（agents.defaults.models 中的值）
+export interface OpenClawModelCatalogEntry {
+  alias?: string;
 }
 
 // OpenClaw 供应商配置（settings_config 结构）
