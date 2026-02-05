@@ -104,13 +104,15 @@ export function useProviderActions(activeApp: AppId) {
           );
         } else {
           // 普通供应商：显示切换成功
-          // OpenCode: show "added to config" message instead of "switched"
-          const messageKey =
-            activeApp === "opencode"
-              ? "notifications.addToConfigSuccess"
-              : "notifications.switchSuccess";
-          const defaultMessage =
-            activeApp === "opencode" ? "已添加到配置" : "切换成功！";
+          // OpenCode/OpenClaw: show "added to config" message instead of "switched"
+          const isMultiProviderApp =
+            activeApp === "opencode" || activeApp === "openclaw";
+          const messageKey = isMultiProviderApp
+            ? "notifications.addToConfigSuccess"
+            : "notifications.switchSuccess";
+          const defaultMessage = isMultiProviderApp
+            ? "已添加到配置"
+            : "切换成功！";
 
           toast.success(t(messageKey, { defaultValue: defaultMessage }), {
             closeButton: true,
