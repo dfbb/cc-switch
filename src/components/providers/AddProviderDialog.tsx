@@ -94,7 +94,8 @@ export function AddProviderDialog({
         ...(values.meta ? { meta: values.meta } : {}),
       };
 
-      if (appId === "opencode" && values.providerKey) {
+      // OpenCode/OpenClaw: pass providerKey for ID generation
+      if ((appId === "opencode" || appId === "openclaw") && values.providerKey) {
         providerData.providerKey = values.providerKey;
       }
 
