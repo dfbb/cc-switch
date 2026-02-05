@@ -61,7 +61,7 @@ export function OpenClawFormFields({
 }: OpenClawFormFieldsProps) {
   const { t } = useTranslation();
   const [expandedModels, setExpandedModels] = useState<Record<number, boolean>>(
-    {}
+    {},
   );
 
   // Toggle advanced section for a model
@@ -100,7 +100,7 @@ export function OpenClawFormFields({
   const handleModelChange = (
     index: number,
     field: keyof OpenClawModel,
-    value: unknown
+    value: unknown,
   ) => {
     const newModels = [...models];
     newModels[index] = { ...newModels[index], [field]: value };
@@ -111,7 +111,7 @@ export function OpenClawFormFields({
   const handleCostChange = (
     index: number,
     costField: "input" | "output" | "cacheRead" | "cacheWrite",
-    value: string
+    value: string,
   ) => {
     const newModels = [...models];
     const numValue = parseFloat(value);
@@ -275,7 +275,7 @@ export function OpenClawFormFields({
                         handleModelChange(
                           index,
                           "contextWindow",
-                          e.target.value ? parseInt(e.target.value) : undefined
+                          e.target.value ? parseInt(e.target.value) : undefined,
                         )
                       }
                       placeholder="200000"
@@ -294,7 +294,7 @@ export function OpenClawFormFields({
                         handleModelChange(
                           index,
                           "maxTokens",
-                          e.target.value ? parseInt(e.target.value) : undefined
+                          e.target.value ? parseInt(e.target.value) : undefined,
                         )
                       }
                       placeholder="32000"
@@ -316,7 +316,9 @@ export function OpenClawFormFields({
                       <span className="text-xs text-muted-foreground">
                         {model.reasoning
                           ? t("openclaw.reasoningOn", { defaultValue: "启用" })
-                          : t("openclaw.reasoningOff", { defaultValue: "关闭" })}
+                          : t("openclaw.reasoningOff", {
+                              defaultValue: "关闭",
+                            })}
                       </span>
                     </div>
                   </div>
@@ -417,7 +419,7 @@ export function OpenClawFormFields({
                             handleCostChange(
                               index,
                               "cacheWrite",
-                              e.target.value
+                              e.target.value,
                             )
                           }
                           placeholder="3.75"

@@ -597,7 +597,11 @@ function App() {
           return (
             <SkillsPage
               ref={skillsPageRef}
-              initialApp={activeApp === "opencode" || activeApp === "openclaw" ? "claude" : activeApp}
+              initialApp={
+                activeApp === "opencode" || activeApp === "openclaw"
+                  ? "claude"
+                  : activeApp
+              }
             />
           );
         case "mcp":

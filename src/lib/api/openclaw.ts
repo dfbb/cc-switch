@@ -1,8 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type {
-  OpenClawDefaultModel,
-  OpenClawModelCatalogEntry,
-} from "@/types";
+import type { OpenClawDefaultModel, OpenClawModelCatalogEntry } from "@/types";
 
 /**
  * OpenClaw agents configuration API
