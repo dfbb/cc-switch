@@ -43,11 +43,14 @@ export interface OpenClawProviderPreset {
 
 /**
  * OpenClaw API protocol options
+ * @see https://github.com/openclaw/openclaw/blob/main/docs/gateway/configuration.md
  */
 export const openclawApiProtocols = [
   { value: "openai-completions", label: "OpenAI Completions" },
-  { value: "anthropic", label: "Anthropic" },
+  { value: "openai-responses", label: "OpenAI Responses" },
+  { value: "anthropic-messages", label: "Anthropic Messages" },
   { value: "google-generative-ai", label: "Google Generative AI" },
+  { value: "bedrock-converse-stream", label: "AWS Bedrock" },
 ] as const;
 
 /**
@@ -262,7 +265,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     settingsConfig: {
       baseUrl: "https://aihubmix.com/v1",
       apiKey: "",
-      api: "anthropic",
+      api: "anthropic-messages",
       models: [
         {
           id: "claude-sonnet-4-5-20250929",
@@ -306,7 +309,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     settingsConfig: {
       baseUrl: "https://www.dmxapi.cn/v1",
       apiKey: "",
-      api: "anthropic",
+      api: "anthropic-messages",
       models: [
         {
           id: "claude-sonnet-4-5-20250929",
@@ -434,7 +437,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     settingsConfig: {
       baseUrl: "https://www.packyapi.com/v1",
       apiKey: "",
-      api: "anthropic",
+      api: "anthropic-messages",
       models: [
         {
           id: "claude-sonnet-4-5-20250929",
@@ -479,7 +482,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     settingsConfig: {
       baseUrl: "https://api.cubence.com/v1",
       apiKey: "",
-      api: "anthropic",
+      api: "anthropic-messages",
       models: [
         {
           id: "claude-sonnet-4-5-20250929",
@@ -525,7 +528,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     settingsConfig: {
       baseUrl: "https://api.aigocode.com/v1",
       apiKey: "",
-      api: "anthropic",
+      api: "anthropic-messages",
       models: [
         {
           id: "claude-sonnet-4-5-20250929",
