@@ -35,7 +35,8 @@ export function AddProviderDialog({
   onSubmit,
 }: AddProviderDialogProps) {
   const { t } = useTranslation();
-  const showUniversalTab = appId !== "opencode";
+  // OpenCode and OpenClaw don't support universal providers
+  const showUniversalTab = appId !== "opencode" && appId !== "openclaw";
   const [activeTab, setActiveTab] = useState<"app-specific" | "universal">(
     "app-specific",
   );
@@ -184,6 +185,11 @@ export function AddProviderDialog({
             | undefined;
           if (options?.baseURL) {
             addUrl(options.baseURL);
+          }
+        } else if (appId === "openclaw") {
+          // OpenClaw uses baseUrl directly
+          if (parsedConfig.baseUrl) {
+            addUrl(parsedConfig.baseUrl as string);
           }
         }
 

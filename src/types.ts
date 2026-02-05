@@ -435,8 +435,16 @@ export interface OpenClawModel {
   id: string;
   name: string;
   alias?: string;
-  cost?: { input: number; output: number };
+  reasoning?: boolean; // 是否支持推理模式（如 o1、DeepSeek R1）
+  input?: string[]; // 支持的输入类型（如 ["text"]、["text", "image"]）
+  cost?: {
+    input: number;
+    output: number;
+    cacheRead?: number; // 缓存读取价格
+    cacheWrite?: number; // 缓存写入价格
+  };
   contextWindow?: number;
+  maxTokens?: number; // 最大输出 token 数
 }
 
 // OpenClaw 默认模型配置（agents.defaults.model）
