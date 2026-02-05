@@ -732,6 +732,14 @@
     "modelOptionKeyPlaceholder": "provider",
     "modelOptionValuePlaceholder": "{\"order\": [\"baseten\"]}"
   },
+  "openclaw": {
+    "providerKey": "プロバイダーキー",
+    "providerKeyPlaceholder": "my-provider",
+    "providerKeyHint": "設定ファイル内のユニーク識別子。作成後は変更できません。小文字、数字、ハイフンのみ使用可能。",
+    "providerKeyRequired": "プロバイダーキーを入力してください",
+    "providerKeyDuplicate": "このキーは既に使用されています",
+    "providerKeyInvalid": "無効な形式です。小文字、数字、ハイフンのみ使用可能。"
+  },
   "providerPreset": {
     "label": "プロバイダータイプ",
     "custom": "カスタム設定",
