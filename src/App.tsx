@@ -425,10 +425,19 @@ function App() {
     const { provider, action } = confirmAction;
 
     if (action === "remove") {
+      // Remove from live config only (for additive mode apps like OpenCode/OpenClaw)
+      // Does NOT delete from database - provider remains in the list
       await providersApi.removeFromLiveConfig(provider.id, activeApp);
-      await queryClient.invalidateQueries({
-        queryKey: ["opencodeLiveProviderIds"],
-      });
+      // Invalidate queries to refresh the isInConfig state
+      if (activeApp === "opencode") {
+        await queryClient.invalidateQueries({
+          queryKey: ["opencodeLiveProviderIds"],
+        });
+      } else if (activeApp === "openclaw") {
+        await queryClient.invalidateQueries({
+          queryKey: ["openclawLiveProviderIds"],
+        });
+      }
       toast.success(
         t("notifications.removeFromConfigSuccess", {
           defaultValue: "已从配置移除",
@@ -642,7 +651,7 @@ function App() {
                         setConfirmAction({ provider, action: "delete" })
                       }
                       onRemoveFromConfig={
-                        activeApp === "opencode"
+                        activeApp === "opencode" || activeApp === "openclaw"
                           ? (provider) =>
                               setConfirmAction({ provider, action: "remove" })
                           : undefined

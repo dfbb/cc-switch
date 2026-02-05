@@ -62,10 +62,13 @@ export function ProviderActions({
   const { t } = useTranslation();
   const iconButtonClass = "h-8 w-8 p-1";
 
-  const isOpenCodeMode = appId === "opencode" && !isOmo;
+  // 累加模式应用（OpenCode 非 OMO 和 OpenClaw）
+  const isAdditiveMode =
+    (appId === "opencode" && !isOmo) || appId === "openclaw";
 
+  // 故障转移模式下的按钮逻辑（累加模式和 OMO 应用不支持故障转移）
   const isFailoverMode =
-    !isOpenCodeMode && !isOmo && isAutoFailoverEnabled && onToggleFailover;
+    !isAdditiveMode && !isOmo && isAutoFailoverEnabled && onToggleFailover;
 
   const handleMainButtonClick = () => {
     if (isOmo) {
@@ -74,7 +77,8 @@ export function ProviderActions({
       } else {
         onSwitch();
       }
-    } else if (isOpenCodeMode) {
+    } else if (isAdditiveMode) {
+      // 累加模式：切换配置状态（添加/移除）
       if (isInConfig) {
         if (onRemoveFromConfig) {
           onRemoveFromConfig();
@@ -112,7 +116,8 @@ export function ProviderActions({
       };
     }
 
-    if (isOpenCodeMode) {
+    // 累加模式（OpenCode 非 OMO / OpenClaw）
+    if (isAdditiveMode) {
       if (isInConfig) {
         return {
           disabled: false,
@@ -180,7 +185,7 @@ export function ProviderActions({
 
   const canDelete = isOmo
     ? !(isLastOmo && isCurrent)
-    : isOpenCodeMode
+    : isAdditiveMode
       ? true
       : !isCurrent;
 

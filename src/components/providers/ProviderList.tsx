@@ -84,12 +84,25 @@ export function ProviderList({
     enabled: appId === "opencode",
   });
 
+  // OpenClaw: 查询 live 配置中的供应商 ID 列表，用于判断 isInConfig
+  const { data: openclawLiveIds } = useQuery({
+    queryKey: ["openclawLiveProviderIds"],
+    queryFn: () => providersApi.getOpenClawLiveProviderIds(),
+    enabled: appId === "openclaw",
+  });
+
+  // 判断供应商是否已添加到配置（累加模式应用：OpenCode/OpenClaw）
   const isProviderInConfig = useCallback(
     (providerId: string): boolean => {
-      if (appId !== "opencode") return true; // 非 OpenCode 应用始终返回 true
-      return opencodeLiveIds?.includes(providerId) ?? false;
+      if (appId === "opencode") {
+        return opencodeLiveIds?.includes(providerId) ?? false;
+      }
+      if (appId === "openclaw") {
+        return openclawLiveIds?.includes(providerId) ?? false;
+      }
+      return true; // 其他应用始终返回 true
     },
-    [appId, opencodeLiveIds],
+    [appId, opencodeLiveIds, openclawLiveIds],
   );
 
   const { data: isAutoFailoverEnabled } = useAutoFailoverEnabled(appId);
