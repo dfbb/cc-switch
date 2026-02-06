@@ -274,10 +274,10 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
           cost: { input: 3, output: 15 },
         },
         {
-          id: "claude-opus-4-5-20251101",
-          name: "Claude Opus 4.5",
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
           contextWindow: 200000,
-          cost: { input: 15, output: 75 },
+          cost: { input: 5, output: 25 },
         },
       ],
     },
@@ -294,11 +294,11 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     suggestedDefaults: {
       model: {
         primary: "aihubmix/claude-sonnet-4-5-20250929",
-        fallbacks: ["aihubmix/claude-opus-4-5-20251101"],
+        fallbacks: ["aihubmix/claude-opus-4-6"],
       },
       modelCatalog: {
         "aihubmix/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
-        "aihubmix/claude-opus-4-5-20251101": { alias: "Opus" },
+        "aihubmix/claude-opus-4-6": { alias: "Opus" },
       },
     },
   },
@@ -318,10 +318,10 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
           cost: { input: 3, output: 15 },
         },
         {
-          id: "claude-opus-4-5-20251101",
-          name: "Claude Opus 4.5",
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
           contextWindow: 200000,
-          cost: { input: 15, output: 75 },
+          cost: { input: 5, output: 25 },
         },
       ],
     },
@@ -338,11 +338,11 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     suggestedDefaults: {
       model: {
         primary: "dmxapi/claude-sonnet-4-5-20250929",
-        fallbacks: ["dmxapi/claude-opus-4-5-20251101"],
+        fallbacks: ["dmxapi/claude-opus-4-6"],
       },
       modelCatalog: {
         "dmxapi/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
-        "dmxapi/claude-opus-4-5-20251101": { alias: "Opus" },
+        "dmxapi/claude-opus-4-6": { alias: "Opus" },
       },
     },
   },
@@ -362,10 +362,10 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
           cost: { input: 3, output: 15 },
         },
         {
-          id: "anthropic/claude-opus-4.5",
-          name: "Claude Opus 4.5",
+          id: "anthropic/claude-opus-4.6",
+          name: "Claude Opus 4.6",
           contextWindow: 200000,
-          cost: { input: 15, output: 75 },
+          cost: { input: 5, output: 25 },
         },
       ],
     },
@@ -382,11 +382,11 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     suggestedDefaults: {
       model: {
         primary: "openrouter/anthropic/claude-sonnet-4.5",
-        fallbacks: ["openrouter/anthropic/claude-opus-4.5"],
+        fallbacks: ["openrouter/anthropic/claude-opus-4.6"],
       },
       modelCatalog: {
         "openrouter/anthropic/claude-sonnet-4.5": { alias: "Sonnet" },
-        "openrouter/anthropic/claude-opus-4.5": { alias: "Opus" },
+        "openrouter/anthropic/claude-opus-4.6": { alias: "Opus" },
       },
     },
   },
@@ -446,10 +446,10 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
           cost: { input: 3, output: 15 },
         },
         {
-          id: "claude-opus-4-5-20251101",
-          name: "Claude Opus 4.5",
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
           contextWindow: 200000,
-          cost: { input: 15, output: 75 },
+          cost: { input: 5, output: 25 },
         },
       ],
     },
@@ -467,11 +467,11 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     suggestedDefaults: {
       model: {
         primary: "packycode/claude-sonnet-4-5-20250929",
-        fallbacks: ["packycode/claude-opus-4-5-20251101"],
+        fallbacks: ["packycode/claude-opus-4-6"],
       },
       modelCatalog: {
         "packycode/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
-        "packycode/claude-opus-4-5-20251101": { alias: "Opus" },
+        "packycode/claude-opus-4-6": { alias: "Opus" },
       },
     },
   },
@@ -491,10 +491,10 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
           cost: { input: 3, output: 15 },
         },
         {
-          id: "claude-opus-4-5-20251101",
-          name: "Claude Opus 4.5",
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
           contextWindow: 200000,
-          cost: { input: 15, output: 75 },
+          cost: { input: 5, output: 25 },
         },
       ],
     },
@@ -513,11 +513,11 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     suggestedDefaults: {
       model: {
         primary: "cubence/claude-sonnet-4-5-20250929",
-        fallbacks: ["cubence/claude-opus-4-5-20251101"],
+        fallbacks: ["cubence/claude-opus-4-6"],
       },
       modelCatalog: {
         "cubence/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
-        "cubence/claude-opus-4-5-20251101": { alias: "Opus" },
+        "cubence/claude-opus-4-6": { alias: "Opus" },
       },
     },
   },
@@ -537,10 +537,10 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
           cost: { input: 3, output: 15 },
         },
         {
-          id: "claude-opus-4-5-20251101",
-          name: "Claude Opus 4.5",
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
           contextWindow: 200000,
-          cost: { input: 15, output: 75 },
+          cost: { input: 5, output: 25 },
         },
       ],
     },
@@ -559,11 +559,11 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     suggestedDefaults: {
       model: {
         primary: "aigocode/claude-sonnet-4-5-20250929",
-        fallbacks: ["aigocode/claude-opus-4-5-20251101"],
+        fallbacks: ["aigocode/claude-opus-4-6"],
       },
       modelCatalog: {
         "aigocode/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
-        "aigocode/claude-opus-4-5-20251101": { alias: "Opus" },
+        "aigocode/claude-opus-4-6": { alias: "Opus" },
       },
     },
   },
