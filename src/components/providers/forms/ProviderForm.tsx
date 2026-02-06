@@ -37,6 +37,7 @@ import {
 import {
   openclawProviderPresets,
   type OpenClawProviderPreset,
+  type OpenClawSuggestedDefaults,
 } from "@/config/openclawProviderPresets";
 import { OpenCodeFormFields } from "./OpenCodeFormFields";
 import { OpenClawFormFields } from "./OpenClawFormFields";
@@ -277,6 +278,7 @@ export function ProviderForm({
     category?: ProviderCategory;
     isPartner?: boolean;
     partnerPromotionKey?: string;
+    suggestedDefaults?: OpenClawSuggestedDefaults;
   } | null>(null);
   const [isEndpointModalOpen, setIsEndpointModalOpen] = useState(false);
   const [isCodexEndpointModalOpen, setIsCodexEndpointModalOpen] =
@@ -1446,6 +1448,10 @@ export function ProviderForm({
       if (activePreset.isPartner) {
         payload.isPartner = activePreset.isPartner;
       }
+      // OpenClaw: 传递预设的 suggestedDefaults 到提交数据
+      if (activePreset.suggestedDefaults) {
+        payload.suggestedDefaults = activePreset.suggestedDefaults;
+      }
     }
 
     if (!isEditMode && draftCustomEndpoints.length > 0) {
@@ -1725,6 +1731,15 @@ export function ProviderForm({
     if (appId === "openclaw") {
       const preset = entry.preset as OpenClawProviderPreset;
       const config = preset.settingsConfig;
+
+      // Update activePreset with suggestedDefaults for OpenClaw
+      setActivePreset({
+        id: value,
+        category: preset.category,
+        isPartner: preset.isPartner,
+        partnerPromotionKey: preset.partnerPromotionKey,
+        suggestedDefaults: preset.suggestedDefaults,
+      });
 
       // Clear provider key (user must enter their own unique key)
       setOpenclawProviderKey("");
@@ -2206,5 +2221,6 @@ export type ProviderFormValues = ProviderFormData & {
   presetCategory?: ProviderCategory;
   isPartner?: boolean;
   meta?: ProviderMeta;
-  providerKey?: string;
+  providerKey?: string; // OpenCode/OpenClaw: user-defined provider key
+  suggestedDefaults?: OpenClawSuggestedDefaults; // OpenClaw: suggested default model configuration
 };

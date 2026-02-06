@@ -17,6 +17,7 @@ import { UniversalProviderPanel } from "@/components/universal";
 import { providerPresets } from "@/config/claudeProviderPresets";
 import { codexProviderPresets } from "@/config/codexProviderPresets";
 import { geminiProviderPresets } from "@/config/geminiProviderPresets";
+import type { OpenClawSuggestedDefaults } from "@/config/openclawProviderPresets";
 import type { UniversalProviderPreset } from "@/config/universalProviderPresets";
 
 interface AddProviderDialogProps {
@@ -24,7 +25,10 @@ interface AddProviderDialogProps {
   onOpenChange: (open: boolean) => void;
   appId: AppId;
   onSubmit: (
-    provider: Omit<Provider, "id"> & { providerKey?: string },
+    provider: Omit<Provider, "id"> & {
+      providerKey?: string;
+      suggestedDefaults?: OpenClawSuggestedDefaults;
+    },
   ) => Promise<void> | void;
 }
 
@@ -83,7 +87,11 @@ export function AddProviderDialog({
         unknown
       >;
 
-      const providerData: Omit<Provider, "id"> & { providerKey?: string } = {
+      // 构造基础提交数据
+      const providerData: Omit<Provider, "id"> & {
+        providerKey?: string;
+        suggestedDefaults?: OpenClawSuggestedDefaults;
+      } = {
         name: values.name.trim(),
         notes: values.notes?.trim() || undefined,
         websiteUrl: values.websiteUrl?.trim() || undefined,
@@ -95,7 +103,10 @@ export function AddProviderDialog({
       };
 
       // OpenCode/OpenClaw: pass providerKey for ID generation
-      if ((appId === "opencode" || appId === "openclaw") && values.providerKey) {
+      if (
+        (appId === "opencode" || appId === "openclaw") &&
+        values.providerKey
+      ) {
         providerData.providerKey = values.providerKey;
       }
 
@@ -211,6 +222,11 @@ export function AddProviderDialog({
             custom_endpoints: customEndpoints,
           };
         }
+      }
+
+      // OpenClaw: pass suggestedDefaults for model registration
+      if (appId === "openclaw" && values.suggestedDefaults) {
+        providerData.suggestedDefaults = values.suggestedDefaults;
       }
 
       await onSubmit(providerData);

@@ -2,8 +2,9 @@ import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { providersApi, settingsApi, type AppId } from "@/lib/api";
+import { providersApi, settingsApi, openclawApi, type AppId } from "@/lib/api";
 import type { Provider, UsageScript } from "@/types";
+import type { OpenClawSuggestedDefaults } from "@/config/openclawProviderPresets";
 import {
   useAddProviderMutation,
   useUpdateProviderMutation,
@@ -54,10 +55,55 @@ export function useProviderActions(activeApp: AppId) {
 
   // 添加供应商
   const addProvider = useCallback(
-    async (provider: Omit<Provider, "id"> & { providerKey?: string }) => {
+    async (
+      provider: Omit<Provider, "id"> & {
+        providerKey?: string;
+        suggestedDefaults?: OpenClawSuggestedDefaults;
+      },
+    ) => {
       await addProviderMutation.mutateAsync(provider);
+
+      // OpenClaw: register models to allowlist after adding provider
+      if (activeApp === "openclaw" && provider.suggestedDefaults) {
+        const { model, modelCatalog } = provider.suggestedDefaults;
+        let modelsRegistered = false;
+
+        try {
+          // 1. Merge model catalog (allowlist)
+          if (modelCatalog && Object.keys(modelCatalog).length > 0) {
+            const existingCatalog = (await openclawApi.getModelCatalog()) || {};
+            const mergedCatalog = { ...existingCatalog, ...modelCatalog };
+            await openclawApi.setModelCatalog(mergedCatalog);
+            modelsRegistered = true;
+          }
+
+          // 2. Set default model (only if not already set)
+          if (model) {
+            const existingDefault = await openclawApi.getDefaultModel();
+            if (!existingDefault?.primary) {
+              await openclawApi.setDefaultModel(model);
+            }
+          }
+
+          // Show success toast if models were registered
+          if (modelsRegistered) {
+            toast.success(
+              t("notifications.openclawModelsRegistered", {
+                defaultValue: "模型已注册到 /model 列表",
+              }),
+              { closeButton: true },
+            );
+          }
+        } catch (error) {
+          // Log warning but don't block main flow - provider config is already saved
+          console.warn(
+            "[OpenClaw] Failed to register models to allowlist:",
+            error,
+          );
+        }
+      }
     },
-    [addProviderMutation],
+    [addProviderMutation, activeApp, t],
   );
 
   // 更新供应商

@@ -162,7 +162,8 @@
     "settingsSaved": "設定を保存しました",
     "settingsSaveFailed": "設定の保存に失敗しました: {{error}}",
     "openAIChatFormatHint": "このプロバイダーは OpenAI Chat フォーマットを使用しており、プロキシサービスの有効化が必要です",
-    "openLinkFailed": "リンクを開けませんでした"
+    "openLinkFailed": "リンクを開けませんでした",
+    "openclawModelsRegistered": "モデルが /model リストに登録されました"
   },
   "confirm": {
     "deleteProvider": "プロバイダーを削除",
