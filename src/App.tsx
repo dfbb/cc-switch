@@ -76,7 +76,13 @@ const HEADER_HEIGHT = 64; // px
 const CONTENT_TOP_OFFSET = DRAG_BAR_HEIGHT + HEADER_HEIGHT;
 
 const STORAGE_KEY = "cc-switch-last-app";
-const VALID_APPS: AppId[] = ["claude", "codex", "gemini", "opencode", "openclaw"];
+const VALID_APPS: AppId[] = [
+  "claude",
+  "codex",
+  "gemini",
+  "opencode",
+  "openclaw",
+];
 
 const getInitialApp = (): AppId => {
   const saved = localStorage.getItem(STORAGE_KEY) as AppId | null;
@@ -968,31 +974,7 @@ function App() {
                 />
 
                 <div className="flex items-center gap-1 p-1 bg-muted rounded-xl">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentView("skills")}
-                    className={cn(
-                      "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
-                      "transition-all duration-200 ease-in-out overflow-hidden",
-                      hasSkillsSupport
-                        ? "opacity-100 w-8 scale-100 px-2"
-                        : "opacity-0 w-0 scale-75 pointer-events-none px-0 -ml-1",
-                    )}
-                    title={t("skills.manage")}
-                  >
-                    <Wrench className="flex-shrink-0 w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentView("prompts")}
-                    className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                    title={t("prompts.manage")}
-                  >
-                    <Book className="w-4 h-4" />
-                  </Button>
-                  {activeApp === "openclaw" && (
+                  {activeApp === "openclaw" ? (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1002,31 +984,58 @@ function App() {
                     >
                       <FolderOpen className="w-4 h-4" />
                     </Button>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("skills")}
+                        className={cn(
+                          "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
+                          "transition-all duration-200 ease-in-out overflow-hidden",
+                          hasSkillsSupport
+                            ? "opacity-100 w-8 scale-100 px-2"
+                            : "opacity-0 w-0 scale-75 pointer-events-none px-0 -ml-1",
+                        )}
+                        title={t("skills.manage")}
+                      >
+                        <Wrench className="flex-shrink-0 w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("prompts")}
+                        className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                        title={t("prompts.manage")}
+                      >
+                        <Book className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("sessions")}
+                        className={cn(
+                          "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
+                          "transition-all duration-200 ease-in-out overflow-hidden",
+                          hasSessionSupport
+                            ? "opacity-100 w-8 scale-100 px-2"
+                            : "opacity-0 w-0 scale-75 pointer-events-none px-0 -ml-1",
+                        )}
+                        title={t("sessionManager.title")}
+                      >
+                        <History className="flex-shrink-0 w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("mcp")}
+                        className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                        title={t("mcp.title")}
+                      >
+                        <McpIcon size={16} />
+                      </Button>
+                    </>
                   )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentView("sessions")}
-                    className={cn(
-                      "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5",
-                      "transition-all duration-200 ease-in-out overflow-hidden",
-                      hasSessionSupport
-                        ? "opacity-100 w-8 scale-100 px-2"
-                        : "opacity-0 w-0 scale-75 pointer-events-none px-0 -ml-1",
-                    )}
-                    title={t("sessionManager.title")}
-                  >
-                    <History className="flex-shrink-0 w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentView("mcp")}
-                    className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
-                    title={t("mcp.title")}
-                  >
-                    <McpIcon size={16} />
-                  </Button>
                 </div>
 
                 <Button
