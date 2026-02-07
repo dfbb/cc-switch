@@ -582,6 +582,8 @@ pub fn run() {
                     crate::app_config::AppType::Claude,
                     crate::app_config::AppType::Codex,
                     crate::app_config::AppType::Gemini,
+                    crate::app_config::AppType::OpenCode,
+                    crate::app_config::AppType::OpenClaw,
                 ] {
                     match crate::services::prompt::PromptService::import_from_file_on_first_launch(
                         &app_state,
@@ -1023,6 +1025,9 @@ pub fn run() {
             commands::get_current_omo_provider_id,
             commands::get_omo_provider_count,
             commands::disable_current_omo,
+            // Workspace files (OpenClaw)
+            commands::read_workspace_file,
+            commands::write_workspace_file,
         ]);
 
     let app = builder

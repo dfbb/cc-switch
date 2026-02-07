@@ -1115,6 +1115,22 @@
       "deleteMessage": "Are you sure you want to delete prompt \"{{name}}\"?"
     }
   },
+  "workspace": {
+    "title": "Workspace Files",
+    "manage": "Workspace",
+    "files": {
+      "agents": "Agent instructions and rules",
+      "soul": "Agent personality and communication style",
+      "user": "User profile and preferences",
+      "identity": "Agent name and avatar",
+      "tools": "Local tool documentation",
+      "memory": "Long-term memory and decisions"
+    },
+    "editing": "Edit {{filename}}",
+    "saveSuccess": "Saved successfully",
+    "saveFailed": "Failed to save",
+    "loadFailed": "Failed to load"
+  },
   "env": {
     "warning": {
       "title": "Environment Variable Conflicts Detected",

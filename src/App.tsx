@@ -16,6 +16,7 @@ import {
   Download,
   FolderArchive,
   Search,
+  FolderOpen,
 } from "lucide-react";
 import type { Provider, VisibleApps } from "@/types";
 import type { EnvConflict } from "@/types/env";
@@ -56,6 +57,7 @@ import { McpIcon } from "@/components/BrandIcons";
 import { Button } from "@/components/ui/button";
 import { SessionManagerPage } from "@/components/sessions/SessionManagerPage";
 import { useDisableCurrentOmo } from "@/lib/query/omo";
+import WorkspaceFilesPanel from "@/components/workspace/WorkspaceFilesPanel";
 
 type View =
   | "providers"
@@ -66,14 +68,15 @@ type View =
   | "mcp"
   | "agents"
   | "universal"
-  | "sessions";
+  | "sessions"
+  | "workspace";
 
 const DRAG_BAR_HEIGHT = isWindows() || isLinux() ? 0 : 28; // px
 const HEADER_HEIGHT = 64; // px
 const CONTENT_TOP_OFFSET = DRAG_BAR_HEIGHT + HEADER_HEIGHT;
 
 const STORAGE_KEY = "cc-switch-last-app";
-const VALID_APPS: AppId[] = ["claude", "codex", "gemini", "opencode"];
+const VALID_APPS: AppId[] = ["claude", "codex", "gemini", "opencode", "openclaw"];
 
 const getInitialApp = (): AppId => {
   const saved = localStorage.getItem(STORAGE_KEY) as AppId | null;
@@ -94,6 +97,7 @@ const VALID_VIEWS: View[] = [
   "agents",
   "universal",
   "sessions",
+  "workspace",
 ];
 
 const getInitialView = (): View => {
@@ -625,6 +629,8 @@ function App() {
 
         case "sessions":
           return <SessionManagerPage />;
+        case "workspace":
+          return <WorkspaceFilesPanel />;
         default:
           return (
             <div className="px-6 flex flex-col h-[calc(100vh-8rem)] overflow-hidden">
@@ -783,6 +789,7 @@ function App() {
                       defaultValue: "统一供应商",
                     })}
                   {currentView === "sessions" && t("sessionManager.title")}
+                  {currentView === "workspace" && t("workspace.title")}
                 </h1>
               </div>
             ) : (
@@ -985,6 +992,17 @@ function App() {
                   >
                     <Book className="w-4 h-4" />
                   </Button>
+                  {activeApp === "openclaw" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCurrentView("workspace")}
+                      className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+                      title={t("workspace.manage")}
+                    >
+                      <FolderOpen className="w-4 h-4" />
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"

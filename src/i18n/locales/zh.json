@@ -1115,6 +1115,22 @@
       "deleteMessage": "确定要删除提示词 \"{{name}}\" 吗？"
     }
   },
+  "workspace": {
+    "title": "Workspace 文件管理",
+    "manage": "Workspace",
+    "files": {
+      "agents": "Agent 操作指令和规则",
+      "soul": "Agent 人格和沟通风格",
+      "user": "用户档案和偏好",
+      "identity": "Agent 名称和头像",
+      "tools": "本地工具文档",
+      "memory": "长期记忆和决策记录"
+    },
+    "editing": "编辑 {{filename}}",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败",
+    "loadFailed": "读取失败"
+  },
   "env": {
     "warning": {
       "title": "检测到系统环境变量冲突",
