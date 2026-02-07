@@ -7,6 +7,9 @@ import {
   IdCard,
   Wrench,
   Brain,
+  Activity,
+  Rocket,
+  Power,
   CheckCircle2,
   Circle,
 } from "lucide-react";
@@ -31,6 +34,17 @@ const WORKSPACE_FILES: WorkspaceFile[] = [
   },
   { filename: "TOOLS.md", icon: Wrench, descKey: "workspace.files.tools" },
   { filename: "MEMORY.md", icon: Brain, descKey: "workspace.files.memory" },
+  {
+    filename: "HEARTBEAT.md",
+    icon: Activity,
+    descKey: "workspace.files.heartbeat",
+  },
+  {
+    filename: "BOOTSTRAP.md",
+    icon: Rocket,
+    descKey: "workspace.files.bootstrap",
+  },
+  { filename: "BOOT.md", icon: Power, descKey: "workspace.files.boot" },
 ];
 
 const WorkspaceFilesPanel: React.FC = () => {

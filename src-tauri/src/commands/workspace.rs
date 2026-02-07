@@ -9,6 +9,9 @@ const ALLOWED_FILES: &[&str] = &[
     "IDENTITY.md",
     "TOOLS.md",
     "MEMORY.md",
+    "HEARTBEAT.md",
+    "BOOTSTRAP.md",
+    "BOOT.md",
 ];
 
 fn validate_filename(filename: &str) -> Result<(), String> {
@@ -33,9 +36,9 @@ pub async fn read_workspace_file(filename: String) -> Result<Option<String>, Str
         return Ok(None);
     }
 
-    std::fs::read_to_string(&path).map(Some).map_err(|e| {
-        format!("Failed to read workspace file {filename}: {e}")
-    })
+    std::fs::read_to_string(&path)
+        .map(Some)
+        .map_err(|e| format!("Failed to read workspace file {filename}: {e}"))
 }
 
 /// Write content to an OpenClaw workspace file (atomic write).
@@ -47,13 +50,11 @@ pub async fn write_workspace_file(filename: String, content: String) -> Result<(
     let workspace_dir = get_openclaw_dir().join("workspace");
 
     // Ensure workspace directory exists
-    std::fs::create_dir_all(&workspace_dir).map_err(|e| {
-        format!("Failed to create workspace directory: {e}")
-    })?;
+    std::fs::create_dir_all(&workspace_dir)
+        .map_err(|e| format!("Failed to create workspace directory: {e}"))?;
 
     let path = workspace_dir.join(&filename);
 
-    write_text_file(&path, &content).map_err(|e| {
-        format!("Failed to write workspace file {filename}: {e}")
-    })
+    write_text_file(&path, &content)
+        .map_err(|e| format!("Failed to write workspace file {filename}: {e}"))
 }

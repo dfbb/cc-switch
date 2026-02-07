@@ -1124,12 +1124,63 @@
       "user": "用户档案和偏好",
       "identity": "Agent 名称和头像",
       "tools": "本地工具文档",
-      "memory": "长期记忆和决策记录"
+      "memory": "长期记忆和决策记录",
+      "heartbeat": "心跳运行清单",
+      "bootstrap": "首次运行仪式",
+      "boot": "网关重启清单"
     },
     "editing": "编辑 {{filename}}",
     "saveSuccess": "保存成功",
     "saveFailed": "保存失败",
     "loadFailed": "读取失败"
+  },
+  "openclaw": {
+    "env": {
+      "title": "环境变量",
+      "description": "管理 openclaw.json 中的环境变量配置（API Key、自定义变量等）",
+      "keyPlaceholder": "变量名",
+      "valuePlaceholder": "值",
+      "add": "添加变量",
+      "saveSuccess": "环境变量已保存",
+      "saveFailed": "保存环境变量失败",
+      "loadFailed": "读取环境变量失败"
+    },
+    "tools": {
+      "title": "工具权限",
+      "description": "管理 openclaw.json 中的工具权限配置（允许/拒绝列表）",
+      "profile": "权限模式",
+      "profiles": {
+        "default": "默认",
+        "strict": "严格",
+        "permissive": "宽松",
+        "custom": "自定义"
+      },
+      "allowList": "允许列表",
+      "denyList": "拒绝列表",
+      "patternPlaceholder": "工具名称或模式",
+      "addAllow": "添加允许",
+      "addDeny": "添加拒绝",
+      "saveSuccess": "工具权限已保存",
+      "saveFailed": "保存工具权限失败",
+      "loadFailed": "读取工具权限失败"
+    },
+    "agents": {
+      "title": "Agents 配置",
+      "description": "管理 openclaw.json 中的 agents.defaults 配置（默认模型、运行参数等）",
+      "modelSection": "模型配置",
+      "primaryModel": "主模型",
+      "primaryModelHint": "格式：provider/model-id",
+      "fallbackModels": "回退模型",
+      "fallbackModelsHint": "逗号分隔，按优先级排列",
+      "runtimeSection": "运行参数",
+      "workspace": "工作区路径",
+      "timeout": "超时时间（秒）",
+      "contextTokens": "上下文 Token 数",
+      "maxConcurrent": "最大并发数",
+      "saveSuccess": "Agents 配置已保存",
+      "saveFailed": "保存 Agents 配置失败",
+      "loadFailed": "读取 Agents 配置失败"
+    }
   },
   "env": {
     "warning": {

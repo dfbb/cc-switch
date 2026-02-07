@@ -1124,12 +1124,63 @@
       "user": "ユーザープロファイルと設定",
       "identity": "エージェントの名前とアバター",
       "tools": "ローカルツールドキュメント",
-      "memory": "長期記憶と意思決定記録"
+      "memory": "長期記憶と意思決定記録",
+      "heartbeat": "ハートビート実行チェックリスト",
+      "bootstrap": "初回実行ブートストラップ",
+      "boot": "ゲートウェイ再起動チェックリスト"
     },
     "editing": "{{filename}} を編集",
     "saveSuccess": "保存しました",
     "saveFailed": "保存に失敗しました",
     "loadFailed": "読み込みに失敗しました"
+  },
+  "openclaw": {
+    "env": {
+      "title": "環境変数",
+      "description": "openclaw.json の環境変数設定を管理（APIキー、カスタム変数など）",
+      "keyPlaceholder": "変数名",
+      "valuePlaceholder": "値",
+      "add": "変数を追加",
+      "saveSuccess": "環境変数を保存しました",
+      "saveFailed": "環境変数の保存に失敗しました",
+      "loadFailed": "環境変数の読み込みに失敗しました"
+    },
+    "tools": {
+      "title": "ツール権限",
+      "description": "openclaw.json のツール権限設定を管理（許可/拒否リスト）",
+      "profile": "権限プロファイル",
+      "profiles": {
+        "default": "デフォルト",
+        "strict": "厳格",
+        "permissive": "寛容",
+        "custom": "カスタム"
+      },
+      "allowList": "許可リスト",
+      "denyList": "拒否リスト",
+      "patternPlaceholder": "ツール名またはパターン",
+      "addAllow": "許可を追加",
+      "addDeny": "拒否を追加",
+      "saveSuccess": "ツール権限を保存しました",
+      "saveFailed": "ツール権限の保存に失敗しました",
+      "loadFailed": "ツール権限の読み込みに失敗しました"
+    },
+    "agents": {
+      "title": "Agents 設定",
+      "description": "openclaw.json の agents.defaults 設定を管理（デフォルトモデル、ランタイムパラメータなど）",
+      "modelSection": "モデル設定",
+      "primaryModel": "プライマリモデル",
+      "primaryModelHint": "形式: provider/model-id",
+      "fallbackModels": "フォールバックモデル",
+      "fallbackModelsHint": "カンマ区切り、優先度順",
+      "runtimeSection": "ランタイムパラメータ",
+      "workspace": "ワークスペースパス",
+      "timeout": "タイムアウト（秒）",
+      "contextTokens": "コンテキストトークン数",
+      "maxConcurrent": "最大同時実行数",
+      "saveSuccess": "Agents 設定を保存しました",
+      "saveFailed": "Agents 設定の保存に失敗しました",
+      "loadFailed": "Agents 設定の読み込みに失敗しました"
+    }
   },
   "env": {
     "warning": {
