@@ -15,7 +15,13 @@ export interface AppConfig {
   badgeClass: string;
 }
 
-export const APP_IDS: AppId[] = ["claude", "codex", "gemini", "opencode", "openclaw"];
+export const APP_IDS: AppId[] = [
+  "claude",
+  "codex",
+  "gemini",
+  "opencode",
+  "openclaw",
+];
 
 export const APP_ICON_MAP: Record<AppId, AppConfig> = {
   claude: {
