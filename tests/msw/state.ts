@@ -86,7 +86,7 @@ let mcpConfigs: McpConfigState = {
       id: "sample",
       name: "Sample Claude Server",
       enabled: true,
-      apps: { claude: true, codex: false, gemini: false, opencode: false },
+      apps: { claude: true, codex: false, gemini: false, opencode: false, openclaw: false },
       server: {
         type: "stdio",
         command: "claude-server",
@@ -98,7 +98,7 @@ let mcpConfigs: McpConfigState = {
       id: "httpServer",
       name: "HTTP Codex Server",
       enabled: false,
-      apps: { claude: false, codex: true, gemini: false, opencode: false },
+      apps: { claude: false, codex: true, gemini: false, opencode: false, openclaw: false },
       server: {
         type: "http",
         url: "http://localhost:3000",
@@ -131,7 +131,7 @@ export const resetProviderState = () => {
         id: "sample",
         name: "Sample Claude Server",
         enabled: true,
-        apps: { claude: true, codex: false, gemini: false, opencode: false },
+        apps: { claude: true, codex: false, gemini: false, opencode: false, openclaw: false },
         server: {
           type: "stdio",
           command: "claude-server",
@@ -143,7 +143,7 @@ export const resetProviderState = () => {
         id: "httpServer",
         name: "HTTP Codex Server",
         enabled: false,
-        apps: { claude: false, codex: true, gemini: false, opencode: false },
+        apps: { claude: false, codex: true, gemini: false, opencode: false, openclaw: false },
         server: {
           type: "http",
           url: "http://localhost:3000",
