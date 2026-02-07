@@ -216,7 +216,10 @@ pub(crate) fn write_live_snapshot(app_type: &AppType, provider: &Provider) -> Re
                         || provider.settings_config.get("api").is_some()
                         || provider.settings_config.get("models").is_some()
                     {
-                        openclaw_config::set_provider(&provider.id, provider.settings_config.clone())?;
+                        openclaw_config::set_provider(
+                            &provider.id,
+                            provider.settings_config.clone(),
+                        )?;
                         log::info!(
                             "OpenClaw provider '{}' written as raw JSON to live config",
                             provider.id

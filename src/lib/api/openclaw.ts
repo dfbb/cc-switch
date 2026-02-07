@@ -1,12 +1,25 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { OpenClawDefaultModel, OpenClawModelCatalogEntry } from "@/types";
+import type {
+  OpenClawDefaultModel,
+  OpenClawModelCatalogEntry,
+  OpenClawAgentsDefaults,
+  OpenClawEnvConfig,
+  OpenClawToolsConfig,
+} from "@/types";
 
 /**
- * OpenClaw agents configuration API
+ * OpenClaw configuration API
  *
- * Manages agents.defaults configuration in ~/.openclaw/openclaw.json
+ * Manages ~/.openclaw/openclaw.json sections:
+ * - agents.defaults (model, catalog)
+ * - env (environment variables)
+ * - tools (permissions)
  */
 export const openclawApi = {
+  // ============================================================
+  // Agents Configuration
+  // ============================================================
+
   /**
    * Get default model configuration (agents.defaults.model)
    */
@@ -41,6 +54,24 @@ export const openclawApi = {
   },
 
   /**
+   * Get full agents.defaults config (all fields)
+   */
+  async getAgentsDefaults(): Promise<OpenClawAgentsDefaults | null> {
+    return await invoke("get_openclaw_agents_defaults");
+  },
+
+  /**
+   * Set full agents.defaults config (all fields)
+   */
+  async setAgentsDefaults(defaults: OpenClawAgentsDefaults): Promise<void> {
+    return await invoke("set_openclaw_agents_defaults", { defaults });
+  },
+
+  // ============================================================
+  // Provider Import
+  // ============================================================
+
+  /**
    * Import providers from live config (openclaw.json) to database
    */
   async importProvidersFromLive(): Promise<number> {
@@ -52,5 +83,41 @@ export const openclawApi = {
    */
   async getLiveProviderIds(): Promise<string[]> {
     return await invoke("get_openclaw_live_provider_ids");
+  },
+
+  // ============================================================
+  // Env Configuration
+  // ============================================================
+
+  /**
+   * Get env config (env section of openclaw.json)
+   */
+  async getEnv(): Promise<OpenClawEnvConfig> {
+    return await invoke("get_openclaw_env");
+  },
+
+  /**
+   * Set env config (env section of openclaw.json)
+   */
+  async setEnv(env: OpenClawEnvConfig): Promise<void> {
+    return await invoke("set_openclaw_env", { env });
+  },
+
+  // ============================================================
+  // Tools Configuration
+  // ============================================================
+
+  /**
+   * Get tools config (tools section of openclaw.json)
+   */
+  async getTools(): Promise<OpenClawToolsConfig> {
+    return await invoke("get_openclaw_tools");
+  },
+
+  /**
+   * Set tools config (tools section of openclaw.json)
+   */
+  async setTools(tools: OpenClawToolsConfig): Promise<void> {
+    return await invoke("set_openclaw_tools", { tools });
   },
 };

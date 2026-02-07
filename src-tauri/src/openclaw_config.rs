@@ -220,12 +220,8 @@ pub fn read_openclaw_config() -> Result<Value, AppError> {
     let content = std::fs::read_to_string(&path).map_err(|e| AppError::io(&path, e))?;
 
     // 尝试 JSON5 解析（支持注释和尾随逗号）
-    json5::from_str(&content).map_err(|e| {
-        AppError::Config(format!(
-            "Failed to parse OpenClaw config as JSON5: {}",
-            e
-        ))
-    })
+    json5::from_str(&content)
+        .map_err(|e| AppError::Config(format!("Failed to parse OpenClaw config as JSON5: {}", e)))
 }
 
 /// 写入 OpenClaw 配置文件（原子写入）
@@ -419,4 +415,131 @@ fn ensure_agents_defaults_path(config: &mut Value) {
     if config["agents"].get("defaults").is_none() {
         config["agents"]["defaults"] = json!({});
     }
+}
+
+// ============================================================================
+// Full Agents Defaults Functions
+// ============================================================================
+
+/// Read the full agents.defaults config
+pub fn get_agents_defaults() -> Result<Option<OpenClawAgentsDefaults>, AppError> {
+    let config = read_openclaw_config()?;
+
+    let Some(defaults_value) = config.get("agents").and_then(|a| a.get("defaults")) else {
+        return Ok(None);
+    };
+
+    let defaults = serde_json::from_value(defaults_value.clone())
+        .map_err(|e| AppError::Config(format!("Failed to parse agents.defaults: {e}")))?;
+
+    Ok(Some(defaults))
+}
+
+/// Write the full agents.defaults config
+pub fn set_agents_defaults(defaults: &OpenClawAgentsDefaults) -> Result<(), AppError> {
+    let mut config = read_openclaw_config()?;
+
+    if config.get("agents").is_none() {
+        config["agents"] = json!({});
+    }
+
+    let value =
+        serde_json::to_value(defaults).map_err(|e| AppError::JsonSerialize { source: e })?;
+
+    config["agents"]["defaults"] = value;
+
+    write_openclaw_config(&config)
+}
+
+// ============================================================================
+// Env Configuration
+// ============================================================================
+
+/// OpenClaw env configuration (env section of openclaw.json)
+///
+/// Stores environment variables like API keys and custom vars.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenClawEnvConfig {
+    /// All environment variable key-value pairs
+    #[serde(flatten)]
+    pub vars: HashMap<String, Value>,
+}
+
+/// Read the env config section
+pub fn get_env_config() -> Result<OpenClawEnvConfig, AppError> {
+    let config = read_openclaw_config()?;
+
+    let Some(env_value) = config.get("env") else {
+        return Ok(OpenClawEnvConfig {
+            vars: HashMap::new(),
+        });
+    };
+
+    serde_json::from_value(env_value.clone())
+        .map_err(|e| AppError::Config(format!("Failed to parse env config: {e}")))
+}
+
+/// Write the env config section
+pub fn set_env_config(env: &OpenClawEnvConfig) -> Result<(), AppError> {
+    let mut config = read_openclaw_config()?;
+
+    let value = serde_json::to_value(env).map_err(|e| AppError::JsonSerialize { source: e })?;
+
+    config["env"] = value;
+
+    write_openclaw_config(&config)
+}
+
+// ============================================================================
+// Tools Configuration
+// ============================================================================
+
+/// OpenClaw tools configuration (tools section of openclaw.json)
+///
+/// Controls tool permissions with profile-based allow/deny lists.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenClawToolsConfig {
+    /// Active permission profile (e.g. "default", "strict", "permissive")
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub profile: Option<String>,
+
+    /// Allowed tool patterns
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub allow: Vec<String>,
+
+    /// Denied tool patterns
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub deny: Vec<String>,
+
+    /// Other custom fields (preserve unknown fields)
+    #[serde(flatten)]
+    pub other: HashMap<String, Value>,
+}
+
+/// Read the tools config section
+pub fn get_tools_config() -> Result<OpenClawToolsConfig, AppError> {
+    let config = read_openclaw_config()?;
+
+    let Some(tools_value) = config.get("tools") else {
+        return Ok(OpenClawToolsConfig {
+            profile: None,
+            allow: Vec::new(),
+            deny: Vec::new(),
+            other: HashMap::new(),
+        });
+    };
+
+    serde_json::from_value(tools_value.clone())
+        .map_err(|e| AppError::Config(format!("Failed to parse tools config: {e}")))
+}
+
+/// Write the tools config section
+pub fn set_tools_config(tools: &OpenClawToolsConfig) -> Result<(), AppError> {
+    let mut config = read_openclaw_config()?;
+
+    let value = serde_json::to_value(tools).map_err(|e| AppError::JsonSerialize { source: e })?;
+
+    config["tools"] = value;
+
+    write_openclaw_config(&config)
 }

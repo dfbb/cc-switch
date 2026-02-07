@@ -13,8 +13,8 @@ mod gemini_config;
 mod gemini_mcp;
 mod init_status;
 mod mcp;
-mod opencode_config;
 mod openclaw_config;
+mod opencode_config;
 mod panic_hook;
 mod prompt;
 mod prompt_files;
@@ -1013,6 +1013,12 @@ pub fn run() {
             commands::set_openclaw_default_model,
             commands::get_openclaw_model_catalog,
             commands::set_openclaw_model_catalog,
+            commands::get_openclaw_agents_defaults,
+            commands::set_openclaw_agents_defaults,
+            commands::get_openclaw_env,
+            commands::set_openclaw_env,
+            commands::get_openclaw_tools,
+            commands::set_openclaw_tools,
             // Global upstream proxy
             commands::get_global_proxy_url,
             commands::set_global_proxy_url,

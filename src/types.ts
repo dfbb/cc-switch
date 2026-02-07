@@ -467,3 +467,23 @@ export interface OpenClawProviderConfig {
   api?: string; // API 协议类型（如 "openai-completions"、"anthropic"）
   models?: OpenClawModel[]; // 可用模型列表
 }
+
+// OpenClaw agents.defaults 完整配置
+export interface OpenClawAgentsDefaults {
+  model?: OpenClawDefaultModel;
+  models?: Record<string, OpenClawModelCatalogEntry>;
+  [key: string]: unknown; // preserve unknown fields
+}
+
+// OpenClaw env 配置（openclaw.json 的 env 节点）
+export interface OpenClawEnvConfig {
+  [key: string]: unknown;
+}
+
+// OpenClaw tools 配置（openclaw.json 的 tools 节点）
+export interface OpenClawToolsConfig {
+  profile?: string;
+  allow?: string[];
+  deny?: string[];
+  [key: string]: unknown; // preserve unknown fields
+}
