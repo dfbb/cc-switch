@@ -48,6 +48,9 @@ interface ProviderCardProps {
   isInFailoverQueue?: boolean; // 是否在故障转移队列中
   onToggleFailover?: (enabled: boolean) => void; // 切换故障转移队列
   activeProviderId?: string; // 代理当前实际使用的供应商 ID（用于故障转移模式下标注绿色边框）
+  // OpenClaw: default model
+  isDefaultModel?: boolean;
+  onSetAsDefault?: () => void;
 }
 
 const extractApiUrl = (provider: Provider, fallbackText: string) => {
@@ -108,6 +111,9 @@ export function ProviderCard({
   isInFailoverQueue = false,
   onToggleFailover,
   activeProviderId,
+  // OpenClaw: default model
+  isDefaultModel,
+  onSetAsDefault,
 }: ProviderCardProps) {
   const { t } = useTranslation();
 
@@ -386,6 +392,9 @@ export function ProviderCard({
               isAutoFailoverEnabled={isAutoFailoverEnabled}
               isInFailoverQueue={isInFailoverQueue}
               onToggleFailover={onToggleFailover}
+              // OpenClaw: default model
+              isDefaultModel={isDefaultModel}
+              onSetAsDefault={onSetAsDefault}
             />
           </div>
         </div>

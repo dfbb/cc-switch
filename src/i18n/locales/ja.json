@@ -88,6 +88,8 @@
     "addOpenCodeProvider": "OpenCode プロバイダーを追加",
     "addToConfig": "追加",
     "removeFromConfig": "削除",
+    "setAsDefault": "有効化",
+    "isDefault": "デフォルト",
     "inConfig": "追加済み",
     "addProviderHint": "一覧にすばやく切り替えられるよう、ここに情報を入力してください。",
     "editClaudeProvider": "Claude Code プロバイダーを編集",
@@ -163,7 +165,10 @@
     "settingsSaveFailed": "設定の保存に失敗しました: {{error}}",
     "openAIChatFormatHint": "このプロバイダーは OpenAI Chat フォーマットを使用しており、プロキシサービスの有効化が必要です",
     "openLinkFailed": "リンクを開けませんでした",
-    "openclawModelsRegistered": "モデルが /model リストに登録されました"
+    "openclawModelsRegistered": "モデルが /model リストに登録されました",
+    "openclawDefaultModelSet": "デフォルトモデルに設定しました",
+    "openclawDefaultModelSetFailed": "デフォルトモデルの設定に失敗しました",
+    "openclawNoModels": "モデルが設定されていません"
   },
   "confirm": {
     "deleteProvider": "プロバイダーを削除",

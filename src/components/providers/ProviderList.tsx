@@ -19,6 +19,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Provider } from "@/types";
 import type { AppId } from "@/lib/api";
 import { providersApi } from "@/lib/api/providers";
+import { openclawApi } from "@/lib/api/openclaw";
 import { useDragSort } from "@/hooks/useDragSort";
 import { ProviderCard } from "@/components/providers/ProviderCard";
 import { ProviderEmptyState } from "@/components/providers/ProviderEmptyState";
@@ -51,6 +52,7 @@ interface ProviderListProps {
   isProxyRunning?: boolean; // 代理服务运行状态
   isProxyTakeover?: boolean; // 代理接管模式（Live配置已被接管）
   activeProviderId?: string; // 代理当前实际使用的供应商 ID（用于故障转移模式下标注绿色边框）
+  onSetAsDefault?: (provider: Provider) => void; // OpenClaw: set as default model
 }
 
 export function ProviderList({
@@ -71,6 +73,7 @@ export function ProviderList({
   isProxyRunning = false,
   isProxyTakeover = false,
   activeProviderId,
+  onSetAsDefault,
 }: ProviderListProps) {
   const { t } = useTranslation();
   const { sortedProviders, sensors, handleDragEnd } = useDragSort(
@@ -105,6 +108,22 @@ export function ProviderList({
     [appId, opencodeLiveIds, openclawLiveIds],
   );
 
+  // OpenClaw: query default model to determine which provider is default
+  const { data: openclawDefaultModel } = useQuery({
+    queryKey: ["openclawDefaultModel"],
+    queryFn: () => openclawApi.getDefaultModel(),
+    enabled: appId === "openclaw",
+  });
+
+  const isProviderDefaultModel = useCallback(
+    (providerId: string): boolean => {
+      if (appId !== "openclaw" || !openclawDefaultModel?.primary) return false;
+      return openclawDefaultModel.primary.startsWith(providerId + "/");
+    },
+    [appId, openclawDefaultModel],
+  );
+
+  // 故障转移相关
   const { data: isAutoFailoverEnabled } = useAutoFailoverEnabled(appId);
   const { data: failoverQueue } = useFailoverQueue(appId);
   const addToQueue = useAddToFailoverQueue();
@@ -253,6 +272,11 @@ export function ProviderList({
                   handleToggleFailover(provider.id, enabled)
                 }
                 activeProviderId={activeProviderId}
+                // OpenClaw: default model
+                isDefaultModel={isProviderDefaultModel(provider.id)}
+                onSetAsDefault={
+                  onSetAsDefault ? () => onSetAsDefault(provider) : undefined
+                }
               />
             );
           })}
@@ -365,6 +389,9 @@ interface SortableProviderCardProps {
   isInFailoverQueue: boolean;
   onToggleFailover: (enabled: boolean) => void;
   activeProviderId?: string;
+  // OpenClaw: default model
+  isDefaultModel?: boolean;
+  onSetAsDefault?: () => void;
 }
 
 function SortableProviderCard({
@@ -392,6 +419,8 @@ function SortableProviderCard({
   isInFailoverQueue,
   onToggleFailover,
   activeProviderId,
+  isDefaultModel,
+  onSetAsDefault,
 }: SortableProviderCardProps) {
   const {
     setNodeRef,
@@ -441,6 +470,9 @@ function SortableProviderCard({
         isInFailoverQueue={isInFailoverQueue}
         onToggleFailover={onToggleFailover}
         activeProviderId={activeProviderId}
+        // OpenClaw: default model
+        isDefaultModel={isDefaultModel}
+        onSetAsDefault={onSetAsDefault}
       />
     </div>
   );

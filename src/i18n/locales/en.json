@@ -88,6 +88,8 @@
     "addOpenCodeProvider": "Add OpenCode Provider",
     "addToConfig": "Add",
     "removeFromConfig": "Remove",
+    "setAsDefault": "Enable",
+    "isDefault": "Default",
     "inConfig": "Added",
     "addProviderHint": "Fill in the information to quickly switch providers in the list.",
     "editClaudeProvider": "Edit Claude Code Provider",
@@ -163,7 +165,10 @@
     "settingsSaveFailed": "Failed to save settings: {{error}}",
     "openAIChatFormatHint": "This provider uses OpenAI Chat format and requires the proxy service to be enabled",
     "openLinkFailed": "Failed to open link",
-    "openclawModelsRegistered": "Models have been registered to /model list"
+    "openclawModelsRegistered": "Models have been registered to /model list",
+    "openclawDefaultModelSet": "Set as default model",
+    "openclawDefaultModelSetFailed": "Failed to set default model",
+    "openclawNoModels": "No models configured"
   },
   "confirm": {
     "deleteProvider": "Delete Provider",

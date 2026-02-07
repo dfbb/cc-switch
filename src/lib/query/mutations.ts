@@ -187,6 +187,9 @@ export const useSwitchProviderMutation = (appId: AppId) => {
         await queryClient.invalidateQueries({
           queryKey: ["openclawLiveProviderIds"],
         });
+        await queryClient.invalidateQueries({
+          queryKey: ["openclawDefaultModel"],
+        });
       }
 
       try {

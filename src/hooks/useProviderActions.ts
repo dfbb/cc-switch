@@ -3,7 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { providersApi, settingsApi, openclawApi, type AppId } from "@/lib/api";
-import type { Provider, UsageScript } from "@/types";
+import type {
+  Provider,
+  UsageScript,
+  OpenClawProviderConfig,
+  OpenClawDefaultModel,
+} from "@/types";
 import type { OpenClawSuggestedDefaults } from "@/config/openclawProviderPresets";
 import {
   useAddProviderMutation,
@@ -218,12 +223,54 @@ export function useProviderActions(activeApp: AppId) {
     [activeApp, queryClient, t],
   );
 
+  // Set provider as default model (OpenClaw only)
+  const setAsDefaultModel = useCallback(
+    async (provider: Provider) => {
+      const config = provider.settingsConfig as OpenClawProviderConfig;
+      if (!config.models || config.models.length === 0) {
+        toast.error(
+          t("notifications.openclawNoModels", {
+            defaultValue: "该供应商没有配置模型",
+          }),
+        );
+        return;
+      }
+
+      const model: OpenClawDefaultModel = {
+        primary: `${provider.id}/${config.models[0].id}`,
+        fallbacks: config.models.slice(1).map((m) => `${provider.id}/${m.id}`),
+      };
+
+      try {
+        await openclawApi.setDefaultModel(model);
+        await queryClient.invalidateQueries({
+          queryKey: ["openclawDefaultModel"],
+        });
+        toast.success(
+          t("notifications.openclawDefaultModelSet", {
+            defaultValue: "已设为默认模型",
+          }),
+          { closeButton: true },
+        );
+      } catch (error) {
+        const detail =
+          extractErrorMessage(error) ||
+          t("notifications.openclawDefaultModelSetFailed", {
+            defaultValue: "设置默认模型失败",
+          });
+        toast.error(detail);
+      }
+    },
+    [queryClient, t],
+  );
+
   return {
     addProvider,
     updateProvider,
     switchProvider,
     deleteProvider,
     saveUsageScript,
+    setAsDefaultModel,
     isLoading:
       addProviderMutation.isPending ||
       updateProviderMutation.isPending ||
