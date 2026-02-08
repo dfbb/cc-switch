@@ -112,7 +112,8 @@ const EnvPanel: React.FC = () => {
       <div className="space-y-3">
         {entries.map((entry, index) => {
           const sensitive = isApiKey(entry.key);
-          const visible = visibleKeys.has(`${index}`);
+          const visibilityId = entry.key || `__new_${index}`;
+          const visible = visibleKeys.has(visibilityId);
 
           return (
             <div key={index} className="flex items-center gap-2">
@@ -138,7 +139,7 @@ const EnvPanel: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     className="flex-shrink-0 h-9 w-9 text-muted-foreground"
-                    onClick={() => toggleVisibility(`${index}`)}
+                    onClick={() => toggleVisibility(visibilityId)}
                   >
                     {visible ? (
                       <EyeOff className="w-4 h-4" />

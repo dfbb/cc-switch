@@ -501,7 +501,7 @@ pub fn run() {
                     log::info!("✓ Imported {count} OpenCode provider(s) from live config");
                 }
                 Ok(_) => log::debug!("○ No OpenCode providers found to import"),
-                Err(e) => log::debug!("○ Failed to import OpenCode providers: {e}"),
+                Err(e) => log::warn!("○ Failed to import OpenCode providers: {e}"),
             }
 
             // 2.2 OMO 配置导入（当数据库中无 OMO provider 时，从本地文件导入）
@@ -534,7 +534,7 @@ pub fn run() {
                     log::info!("✓ Imported {count} OpenClaw provider(s) from live config");
                 }
                 Ok(_) => log::debug!("○ No OpenClaw providers found to import"),
-                Err(e) => log::debug!("○ Failed to import OpenClaw providers: {e}"),
+                Err(e) => log::warn!("○ Failed to import OpenClaw providers: {e}"),
             }
 
             // 3. 导入 MCP 服务器配置（表空时触发）

@@ -70,17 +70,28 @@ const AgentsDefaultsPanel: React.FC = () => {
         };
       }
 
-      // Optional numeric fields
+      // Optional fields
       if (workspace.trim()) updated.workspace = workspace.trim();
       else delete updated.workspace;
 
-      if (timeout.trim()) updated.timeout = Number(timeout);
+      // Numeric fields: validate before saving to avoid NaN
+      const parseNum = (v: string) => {
+        const n = Number(v);
+        return !isNaN(n) && isFinite(n) ? n : undefined;
+      };
+
+      const timeoutNum = timeout.trim() ? parseNum(timeout) : undefined;
+      if (timeoutNum !== undefined) updated.timeout = timeoutNum;
       else delete updated.timeout;
 
-      if (contextTokens.trim()) updated.contextTokens = Number(contextTokens);
+      const ctxNum = contextTokens.trim() ? parseNum(contextTokens) : undefined;
+      if (ctxNum !== undefined) updated.contextTokens = ctxNum;
       else delete updated.contextTokens;
 
-      if (maxConcurrent.trim()) updated.maxConcurrent = Number(maxConcurrent);
+      const concNum = maxConcurrent.trim()
+        ? parseNum(maxConcurrent)
+        : undefined;
+      if (concNum !== undefined) updated.maxConcurrent = concNum;
       else delete updated.maxConcurrent;
 
       await openclawApi.setAgentsDefaults(updated);

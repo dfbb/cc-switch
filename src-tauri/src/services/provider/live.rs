@@ -707,6 +707,16 @@ pub fn import_openclaw_providers_from_live(state: &AppState) -> Result<usize, Ap
     let existing = state.db.get_all_providers("openclaw")?;
 
     for (id, config) in providers {
+        // Validate: skip entries with empty id or no models
+        if id.trim().is_empty() {
+            log::warn!("Skipping OpenClaw provider with empty id");
+            continue;
+        }
+        if config.models.is_empty() {
+            log::warn!("Skipping OpenClaw provider '{id}': no models defined");
+            continue;
+        }
+
         // Skip if already exists in database
         if existing.contains_key(&id) {
             log::debug!("OpenClaw provider '{id}' already exists in database, skipping");
