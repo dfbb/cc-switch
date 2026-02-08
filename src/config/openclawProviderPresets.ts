@@ -263,7 +263,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     websiteUrl: "https://aihubmix.com",
     apiKeyUrl: "https://aihubmix.com",
     settingsConfig: {
-      baseUrl: "https://aihubmix.com/v1",
+      baseUrl: "https://aihubmix.com",
       apiKey: "",
       api: "anthropic-messages",
       models: [
@@ -307,7 +307,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     websiteUrl: "https://www.dmxapi.cn",
     apiKeyUrl: "https://www.dmxapi.cn",
     settingsConfig: {
-      baseUrl: "https://www.dmxapi.cn/v1",
+      baseUrl: "https://www.dmxapi.cn",
       apiKey: "",
       api: "anthropic-messages",
       models: [
@@ -435,7 +435,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     websiteUrl: "https://www.packyapi.com",
     apiKeyUrl: "https://www.packyapi.com/register?aff=cc-switch",
     settingsConfig: {
-      baseUrl: "https://www.packyapi.com/v1",
+      baseUrl: "https://www.packyapi.com",
       apiKey: "",
       api: "anthropic-messages",
       models: [
@@ -480,7 +480,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     websiteUrl: "https://cubence.com",
     apiKeyUrl: "https://cubence.com/signup?code=CCSWITCH&source=ccs",
     settingsConfig: {
-      baseUrl: "https://api.cubence.com/v1",
+      baseUrl: "https://api.cubence.com",
       apiKey: "",
       api: "anthropic-messages",
       models: [
@@ -526,7 +526,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     websiteUrl: "https://aigocode.com",
     apiKeyUrl: "https://aigocode.com/invite/CC-SWITCH",
     settingsConfig: {
-      baseUrl: "https://api.aigocode.com/v1",
+      baseUrl: "https://api.aigocode.com",
       apiKey: "",
       api: "anthropic-messages",
       models: [
