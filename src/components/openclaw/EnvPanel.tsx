@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import type { OpenClawEnvConfig } from "@/types";
 
 interface EnvEntry {
+  id: string;
   key: string;
   value: string;
   isNew?: boolean;
@@ -24,6 +25,7 @@ const EnvPanel: React.FC = () => {
   useEffect(() => {
     if (envData) {
       const items: EnvEntry[] = Object.entries(envData).map(([key, value]) => ({
+        id: crypto.randomUUID(),
         key,
         value: String(value ?? ""),
       }));
@@ -34,9 +36,15 @@ const EnvPanel: React.FC = () => {
   const handleSave = async () => {
     try {
       const env: OpenClawEnvConfig = {};
+      const seen = new Set<string>();
       for (const entry of entries) {
         const trimmedKey = entry.key.trim();
         if (trimmedKey) {
+          if (seen.has(trimmedKey)) {
+            toast.error(t("openclaw.env.duplicateKey", { key: trimmedKey }));
+            return;
+          }
+          seen.add(trimmedKey);
           env[trimmedKey] = entry.value;
         }
       }
@@ -51,7 +59,10 @@ const EnvPanel: React.FC = () => {
   };
 
   const addEntry = () => {
-    setEntries((prev) => [...prev, { key: "", value: "", isNew: true }]);
+    setEntries((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), key: "", value: "", isNew: true },
+    ]);
   };
 
   const removeEntry = (index: number) => {
@@ -103,7 +114,7 @@ const EnvPanel: React.FC = () => {
           const visible = visibleKeys.has(visibilityId);
 
           return (
-            <div key={index} className="flex items-center gap-2">
+            <div key={entry.id} className="flex items-center gap-2">
               <div className="w-[200px] flex-shrink-0">
                 <Input
                   value={entry.key}

@@ -68,24 +68,6 @@ export const openclawApi = {
   },
 
   // ============================================================
-  // Provider Import
-  // ============================================================
-
-  /**
-   * Import providers from live config (openclaw.json) to database
-   */
-  async importProvidersFromLive(): Promise<number> {
-    return await invoke("import_openclaw_providers_from_live");
-  },
-
-  /**
-   * Get provider IDs that exist in live config (openclaw.json)
-   */
-  async getLiveProviderIds(): Promise<string[]> {
-    return await invoke("get_openclaw_live_provider_ids");
-  },
-
-  // ============================================================
   // Env Configuration
   // ============================================================
 

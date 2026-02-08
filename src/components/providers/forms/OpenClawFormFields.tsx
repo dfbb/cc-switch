@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,21 @@ export function OpenClawFormFields({
     {},
   );
 
+  // Stable key tracking for models list
+  const modelKeysRef = useRef<string[]>([]);
+  const getModelKeys = useCallback(() => {
+    // Grow keys array if models were added externally
+    while (modelKeysRef.current.length < models.length) {
+      modelKeysRef.current.push(crypto.randomUUID());
+    }
+    // Shrink if models were removed externally
+    if (modelKeysRef.current.length > models.length) {
+      modelKeysRef.current.length = models.length;
+    }
+    return modelKeysRef.current;
+  }, [models.length]);
+  const modelKeys = getModelKeys();
+
   // Toggle advanced section for a model
   const toggleModelAdvanced = (index: number) => {
     setExpandedModels((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -71,6 +86,7 @@ export function OpenClawFormFields({
 
   // Add a new model entry
   const handleAddModel = () => {
+    modelKeysRef.current.push(crypto.randomUUID());
     onModelsChange([
       ...models,
       {
@@ -85,6 +101,7 @@ export function OpenClawFormFields({
 
   // Remove a model entry
   const handleRemoveModel = (index: number) => {
+    modelKeysRef.current.splice(index, 1);
     const newModels = [...models];
     newModels.splice(index, 1);
     onModelsChange(newModels);
@@ -216,7 +233,7 @@ export function OpenClawFormFields({
           <div className="space-y-4">
             {models.map((model, index) => (
               <div
-                key={index}
+                key={modelKeys[index]}
                 className="p-3 border border-border/50 rounded-lg space-y-3"
               >
                 {/* Model ID and Name row */}

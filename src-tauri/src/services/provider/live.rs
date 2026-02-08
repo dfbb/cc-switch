@@ -478,40 +478,9 @@ pub fn import_default_config(state: &AppState, app_type: AppType) -> Result<bool
                 "config": config_obj
             })
         }
-        AppType::OpenCode => {
-            // OpenCode uses additive mode - import from live is not the same pattern
-            // For now, return an empty config structure
-            use crate::opencode_config::{get_opencode_config_path, read_opencode_config};
-
-            let config_path = get_opencode_config_path();
-            if !config_path.exists() {
-                return Err(AppError::localized(
-                    "opencode.live.missing",
-                    "OpenCode 配置文件不存在",
-                    "OpenCode configuration file is missing",
-                ));
-            }
-
-            // For OpenCode, we return the full config - but note that OpenCode
-            // uses additive mode, so importing defaults works differently
-            read_opencode_config()?
-        }
-        AppType::OpenClaw => {
-            // OpenClaw uses additive mode - import from live is not the same pattern
-            use crate::openclaw_config::{get_openclaw_config_path, read_openclaw_config};
-
-            let config_path = get_openclaw_config_path();
-            if !config_path.exists() {
-                return Err(AppError::localized(
-                    "openclaw.live.missing",
-                    "OpenClaw 配置文件不存在",
-                    "OpenClaw configuration file is missing",
-                ));
-            }
-
-            // For OpenClaw, we return the full config - but note that OpenClaw
-            // uses additive mode, so importing defaults works differently
-            read_openclaw_config()?
+        // OpenCode and OpenClaw use additive mode and are handled by early return above
+        AppType::OpenCode | AppType::OpenClaw => {
+            unreachable!("additive mode apps are handled by early return")
         }
     };
 
@@ -761,6 +730,12 @@ pub fn import_openclaw_providers_from_live(state: &AppState) -> Result<usize, Ap
 /// without affecting other providers in the file.
 pub fn remove_openclaw_provider_from_live(provider_id: &str) -> Result<(), AppError> {
     use crate::openclaw_config;
+
+    // Check if OpenClaw config directory exists
+    if !openclaw_config::get_openclaw_dir().exists() {
+        log::debug!("OpenClaw config directory doesn't exist, skipping removal of '{provider_id}'");
+        return Ok(());
+    }
 
     openclaw_config::remove_provider(provider_id)?;
     log::info!("OpenClaw provider '{provider_id}' removed from live config");

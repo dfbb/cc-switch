@@ -482,6 +482,10 @@ pub fn parse_and_merge_config(
         "claude" => merge_claude_config(&mut merged, &config_value)?,
         "codex" => merge_codex_config(&mut merged, &config_value)?,
         "gemini" => merge_gemini_config(&mut merged, &config_value)?,
+        // Additive mode apps use JSON config directly; pass through as-is
+        "openclaw" | "opencode" => {
+            merge_additive_config(&mut merged, &config_value)?;
+        }
         "" => {
             // No app specified, skip merging
             return Ok(merged);
@@ -647,6 +651,47 @@ fn merge_gemini_config(
             if request.homepage.is_none() {
                 request.homepage = Some("https://ai.google.dev".to_string());
             }
+        }
+    }
+
+    Ok(())
+}
+
+/// Merge configuration for additive mode apps (OpenClaw, OpenCode)
+///
+/// These apps use JSON config directly, so we only extract common fields
+/// (api_key, endpoint, model) from the config if not already set in URL params.
+fn merge_additive_config(
+    request: &mut DeepLinkImportRequest,
+    config: &serde_json::Value,
+) -> Result<(), AppError> {
+    // Extract api_key from config if not provided in URL
+    if request.api_key.as_ref().is_none_or(|s| s.is_empty()) {
+        if let Some(api_key) = config
+            .get("apiKey")
+            .or_else(|| config.get("api_key"))
+            .and_then(|v| v.as_str())
+        {
+            request.api_key = Some(api_key.to_string());
+        }
+    }
+
+    // Extract endpoint from config if not provided in URL
+    if request.endpoint.as_ref().is_none_or(|s| s.is_empty()) {
+        if let Some(base_url) = config
+            .get("baseUrl")
+            .or_else(|| config.get("base_url"))
+            .or_else(|| config.get("options").and_then(|o| o.get("baseURL")))
+            .and_then(|v| v.as_str())
+        {
+            request.endpoint = Some(base_url.to_string());
+        }
+    }
+
+    // Auto-fill homepage from endpoint
+    if request.homepage.as_ref().is_none_or(|s| s.is_empty()) {
+        if let Some(endpoint) = request.endpoint.as_ref().filter(|s| !s.is_empty()) {
+            request.homepage = infer_homepage_from_endpoint(endpoint);
         }
     }
 

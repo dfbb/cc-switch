@@ -95,9 +95,9 @@ pub struct OpenClawProviderConfig {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub models: Vec<OpenClawModelEntry>,
 
-    /// 其他自定义字段（保留原始配置）
+    /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub extra: Map<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 /// OpenClaw 模型条目
@@ -123,9 +123,9 @@ pub struct OpenClawModelEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub context_window: Option<u32>,
 
-    /// 其他自定义字段（保留未知字段）
+    /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub extra: Map<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 /// OpenClaw 模型成本配置
@@ -137,9 +137,9 @@ pub struct OpenClawModelCost {
     /// 输出价格（每百万 token）
     pub output: f64,
 
-    /// 其他自定义字段（保留未知字段）
+    /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub other: HashMap<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 /// OpenClaw 默认模型配置（agents.defaults.model）
@@ -152,9 +152,9 @@ pub struct OpenClawDefaultModel {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub fallbacks: Vec<String>,
 
-    /// 其他自定义字段（保留未知字段）
+    /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub other: HashMap<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 /// OpenClaw 模型目录条目（agents.defaults.models 中的值）
@@ -164,9 +164,9 @@ pub struct OpenClawModelCatalogEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alias: Option<String>,
 
-    /// 其他自定义字段（保留未知字段）
+    /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub other: HashMap<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 /// OpenClaw agents.defaults 配置
@@ -180,21 +180,22 @@ pub struct OpenClawAgentsDefaults {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub models: Option<HashMap<String, OpenClawModelCatalogEntry>>,
 
-    /// 其他自定义字段（保留未知字段）
+    /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub other: HashMap<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 /// OpenClaw agents 顶层配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct OpenClawAgents {
     /// 默认配置
     #[serde(skip_serializing_if = "Option::is_none")]
     pub defaults: Option<OpenClawAgentsDefaults>,
 
-    /// 其他自定义字段（保留未知字段）
+    /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub other: HashMap<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 // ============================================================================
@@ -513,7 +514,7 @@ pub struct OpenClawToolsConfig {
 
     /// Other custom fields (preserve unknown fields)
     #[serde(flatten)]
-    pub other: HashMap<String, Value>,
+    pub extra: HashMap<String, Value>,
 }
 
 /// Read the tools config section
@@ -525,7 +526,7 @@ pub fn get_tools_config() -> Result<OpenClawToolsConfig, AppError> {
             profile: None,
             allow: Vec::new(),
             deny: Vec::new(),
-            other: HashMap::new(),
+            extra: HashMap::new(),
         });
     };
 

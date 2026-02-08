@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/select";
 import type { OpenClawToolsConfig } from "@/types";
 
+interface ListItem {
+  id: string;
+  value: string;
+}
+
 const PROFILE_OPTIONS = ["default", "strict", "permissive", "custom"];
 
 const ToolsPanel: React.FC = () => {
@@ -23,14 +28,24 @@ const ToolsPanel: React.FC = () => {
   const { data: toolsData, isLoading } = useOpenClawTools();
   const saveToolsMutation = useSaveOpenClawTools();
   const [config, setConfig] = useState<OpenClawToolsConfig>({});
-  const [allowList, setAllowList] = useState<string[]>([]);
-  const [denyList, setDenyList] = useState<string[]>([]);
+  const [allowList, setAllowList] = useState<ListItem[]>([]);
+  const [denyList, setDenyList] = useState<ListItem[]>([]);
 
   useEffect(() => {
     if (toolsData) {
       setConfig(toolsData);
-      setAllowList(toolsData.allow ?? []);
-      setDenyList(toolsData.deny ?? []);
+      setAllowList(
+        (toolsData.allow ?? []).map((v) => ({
+          id: crypto.randomUUID(),
+          value: v,
+        })),
+      );
+      setDenyList(
+        (toolsData.deny ?? []).map((v) => ({
+          id: crypto.randomUUID(),
+          value: v,
+        })),
+      );
     }
   }, [toolsData]);
 
@@ -40,8 +55,8 @@ const ToolsPanel: React.FC = () => {
       const newConfig: OpenClawToolsConfig = {
         ...other,
         profile: config.profile,
-        allow: allowList.filter((s) => s.trim()),
-        deny: denyList.filter((s) => s.trim()),
+        allow: allowList.map((item) => item.value).filter((s) => s.trim()),
+        deny: denyList.map((item) => item.value).filter((s) => s.trim()),
       };
       await saveToolsMutation.mutateAsync(newConfig);
       toast.success(t("openclaw.tools.saveSuccess"));
@@ -54,20 +69,20 @@ const ToolsPanel: React.FC = () => {
   };
 
   const updateListItem = (
-    list: string[],
-    setList: React.Dispatch<React.SetStateAction<string[]>>,
+    setList: React.Dispatch<React.SetStateAction<ListItem[]>>,
     index: number,
     value: string,
   ) => {
-    setList(list.map((item, i) => (i === index ? value : item)));
+    setList((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, value } : item)),
+    );
   };
 
   const removeListItem = (
-    list: string[],
-    setList: React.Dispatch<React.SetStateAction<string[]>>,
+    setList: React.Dispatch<React.SetStateAction<ListItem[]>>,
     index: number,
   ) => {
-    setList(list.filter((_, i) => i !== index));
+    setList((prev) => prev.filter((_, i) => i !== index));
   };
 
   if (isLoading) {
@@ -113,11 +128,11 @@ const ToolsPanel: React.FC = () => {
         <Label className="mb-2 block">{t("openclaw.tools.allowList")}</Label>
         <div className="space-y-2">
           {allowList.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">
+            <div key={item.id} className="flex items-center gap-2">
               <Input
-                value={item}
+                value={item.value}
                 onChange={(e) =>
-                  updateListItem(allowList, setAllowList, index, e.target.value)
+                  updateListItem(setAllowList, index, e.target.value)
                 }
                 placeholder={t("openclaw.tools.patternPlaceholder")}
                 className="font-mono text-xs"
@@ -126,7 +141,7 @@ const ToolsPanel: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 className="flex-shrink-0 h-9 w-9 text-muted-foreground hover:text-destructive"
-                onClick={() => removeListItem(allowList, setAllowList, index)}
+                onClick={() => removeListItem(setAllowList, index)}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -135,7 +150,12 @@ const ToolsPanel: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setAllowList((prev) => [...prev, ""])}
+            onClick={() =>
+              setAllowList((prev) => [
+                ...prev,
+                { id: crypto.randomUUID(), value: "" },
+              ])
+            }
           >
             <Plus className="w-4 h-4 mr-1" />
             {t("openclaw.tools.addAllow")}
@@ -148,11 +168,11 @@ const ToolsPanel: React.FC = () => {
         <Label className="mb-2 block">{t("openclaw.tools.denyList")}</Label>
         <div className="space-y-2">
           {denyList.map((item, index) => (
-            <div key={index} className="flex items-center gap-2">
+            <div key={item.id} className="flex items-center gap-2">
               <Input
-                value={item}
+                value={item.value}
                 onChange={(e) =>
-                  updateListItem(denyList, setDenyList, index, e.target.value)
+                  updateListItem(setDenyList, index, e.target.value)
                 }
                 placeholder={t("openclaw.tools.patternPlaceholder")}
                 className="font-mono text-xs"
@@ -161,7 +181,7 @@ const ToolsPanel: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 className="flex-shrink-0 h-9 w-9 text-muted-foreground hover:text-destructive"
-                onClick={() => removeListItem(denyList, setDenyList, index)}
+                onClick={() => removeListItem(setDenyList, index)}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -170,7 +190,12 @@ const ToolsPanel: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setDenyList((prev) => [...prev, ""])}
+            onClick={() =>
+              setDenyList((prev) => [
+                ...prev,
+                { id: crypto.randomUUID(), value: "" },
+              ])
+            }
           >
             <Plus className="w-4 h-4 mr-1" />
             {t("openclaw.tools.addDeny")}

@@ -744,7 +744,31 @@
     "providerKeyHint": "Unique identifier in config file. Cannot be changed after creation. Use lowercase letters, numbers, and hyphens only.",
     "providerKeyRequired": "Provider key is required",
     "providerKeyDuplicate": "This key is already in use",
-    "providerKeyInvalid": "Invalid format. Use lowercase letters, numbers, and hyphens only."
+    "providerKeyInvalid": "Invalid format. Use lowercase letters, numbers, and hyphens only.",
+    "apiProtocol": "API Protocol",
+    "selectProtocol": "Select API Protocol",
+    "apiProtocolHint": "Select the protocol type compatible with the provider's API. Most providers use OpenAI Completions format.",
+    "baseUrl": "API Endpoint",
+    "baseUrlHint": "The provider's API endpoint address.",
+    "models": "Models",
+    "addModel": "Add Model",
+    "noModels": "No models configured. Click Add Model to configure available models.",
+    "modelId": "Model ID",
+    "modelIdPlaceholder": "claude-3-sonnet",
+    "modelName": "Display Name",
+    "modelNamePlaceholder": "Claude 3 Sonnet",
+    "contextWindow": "Context Window",
+    "maxTokens": "Max Output Tokens",
+    "reasoning": "Reasoning Mode",
+    "reasoningOn": "Enabled",
+    "reasoningOff": "Disabled",
+    "inputCost": "Input Cost ($/M tokens)",
+    "outputCost": "Output Cost ($/M tokens)",
+    "advancedOptions": "Advanced Options",
+    "cacheReadCost": "Cache Read Cost ($/M tokens)",
+    "cacheWriteCost": "Cache Write Cost ($/M tokens)",
+    "cacheCostHint": "Cache costs are used to calculate Prompt Caching costs. Leave empty if not using caching.",
+    "modelsHint": "Configure the models supported by this provider. Model ID is used for API calls, Display Name for the interface."
   },
   "providerPreset": {
     "label": "Provider Preset",
@@ -1143,7 +1167,8 @@
       "add": "Add Variable",
       "saveSuccess": "Environment variables saved",
       "saveFailed": "Failed to save environment variables",
-      "loadFailed": "Failed to load environment variables"
+      "loadFailed": "Failed to load environment variables",
+      "duplicateKey": "Duplicate variable name detected: {{key}}"
     },
     "tools": {
       "title": "Tool Permissions",

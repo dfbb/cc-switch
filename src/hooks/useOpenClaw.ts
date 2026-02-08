@@ -55,6 +55,7 @@ export function useOpenClawEnv() {
   return useQuery({
     queryKey: openclawKeys.env,
     queryFn: () => openclawApi.getEnv(),
+    staleTime: 30_000,
   });
 }
 
@@ -65,6 +66,7 @@ export function useOpenClawTools() {
   return useQuery({
     queryKey: openclawKeys.tools,
     queryFn: () => openclawApi.getTools(),
+    staleTime: 30_000,
   });
 }
 
@@ -75,6 +77,7 @@ export function useOpenClawAgentsDefaults() {
   return useQuery({
     queryKey: openclawKeys.agentsDefaults,
     queryFn: () => openclawApi.getAgentsDefaults(),
+    staleTime: 30_000,
   });
 }
 
