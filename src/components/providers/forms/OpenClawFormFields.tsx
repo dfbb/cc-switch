@@ -277,111 +277,6 @@ export function OpenClawFormFields({
                   </Button>
                 </div>
 
-                {/* Context Window, Max Tokens and Reasoning row */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 space-y-1">
-                    <label className="text-xs text-muted-foreground">
-                      {t("openclaw.contextWindow", {
-                        defaultValue: "上下文窗口",
-                      })}
-                    </label>
-                    <Input
-                      type="number"
-                      value={model.contextWindow ?? ""}
-                      onChange={(e) =>
-                        handleModelChange(
-                          index,
-                          "contextWindow",
-                          e.target.value ? parseInt(e.target.value) : undefined,
-                        )
-                      }
-                      placeholder="200000"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <label className="text-xs text-muted-foreground">
-                      {t("openclaw.maxTokens", {
-                        defaultValue: "最大输出 Tokens",
-                      })}
-                    </label>
-                    <Input
-                      type="number"
-                      value={model.maxTokens ?? ""}
-                      onChange={(e) =>
-                        handleModelChange(
-                          index,
-                          "maxTokens",
-                          e.target.value ? parseInt(e.target.value) : undefined,
-                        )
-                      }
-                      placeholder="32000"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <label className="text-xs text-muted-foreground">
-                      {t("openclaw.reasoning", {
-                        defaultValue: "推理模式",
-                      })}
-                    </label>
-                    <div className="flex items-center h-9 gap-2">
-                      <Switch
-                        checked={model.reasoning ?? false}
-                        onCheckedChange={(checked) =>
-                          handleModelChange(index, "reasoning", checked)
-                        }
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        {model.reasoning
-                          ? t("openclaw.reasoningOn", { defaultValue: "启用" })
-                          : t("openclaw.reasoningOff", {
-                              defaultValue: "关闭",
-                            })}
-                      </span>
-                    </div>
-                  </div>
-                  {/* Spacer for alignment with delete button */}
-                  <div className="w-9" />
-                </div>
-
-                {/* Basic Cost row */}
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 space-y-1">
-                    <label className="text-xs text-muted-foreground">
-                      {t("openclaw.inputCost", {
-                        defaultValue: "输入价格 ($/M tokens)",
-                      })}
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.001"
-                      value={model.cost?.input ?? ""}
-                      onChange={(e) =>
-                        handleCostChange(index, "input", e.target.value)
-                      }
-                      placeholder="3"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <label className="text-xs text-muted-foreground">
-                      {t("openclaw.outputCost", {
-                        defaultValue: "输出价格 ($/M tokens)",
-                      })}
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.001"
-                      value={model.cost?.output ?? ""}
-                      onChange={(e) =>
-                        handleCostChange(index, "output", e.target.value)
-                      }
-                      placeholder="15"
-                    />
-                  </div>
-                  {/* Spacer for alignment */}
-                  <div className="flex-1" />
-                  <div className="w-9" />
-                </div>
-
                 {/* Advanced Options (Collapsible) */}
                 <Collapsible
                   open={expandedModels[index] ?? false}
@@ -404,7 +299,115 @@ export function OpenClawFormFields({
                       })}
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
+                  <CollapsibleContent className="space-y-3 pt-2">
+                    {/* Context Window, Max Tokens and Reasoning row */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 space-y-1">
+                        <label className="text-xs text-muted-foreground">
+                          {t("openclaw.contextWindow", {
+                            defaultValue: "上下文窗口",
+                          })}
+                        </label>
+                        <Input
+                          type="number"
+                          value={model.contextWindow ?? ""}
+                          onChange={(e) =>
+                            handleModelChange(
+                              index,
+                              "contextWindow",
+                              e.target.value
+                                ? parseInt(e.target.value)
+                                : undefined,
+                            )
+                          }
+                          placeholder="200000"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <label className="text-xs text-muted-foreground">
+                          {t("openclaw.maxTokens", {
+                            defaultValue: "最大输出 Tokens",
+                          })}
+                        </label>
+                        <Input
+                          type="number"
+                          value={model.maxTokens ?? ""}
+                          onChange={(e) =>
+                            handleModelChange(
+                              index,
+                              "maxTokens",
+                              e.target.value
+                                ? parseInt(e.target.value)
+                                : undefined,
+                            )
+                          }
+                          placeholder="32000"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <label className="text-xs text-muted-foreground">
+                          {t("openclaw.reasoning", {
+                            defaultValue: "推理模式",
+                          })}
+                        </label>
+                        <div className="flex items-center h-9 gap-2">
+                          <Switch
+                            checked={model.reasoning ?? false}
+                            onCheckedChange={(checked) =>
+                              handleModelChange(index, "reasoning", checked)
+                            }
+                          />
+                          <span className="text-xs text-muted-foreground">
+                            {model.reasoning
+                              ? t("openclaw.reasoningOn", {
+                                  defaultValue: "启用",
+                                })
+                              : t("openclaw.reasoningOff", {
+                                  defaultValue: "关闭",
+                                })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Cost row */}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 space-y-1">
+                        <label className="text-xs text-muted-foreground">
+                          {t("openclaw.inputCost", {
+                            defaultValue: "输入价格 ($/M tokens)",
+                          })}
+                        </label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={model.cost?.input ?? ""}
+                          onChange={(e) =>
+                            handleCostChange(index, "input", e.target.value)
+                          }
+                          placeholder="3"
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <label className="text-xs text-muted-foreground">
+                          {t("openclaw.outputCost", {
+                            defaultValue: "输出价格 ($/M tokens)",
+                          })}
+                        </label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={model.cost?.output ?? ""}
+                          onChange={(e) =>
+                            handleCostChange(index, "output", e.target.value)
+                          }
+                          placeholder="15"
+                        />
+                      </div>
+                      <div className="flex-1" />
+                    </div>
+
+                    {/* Cache Cost row */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1 space-y-1">
                         <label className="text-xs text-muted-foreground">
@@ -442,11 +445,9 @@ export function OpenClawFormFields({
                           placeholder="3.75"
                         />
                       </div>
-                      {/* Spacer for alignment */}
                       <div className="flex-1" />
-                      <div className="w-9" />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground">
                       {t("openclaw.cacheCostHint", {
                         defaultValue:
                           "缓存价格用于计算 Prompt Caching 的成本。如不使用缓存可留空。",
