@@ -143,6 +143,46 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     },
   },
   {
+    name: "Zhipu GLM en",
+    websiteUrl: "https://z.ai",
+    apiKeyUrl: "https://z.ai/subscribe?ic=8JVLJQFSKB",
+    settingsConfig: {
+      baseUrl: "https://api.z.ai/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "glm-4.7",
+          name: "GLM-4.7",
+          contextWindow: 128000,
+          cost: { input: 0.001, output: 0.001 },
+        },
+      ],
+    },
+    category: "cn_official",
+    isPartner: true,
+    partnerPromotionKey: "zhipu",
+    icon: "zhipu",
+    iconColor: "#0F62FE",
+    templateValues: {
+      baseUrl: {
+        label: "Base URL",
+        placeholder: "https://api.z.ai/v1",
+        defaultValue: "https://api.z.ai/v1",
+        editorValue: "",
+      },
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "zhipu-en/glm-4.7" },
+      modelCatalog: { "zhipu-en/glm-4.7": { alias: "GLM" } },
+    },
+  },
+  {
     name: "Qwen Coder",
     websiteUrl: "https://bailian.console.aliyun.com",
     apiKeyUrl: "https://bailian.console.aliyun.com/#/api-key",
@@ -219,6 +259,44 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     },
   },
   {
+    name: "Kimi For Coding",
+    websiteUrl: "https://www.kimi.com/coding/docs/",
+    apiKeyUrl: "https://platform.moonshot.cn/console/api-keys",
+    settingsConfig: {
+      baseUrl: "https://api.kimi.com/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "kimi-for-coding",
+          name: "Kimi For Coding",
+          contextWindow: 131072,
+          cost: { input: 0.002, output: 0.006 },
+        },
+      ],
+    },
+    category: "cn_official",
+    icon: "kimi",
+    iconColor: "#6366F1",
+    templateValues: {
+      baseUrl: {
+        label: "Base URL",
+        placeholder: "https://api.kimi.com/v1",
+        defaultValue: "https://api.kimi.com/v1",
+        editorValue: "",
+      },
+      apiKey: {
+        label: "API Key",
+        placeholder: "sk-...",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "kimi-coding/kimi-for-coding" },
+      modelCatalog: { "kimi-coding/kimi-for-coding": { alias: "Kimi" } },
+    },
+  },
+  {
     name: "MiniMax",
     websiteUrl: "https://platform.minimaxi.com",
     apiKeyUrl: "https://platform.minimaxi.com/subscribe/coding-plan",
@@ -254,6 +332,222 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     suggestedDefaults: {
       model: { primary: "minimax/MiniMax-M2.1" },
       modelCatalog: { "minimax/MiniMax-M2.1": { alias: "MiniMax" } },
+    },
+  },
+  {
+    name: "MiniMax en",
+    websiteUrl: "https://platform.minimax.io",
+    apiKeyUrl: "https://platform.minimax.io/subscribe/coding-plan",
+    settingsConfig: {
+      baseUrl: "https://api.minimax.io/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "MiniMax-M2.1",
+          name: "MiniMax M2.1",
+          contextWindow: 200000,
+          cost: { input: 0.001, output: 0.004 },
+        },
+      ],
+    },
+    category: "cn_official",
+    isPartner: true,
+    partnerPromotionKey: "minimax_en",
+    theme: {
+      backgroundColor: "#f64551",
+      textColor: "#FFFFFF",
+    },
+    icon: "minimax",
+    iconColor: "#FF6B6B",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "minimax-en/MiniMax-M2.1" },
+      modelCatalog: { "minimax-en/MiniMax-M2.1": { alias: "MiniMax" } },
+    },
+  },
+  {
+    name: "KAT-Coder",
+    websiteUrl: "https://console.streamlake.ai",
+    apiKeyUrl: "https://console.streamlake.ai/console/api-key",
+    settingsConfig: {
+      baseUrl:
+        "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/openai",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "KAT-Coder-Pro",
+          name: "KAT-Coder Pro",
+          contextWindow: 128000,
+          cost: { input: 0.002, output: 0.006 },
+        },
+      ],
+    },
+    category: "cn_official",
+    icon: "catcoder",
+    templateValues: {
+      baseUrl: {
+        label: "Base URL",
+        placeholder:
+          "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/openai",
+        defaultValue:
+          "https://vanchin.streamlake.ai/api/gateway/v1/endpoints/${ENDPOINT_ID}/openai",
+        editorValue: "",
+      },
+      ENDPOINT_ID: {
+        label: "Endpoint ID",
+        placeholder: "",
+        editorValue: "",
+      },
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "katcoder/KAT-Coder-Pro" },
+      modelCatalog: { "katcoder/KAT-Coder-Pro": { alias: "KAT-Coder" } },
+    },
+  },
+  {
+    name: "Longcat",
+    websiteUrl: "https://longcat.chat/platform",
+    apiKeyUrl: "https://longcat.chat/platform/api_keys",
+    settingsConfig: {
+      baseUrl: "https://api.longcat.chat/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "LongCat-Flash-Chat",
+          name: "LongCat Flash Chat",
+          contextWindow: 128000,
+          cost: { input: 0.001, output: 0.004 },
+        },
+      ],
+    },
+    category: "cn_official",
+    icon: "longcat",
+    iconColor: "#29E154",
+    templateValues: {
+      baseUrl: {
+        label: "Base URL",
+        placeholder: "https://api.longcat.chat/v1",
+        defaultValue: "https://api.longcat.chat/v1",
+        editorValue: "",
+      },
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "longcat/LongCat-Flash-Chat" },
+      modelCatalog: { "longcat/LongCat-Flash-Chat": { alias: "LongCat" } },
+    },
+  },
+  {
+    name: "DouBaoSeed",
+    websiteUrl: "https://www.volcengine.com/product/doubao",
+    apiKeyUrl: "https://www.volcengine.com/product/doubao",
+    settingsConfig: {
+      baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "doubao-seed-code-preview-latest",
+          name: "DouBao Seed Code Preview",
+          contextWindow: 128000,
+          cost: { input: 0.002, output: 0.006 },
+        },
+      ],
+    },
+    category: "cn_official",
+    icon: "doubao",
+    iconColor: "#3370FF",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "doubaoseed/doubao-seed-code-preview-latest" },
+      modelCatalog: {
+        "doubaoseed/doubao-seed-code-preview-latest": { alias: "DouBao" },
+      },
+    },
+  },
+  {
+    name: "BaiLing",
+    websiteUrl: "https://alipaytbox.yuque.com/sxs0ba/ling/get_started",
+    settingsConfig: {
+      baseUrl: "https://api.tbox.cn/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "Ling-1T",
+          name: "Ling 1T",
+          contextWindow: 128000,
+          cost: { input: 0.001, output: 0.004 },
+        },
+      ],
+    },
+    category: "cn_official",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "bailing/Ling-1T" },
+      modelCatalog: { "bailing/Ling-1T": { alias: "BaiLing" } },
+    },
+  },
+  {
+    name: "Xiaomi MiMo",
+    websiteUrl: "https://platform.xiaomimimo.com",
+    apiKeyUrl: "https://platform.xiaomimimo.com/#/console/api-keys",
+    settingsConfig: {
+      baseUrl: "https://api.xiaomimimo.com/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "mimo-v2-flash",
+          name: "MiMo V2 Flash",
+          contextWindow: 128000,
+          cost: { input: 0.001, output: 0.004 },
+        },
+      ],
+    },
+    category: "cn_official",
+    icon: "xiaomimimo",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "xiaomimimo/mimo-v2-flash" },
+      modelCatalog: { "xiaomimimo/mimo-v2-flash": { alias: "MiMo" } },
     },
   },
 
@@ -428,6 +722,106 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       modelCatalog: { "modelscope/ZhipuAI/GLM-4.7": { alias: "GLM" } },
     },
   },
+  {
+    name: "SiliconFlow",
+    websiteUrl: "https://siliconflow.cn",
+    apiKeyUrl: "https://cloud.siliconflow.cn/me/account/ak",
+    settingsConfig: {
+      baseUrl: "https://api.siliconflow.cn/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "Pro/MiniMaxAI/MiniMax-M2.1",
+          name: "MiniMax M2.1",
+          contextWindow: 200000,
+          cost: { input: 0.001, output: 0.004 },
+        },
+      ],
+    },
+    category: "aggregator",
+    icon: "siliconflow",
+    iconColor: "#6E29F6",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "sk-...",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "siliconflow/Pro/MiniMaxAI/MiniMax-M2.1" },
+      modelCatalog: {
+        "siliconflow/Pro/MiniMaxAI/MiniMax-M2.1": { alias: "MiniMax" },
+      },
+    },
+  },
+  {
+    name: "SiliconFlow en",
+    websiteUrl: "https://siliconflow.com",
+    apiKeyUrl: "https://cloud.siliconflow.com/account/ak",
+    settingsConfig: {
+      baseUrl: "https://api.siliconflow.com/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "MiniMaxAI/MiniMax-M2.1",
+          name: "MiniMax M2.1",
+          contextWindow: 200000,
+          cost: { input: 0.001, output: 0.004 },
+        },
+      ],
+    },
+    category: "aggregator",
+    icon: "siliconflow",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "sk-...",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "siliconflow-en/MiniMaxAI/MiniMax-M2.1" },
+      modelCatalog: {
+        "siliconflow-en/MiniMaxAI/MiniMax-M2.1": { alias: "MiniMax" },
+      },
+    },
+  },
+  {
+    name: "Nvidia",
+    websiteUrl: "https://build.nvidia.com",
+    apiKeyUrl: "https://build.nvidia.com/settings/api-keys",
+    settingsConfig: {
+      baseUrl: "https://integrate.api.nvidia.com/v1",
+      apiKey: "",
+      api: "openai-completions",
+      models: [
+        {
+          id: "moonshotai/kimi-k2.5",
+          name: "Kimi K2.5",
+          contextWindow: 131072,
+          cost: { input: 0.002, output: 0.006 },
+        },
+      ],
+    },
+    category: "aggregator",
+    icon: "nvidia",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "nvapi-...",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: { primary: "nvidia/moonshotai/kimi-k2.5" },
+      modelCatalog: { "nvidia/moonshotai/kimi-k2.5": { alias: "Kimi" } },
+    },
+  },
 
   // ========== Third Party Partners ==========
   {
@@ -564,6 +958,98 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       modelCatalog: {
         "aigocode/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
         "aigocode/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
+  },
+  {
+    name: "RightCode",
+    websiteUrl: "https://www.right.codes",
+    apiKeyUrl: "https://www.right.codes/register?aff=CCSWITCH",
+    settingsConfig: {
+      baseUrl: "https://www.right.codes/claude",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-sonnet-4-5-20250929",
+          name: "Claude Sonnet 4.5",
+          contextWindow: 200000,
+          cost: { input: 3, output: 15 },
+        },
+        {
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
+          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
+        },
+      ],
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "rightcode",
+    icon: "rc",
+    iconColor: "#E96B2C",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "rightcode/claude-sonnet-4-5-20250929",
+        fallbacks: ["rightcode/claude-opus-4-6"],
+      },
+      modelCatalog: {
+        "rightcode/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
+        "rightcode/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
+  },
+  {
+    name: "AICodeMirror",
+    websiteUrl: "https://www.aicodemirror.com",
+    apiKeyUrl: "https://www.aicodemirror.com/register?invitecode=9915W3",
+    settingsConfig: {
+      baseUrl: "https://api.aicodemirror.com/api/claudecode",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-sonnet-4-5-20250929",
+          name: "Claude Sonnet 4.5",
+          contextWindow: 200000,
+          cost: { input: 3, output: 15 },
+        },
+        {
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
+          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
+        },
+      ],
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "aicodemirror",
+    icon: "aicodemirror",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "aicodemirror/claude-sonnet-4-5-20250929",
+        fallbacks: ["aicodemirror/claude-opus-4-6"],
+      },
+      modelCatalog: {
+        "aicodemirror/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
+        "aicodemirror/claude-opus-4-6": { alias: "Opus" },
       },
     },
   },
