@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Save, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { openclawApi } from "@/lib/api/openclaw";
+import { useOpenClawEnv, useSaveOpenClawEnv } from "@/hooks/useOpenClaw";
+import { extractErrorMessage } from "@/utils/errorUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { OpenClawEnvConfig } from "@/types";
@@ -15,35 +16,23 @@ interface EnvEntry {
 
 const EnvPanel: React.FC = () => {
   const { t } = useTranslation();
+  const { data: envData, isLoading } = useOpenClawEnv();
+  const saveEnvMutation = useSaveOpenClawEnv();
   const [entries, setEntries] = useState<EnvEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
 
-  const loadEnv = useCallback(async () => {
-    try {
-      setLoading(true);
-      const env = await openclawApi.getEnv();
-      const items: EnvEntry[] = Object.entries(env).map(([key, value]) => ({
+  useEffect(() => {
+    if (envData) {
+      const items: EnvEntry[] = Object.entries(envData).map(([key, value]) => ({
         key,
         value: String(value ?? ""),
       }));
       setEntries(items.length > 0 ? items : []);
-    } catch (err) {
-      toast.error(t("openclaw.env.loadFailed"));
-      console.error("Failed to load env config:", err);
-    } finally {
-      setLoading(false);
     }
-  }, [t]);
-
-  useEffect(() => {
-    void loadEnv();
-  }, [loadEnv]);
+  }, [envData]);
 
   const handleSave = async () => {
     try {
-      setSaving(true);
       const env: OpenClawEnvConfig = {};
       for (const entry of entries) {
         const trimmedKey = entry.key.trim();
@@ -51,15 +40,13 @@ const EnvPanel: React.FC = () => {
           env[trimmedKey] = entry.value;
         }
       }
-      await openclawApi.setEnv(env);
+      await saveEnvMutation.mutateAsync(env);
       toast.success(t("openclaw.env.saveSuccess"));
-      // Reload to normalize
-      await loadEnv();
-    } catch (err) {
-      toast.error(t("openclaw.env.saveFailed"));
-      console.error("Failed to save env config:", err);
-    } finally {
-      setSaving(false);
+    } catch (error) {
+      const detail = extractErrorMessage(error);
+      toast.error(t("openclaw.env.saveFailed"), {
+        description: detail || undefined,
+      });
     }
   };
 
@@ -93,7 +80,7 @@ const EnvPanel: React.FC = () => {
 
   const isApiKey = (key: string) => /key|token|secret|password/i.test(key);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="px-6 pt-4 pb-8 flex items-center justify-center min-h-[200px]">
         <div className="text-sm text-muted-foreground">
@@ -168,9 +155,13 @@ const EnvPanel: React.FC = () => {
           {t("openclaw.env.add")}
         </Button>
         <div className="flex-1" />
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={saveEnvMutation.isPending}
+        >
           <Save className="w-4 h-4 mr-1" />
-          {saving ? t("common.saving") : t("common.save")}
+          {saveEnvMutation.isPending ? t("common.saving") : t("common.save")}
         </Button>
       </div>
     </div>

@@ -1,8 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Save } from "lucide-react";
 import { toast } from "sonner";
-import { openclawApi } from "@/lib/api/openclaw";
+import {
+  useOpenClawAgentsDefaults,
+  useSaveOpenClawAgentsDefaults,
+} from "@/hooks/useOpenClaw";
+import { extractErrorMessage } from "@/utils/errorUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,11 +14,11 @@ import type { OpenClawAgentsDefaults } from "@/types";
 
 const AgentsDefaultsPanel: React.FC = () => {
   const { t } = useTranslation();
+  const { data: agentsData, isLoading } = useOpenClawAgentsDefaults();
+  const saveAgentsMutation = useSaveOpenClawAgentsDefaults();
   const [defaults, setDefaults] = useState<OpenClawAgentsDefaults | null>(null);
   const [primaryModel, setPrimaryModel] = useState("");
   const [fallbacks, setFallbacks] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   // Extra known fields from agents.defaults
   const [workspace, setWorkspace] = useState("");
@@ -22,38 +26,25 @@ const AgentsDefaultsPanel: React.FC = () => {
   const [contextTokens, setContextTokens] = useState("");
   const [maxConcurrent, setMaxConcurrent] = useState("");
 
-  const loadDefaults = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await openclawApi.getAgentsDefaults();
-      setDefaults(data);
-
-      if (data) {
-        setPrimaryModel(data.model?.primary ?? "");
-        setFallbacks((data.model?.fallbacks ?? []).join(", "));
-
-        // Extract known extra fields
-        setWorkspace(String(data.workspace ?? ""));
-        setTimeout_(String(data.timeout ?? ""));
-        setContextTokens(String(data.contextTokens ?? ""));
-        setMaxConcurrent(String(data.maxConcurrent ?? ""));
-      }
-    } catch (err) {
-      toast.error(t("openclaw.agents.loadFailed"));
-      console.error("Failed to load agents defaults:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
   useEffect(() => {
-    void loadDefaults();
-  }, [loadDefaults]);
+    // agentsData is undefined while loading, null when config section is absent
+    if (agentsData === undefined) return;
+    setDefaults(agentsData);
+
+    if (agentsData) {
+      setPrimaryModel(agentsData.model?.primary ?? "");
+      setFallbacks((agentsData.model?.fallbacks ?? []).join(", "));
+
+      // Extract known extra fields
+      setWorkspace(String(agentsData.workspace ?? ""));
+      setTimeout_(String(agentsData.timeout ?? ""));
+      setContextTokens(String(agentsData.contextTokens ?? ""));
+      setMaxConcurrent(String(agentsData.maxConcurrent ?? ""));
+    }
+  }, [agentsData]);
 
   const handleSave = async () => {
     try {
-      setSaving(true);
-
       // Preserve all unknown fields from original data
       const updated: OpenClawAgentsDefaults = { ...defaults };
 
@@ -94,18 +85,17 @@ const AgentsDefaultsPanel: React.FC = () => {
       if (concNum !== undefined) updated.maxConcurrent = concNum;
       else delete updated.maxConcurrent;
 
-      await openclawApi.setAgentsDefaults(updated);
+      await saveAgentsMutation.mutateAsync(updated);
       toast.success(t("openclaw.agents.saveSuccess"));
-      await loadDefaults();
-    } catch (err) {
-      toast.error(t("openclaw.agents.saveFailed"));
-      console.error("Failed to save agents defaults:", err);
-    } finally {
-      setSaving(false);
+    } catch (error) {
+      const detail = extractErrorMessage(error);
+      toast.error(t("openclaw.agents.saveFailed"), {
+        description: detail || undefined,
+      });
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="px-6 pt-4 pb-8 flex items-center justify-center min-h-[200px]">
         <div className="text-sm text-muted-foreground">
@@ -222,9 +212,13 @@ const AgentsDefaultsPanel: React.FC = () => {
 
       {/* Save button */}
       <div className="flex justify-end">
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={saveAgentsMutation.isPending}
+        >
           <Save className="w-4 h-4 mr-1" />
-          {saving ? t("common.saving") : t("common.save")}
+          {saveAgentsMutation.isPending ? t("common.saving") : t("common.save")}
         </Button>
       </div>
     </div>

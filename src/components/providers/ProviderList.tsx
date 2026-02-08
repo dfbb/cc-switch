@@ -19,8 +19,12 @@ import { useQuery } from "@tanstack/react-query";
 import type { Provider } from "@/types";
 import type { AppId } from "@/lib/api";
 import { providersApi } from "@/lib/api/providers";
-import { openclawApi } from "@/lib/api/openclaw";
 import { useDragSort } from "@/hooks/useDragSort";
+import {
+  useOpenClawLiveProviderIds,
+  useOpenClawDefaultModel,
+} from "@/hooks/useOpenClaw";
+// import { useStreamCheck } from "@/hooks/useStreamCheck"; // 测试功能已隐藏
 import { ProviderCard } from "@/components/providers/ProviderCard";
 import { ProviderEmptyState } from "@/components/providers/ProviderEmptyState";
 import {
@@ -88,11 +92,9 @@ export function ProviderList({
   });
 
   // OpenClaw: 查询 live 配置中的供应商 ID 列表，用于判断 isInConfig
-  const { data: openclawLiveIds } = useQuery({
-    queryKey: ["openclawLiveProviderIds"],
-    queryFn: () => providersApi.getOpenClawLiveProviderIds(),
-    enabled: appId === "openclaw",
-  });
+  const { data: openclawLiveIds } = useOpenClawLiveProviderIds(
+    appId === "openclaw",
+  );
 
   // 判断供应商是否已添加到配置（累加模式应用：OpenCode/OpenClaw）
   const isProviderInConfig = useCallback(
@@ -109,11 +111,9 @@ export function ProviderList({
   );
 
   // OpenClaw: query default model to determine which provider is default
-  const { data: openclawDefaultModel } = useQuery({
-    queryKey: ["openclawDefaultModel"],
-    queryFn: () => openclawApi.getDefaultModel(),
-    enabled: appId === "openclaw",
-  });
+  const { data: openclawDefaultModel } = useOpenClawDefaultModel(
+    appId === "openclaw",
+  );
 
   const isProviderDefaultModel = useCallback(
     (providerId: string): boolean => {

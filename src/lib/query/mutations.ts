@@ -5,6 +5,7 @@ import { providersApi, settingsApi, type AppId } from "@/lib/api";
 import type { Provider, Settings } from "@/types";
 import { extractErrorMessage } from "@/utils/errorUtils";
 import { generateUUID } from "@/utils/uuid";
+import { openclawKeys } from "@/hooks/useOpenClaw";
 
 export const useAddProviderMutation = (appId: AppId) => {
   const queryClient = useQueryClient();
@@ -185,10 +186,10 @@ export const useSwitchProviderMutation = (appId: AppId) => {
       }
       if (appId === "openclaw") {
         await queryClient.invalidateQueries({
-          queryKey: ["openclawLiveProviderIds"],
+          queryKey: openclawKeys.liveProviderIds,
         });
         await queryClient.invalidateQueries({
-          queryKey: ["openclawDefaultModel"],
+          queryKey: openclawKeys.defaultModel,
         });
       }
 

@@ -17,6 +17,7 @@ import {
   useSwitchProviderMutation,
 } from "@/lib/query";
 import { extractErrorMessage } from "@/utils/errorUtils";
+import { openclawKeys } from "@/hooks/useOpenClaw";
 
 /**
  * Hook for managing provider actions (add, update, delete, switch)
@@ -244,7 +245,7 @@ export function useProviderActions(activeApp: AppId) {
       try {
         await openclawApi.setDefaultModel(model);
         await queryClient.invalidateQueries({
-          queryKey: ["openclawDefaultModel"],
+          queryKey: openclawKeys.defaultModel,
         });
         toast.success(
           t("notifications.openclawDefaultModelSet", {

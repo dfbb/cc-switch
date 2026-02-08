@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
-import { openclawApi } from "@/lib/api/openclaw";
+import { useOpenClawTools, useSaveOpenClawTools } from "@/hooks/useOpenClaw";
+import { extractErrorMessage } from "@/utils/errorUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,34 +20,22 @@ const PROFILE_OPTIONS = ["default", "strict", "permissive", "custom"];
 
 const ToolsPanel: React.FC = () => {
   const { t } = useTranslation();
+  const { data: toolsData, isLoading } = useOpenClawTools();
+  const saveToolsMutation = useSaveOpenClawTools();
   const [config, setConfig] = useState<OpenClawToolsConfig>({});
   const [allowList, setAllowList] = useState<string[]>([]);
   const [denyList, setDenyList] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  const loadTools = useCallback(async () => {
-    try {
-      setLoading(true);
-      const tools = await openclawApi.getTools();
-      setConfig(tools);
-      setAllowList(tools.allow ?? []);
-      setDenyList(tools.deny ?? []);
-    } catch (err) {
-      toast.error(t("openclaw.tools.loadFailed"));
-      console.error("Failed to load tools config:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
 
   useEffect(() => {
-    void loadTools();
-  }, [loadTools]);
+    if (toolsData) {
+      setConfig(toolsData);
+      setAllowList(toolsData.allow ?? []);
+      setDenyList(toolsData.deny ?? []);
+    }
+  }, [toolsData]);
 
   const handleSave = async () => {
     try {
-      setSaving(true);
       const { profile, allow, deny, ...other } = config;
       const newConfig: OpenClawToolsConfig = {
         ...other,
@@ -54,14 +43,13 @@ const ToolsPanel: React.FC = () => {
         allow: allowList.filter((s) => s.trim()),
         deny: denyList.filter((s) => s.trim()),
       };
-      await openclawApi.setTools(newConfig);
+      await saveToolsMutation.mutateAsync(newConfig);
       toast.success(t("openclaw.tools.saveSuccess"));
-      await loadTools();
-    } catch (err) {
-      toast.error(t("openclaw.tools.saveFailed"));
-      console.error("Failed to save tools config:", err);
-    } finally {
-      setSaving(false);
+    } catch (error) {
+      const detail = extractErrorMessage(error);
+      toast.error(t("openclaw.tools.saveFailed"), {
+        description: detail || undefined,
+      });
     }
   };
 
@@ -82,7 +70,7 @@ const ToolsPanel: React.FC = () => {
     setList(list.filter((_, i) => i !== index));
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="px-6 pt-4 pb-8 flex items-center justify-center min-h-[200px]">
         <div className="text-sm text-muted-foreground">
@@ -192,9 +180,13 @@ const ToolsPanel: React.FC = () => {
 
       {/* Save button */}
       <div className="flex justify-end">
-        <Button size="sm" onClick={handleSave} disabled={saving}>
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={saveToolsMutation.isPending}
+        >
           <Save className="w-4 h-4 mr-1" />
-          {saving ? t("common.saving") : t("common.save")}
+          {saveToolsMutation.isPending ? t("common.saving") : t("common.save")}
         </Button>
       </div>
     </div>
