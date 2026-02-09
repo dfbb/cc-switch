@@ -15,9 +15,11 @@
 
 ## ❤️スポンサー
 
-[![Zhipu GLM](assets/partners/banners/glm-en.jpg)](https://z.ai/subscribe?ic=8JVLJQFSKB)
+[![MiniMax](assets/partners/banners/minimax-en.jpg)](https://bit.ly/3Nue8mA)
 
-本プロジェクトは Z.ai の GLM CODING PLAN による支援を受けています。GLM CODING PLAN は AI コーディング向けのサブスクリプションで、月額わずか 3 ドルから。Claude Code、Cline、Roo Code など 10 以上の人気 AI コーディングツールでフラッグシップモデル GLM-4.6 を利用でき、速く安定した開発体験を提供します。[このリンク](https://z.ai/subscribe?ic=8JVLJQFSKB) から申し込むと 10% オフになります！
+MiniMax M2.1 は、実務開発とエージェントワークフロー向けに構築されたオープンソースの最先端モデルです。100 億のアクティブパラメータ / 2,300 億の総パラメータを持つ MoE アーキテクチャにより、高速な推論、簡単なデプロイ、ローカル実行にも対応します。SWE、VIBE、Multi-SWE などの主要コーディングベンチマークでトップクラスの性能を発揮し、コーディング、デジタル環境のナビゲーション、大規模な多段階タスクの処理に優れています。
+
+[こちら](https://bit.ly/3Nue8mA)から MiniMax Coding Plan の限定 12% オフを入手！
 
 ---
 
