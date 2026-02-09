@@ -51,6 +51,11 @@ Claude Code / Codex / Gemini 公式チャンネルが最安で元価格の 38% /
 </tr>
 
 <tr>
+<td width="180"><a href="https://www.right.codes/register?aff=CCSWITCH"><img src="assets/partners/logos/rightcode.jpg" alt="RightCode" width="150"></a></td>
+<td>本プロジェクトへのご支援として、Right Code にご協賛いただき誠にありがとうございます。Right Code は、Claude Code、Codex、Gemini などのモデルに対応した中継（プロキシ）サービスを安定して提供しています。特に高いコストパフォーマンスを誇る Codex の月額プランを主力としており、<strong>未使用分の利用枠を翌日に繰り越して利用できる（繰越対応）</strong>点が特長です。チャージ（入金）後に請求書の発行が可能で、企業・チーム向けには専任担当による個別対応も行っています。さらに CC Switch ユーザー向けの特別優待として、<a href="https://www.right.codes/register?aff=CCSWITCH">こちらのリンク</a>からご登録いただくと、チャージのたびに実支払額の 25% 相当の従量課金クレジットが付与されます。</td>
+</tr>
+
+<tr>
 <td width="180"><a href="https://aicoding.sh/i/CCSWITCH"><img src="assets/partners/logos/aicoding.jpg" alt="AICoding" width="150"></a></td>
 <td>AICoding.sh のご支援に感謝します！AICoding.sh —— グローバル AI モデル API 超お得な中継サービス！Claude Code 81% オフ、GPT 99% オフ！数百社の企業に高コストパフォーマンスの AI サービスを提供。Claude Code、GPT、Gemini および国内主要モデルに対応、エンタープライズ級の高同時接続、迅速な請求書発行、24 時間年中無休の専属テクニカルサポート。<a href="https://aicoding.sh/i/CCSWITCH">こちらのリンク</a>から登録した CC Switch ユーザーは、初回チャージ 10% オフ！</td>
 </tr>

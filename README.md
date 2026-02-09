@@ -51,6 +51,11 @@ Claude Code / Codex / Gemini official channels at 38% / 2% / 9% of original pric
 </tr>
 
 <tr>
+<td width="180"><a href="https://www.right.codes/register?aff=CCSWITCH"><img src="assets/partners/logos/rightcode.jpg" alt="RightCode" width="150"></a></td>
+<td>Thank you to Right Code for sponsoring this project! Right Code reliably provides routing services for models such as Claude Code, Codex, and Gemini. It features a highly cost-effective Codex monthly subscription plan and <strong>supports quota rollovers—unused quota from one day can be carried over and used the next day.</strong> Invoices are available upon top-up. Enterprise and team users can receive dedicated one-on-one support. Right Code also offers an exclusive discount for CC Switch users: register via <a href="https://www.right.codes/register?aff=CCSWITCH">this link</a>, and with every top-up you will receive pay-as-you-go credit equivalent to 25% of the amount paid.</td>
+</tr>
+
+<tr>
 <td width="180"><a href="https://aicoding.sh/i/CCSWITCH"><img src="assets/partners/logos/aicoding.jpg" alt="AICoding" width="150"></a></td>
 <td>Thanks to AICoding.sh for sponsoring this project! AICoding.sh — Global AI Model API Relay Service at Unbeatable Prices! Claude Code at 19% of original price, GPT at just 1%! Trusted by hundreds of enterprises for cost-effective AI services. Supports Claude Code, GPT, Gemini and major domestic models, with enterprise-grade high concurrency, fast invoicing, and 24/7 dedicated technical support. CC Switch users who register via <a href="https://aicoding.sh/i/CCSWITCH">this link</a> get 10% off their first top-up!</td>
 </tr>
