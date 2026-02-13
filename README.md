@@ -60,6 +60,11 @@ Claude Code / Codex / Gemini official channels at 38% / 2% / 9% of original pric
 <td>Thanks to AICoding.sh for sponsoring this project! AICoding.sh — Global AI Model API Relay Service at Unbeatable Prices! Claude Code at 19% of original price, GPT at just 1%! Trusted by hundreds of enterprises for cost-effective AI services. Supports Claude Code, GPT, Gemini and major domestic models, with enterprise-grade high concurrency, fast invoicing, and 24/7 dedicated technical support. CC Switch users who register via <a href="https://aicoding.sh/i/CCSWITCH">this link</a> get 10% off their first top-up!</td>
 </tr>
 
+<tr>
+<td width="180"><a href="https://crazyrouter.com/register?ref=cc-switch"><img src="assets/partners/logos/crazyrouter.jpg" alt="AICoding" width="150"></a></td>
+<td>Thanks to Crazyrouter for sponsoring this project! Crazyrouter is a high-performance AI API aggregation platform — one API key for 300+ models including Claude Code, Codex, Gemini CLI, GPT, and more. All through a single OpenAI-compatible endpoint with zero code changes. Features include auto-failover, smart routing, unlimited concurrency, and global low-latency access. <a href="https://crazyrouter.com/register?ref=cc-switch">Register here</a> to get started.</td>
+</tr>
+
 </table>
 
 ## Screenshots

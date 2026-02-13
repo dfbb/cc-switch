@@ -60,6 +60,11 @@ Claude Code / Codex / Gemini 公式チャンネルが最安で元価格の 38% /
 <td>AICoding.sh のご支援に感謝します！AICoding.sh —— グローバル AI モデル API 超お得な中継サービス！Claude Code 81% オフ、GPT 99% オフ！数百社の企業に高コストパフォーマンスの AI サービスを提供。Claude Code、GPT、Gemini および国内主要モデルに対応、エンタープライズ級の高同時接続、迅速な請求書発行、24 時間年中無休の専属テクニカルサポート。<a href="https://aicoding.sh/i/CCSWITCH">こちらのリンク</a>から登録した CC Switch ユーザーは、初回チャージ 10% オフ！</td>
 </tr>
 
+<tr>
+<td width="180"><a href="https://crazyrouter.com/register?ref=cc-switch"><img src="assets/partners/logos/crazyrouter.jpg" alt="AICoding" width="150"></a></td>
+<td>Crazyrouter のご支援に感謝します！Crazyrouter は高性能 AI API アグリゲーションプラットフォームです。1 つの API キーで Claude Code、Codex、Gemini CLI、GPT など 300 以上のモデルにアクセス可能。OpenAI 互換エンドポイントでコード変更不要。自動フェイルオーバー、スマートルーティング、無制限同時接続、グローバル低遅延アクセスに対応。<a href="https://crazyrouter.com/register?ref=cc-switch">こちらから登録</a>してすぐにご利用いただけます。</td>
+</tr>
+
 </table>
 
 ## スクリーンショット

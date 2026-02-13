@@ -61,6 +61,11 @@ Claude Code / Codex / Gemini 官方渠道低至 3.8 / 0.2 / 0.9 折，充值更�
 <td>感谢 AICoding.sh 赞助了本项目！AICoding.sh —— 全球大模型 API 超值中转服务！Claude Code 1.9 折，GPT 0.1 折，已为数百家企业提供高性价比 AI 服务。支持 Claude Code、GPT、Gemini 及国内主流模型，企业级高并发、极速开票、7×24 专属技术支持，通过<a href="https://aicoding.sh/i/CCSWITCH">此链接</a> 注册的 CC Switch 用户，首充可享受九折优惠！</td>
 </tr>
 
+<tr>
+<td width="180"><a href="https://crazyrouter.com/register?ref=cc-switch"><img src="assets/partners/logos/crazyrouter.jpg" alt="AICoding" width="150"></a></td>
+<td>感谢 Crazyrouter 赞助了本项目！Crazyrouter 是一个高性能 AI API 聚合平台——一个 API Key 即可访问 300+ 模型，包括 Claude Code、Codex、Gemini CLI、GPT 等。通过单一 OpenAI 兼容端点实现零代码改动接入。支持自动故障转移、智能路由、无限并发和全球低延迟访问。<a href="https://crazyrouter.com/register?ref=cc-switch">点击这里注册</a>即可开始使用！</td>
+</tr>
+
 </table>
 
 ## 界面预览
