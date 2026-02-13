@@ -16,6 +16,7 @@ import type {
   ClaudeApiFormat,
   OpenCodeModel,
   OpenCodeProviderConfig,
+  OpenClawModel,
 } from "@/types";
 import {
   providerPresets,
@@ -41,7 +42,6 @@ import {
 } from "@/config/openclawProviderPresets";
 import { OpenCodeFormFields } from "./OpenCodeFormFields";
 import { OpenClawFormFields } from "./OpenClawFormFields";
-import type { OpenCodeModel, OpenClawModel } from "@/types";
 import type { UniversalProviderPreset } from "@/config/universalProviderPresets";
 import { applyTemplateValues } from "@/utils/providerConfigUtils";
 import { mergeProviderMeta } from "@/utils/providerMetaUtils";
