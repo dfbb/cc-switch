@@ -162,6 +162,36 @@ export interface VisibleApps {
   opencode: boolean;
 }
 
+// WebDAV v2 同步状态
+export interface WebDavSyncStatus {
+  lastSyncAt?: number | null;
+  lastError?: string | null;
+  lastRemoteEtag?: string | null;
+  lastLocalManifestHash?: string | null;
+  lastRemoteManifestHash?: string | null;
+}
+
+// WebDAV v2 同步配置
+export interface WebDavSyncSettings {
+  enabled?: boolean;
+  baseUrl?: string;
+  username?: string;
+  password?: string;
+  remoteRoot?: string;
+  profile?: string;
+  status?: WebDavSyncStatus;
+}
+
+// 远端快照信息（下载前预览）
+export interface RemoteSnapshotInfo {
+  deviceName: string;
+  createdAt: string;
+  snapshotId: string;
+  version: number;
+  compatible: boolean;
+  artifacts: string[];
+}
+
 // 应用设置类型（用于设置对话框与 Tauri API）
 // 存储在本地 ~/.cc-switch/settings.json，不随数据库同步
 export interface Settings {
@@ -205,6 +235,9 @@ export interface Settings {
   // ===== Skill 同步设置 =====
   // Skill 同步方式：auto（默认，优先 symlink）、symlink、copy
   skillSyncMethod?: SkillSyncMethod;
+
+  // ===== WebDAV v2 同步设置 =====
+  webdavSync?: WebDavSyncSettings;
 
   // ===== 终端设置 =====
   // 首选终端应用（可选，默认使用系统默认终端）

@@ -886,6 +886,11 @@ pub fn run() {
             // theirs: config import/export and dialogs
             commands::export_config_to_file,
             commands::import_config_from_file,
+            commands::webdav_test_connection,
+            commands::webdav_sync_upload,
+            commands::webdav_sync_download,
+            commands::webdav_sync_save_settings,
+            commands::webdav_sync_fetch_remote_info,
             commands::save_file_dialog,
             commands::open_file_dialog,
             commands::open_zip_file_dialog,
