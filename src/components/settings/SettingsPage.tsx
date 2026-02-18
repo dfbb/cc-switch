@@ -597,9 +597,7 @@ export function SettingsPage({
                             onClear={clearSelection}
                           />
                           <div className="pt-6">
-                            <WebdavSyncSection
-                              config={settings?.webdavSync}
-                            />
+                            <WebdavSyncSection config={settings?.webdavSync} />
                           </div>
                         </AccordionContent>
                       </AccordionItem>

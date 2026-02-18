@@ -308,7 +308,8 @@ function App() {
         const off = await listen(
           "webdav-sync-status-updated",
           async (event) => {
-            const payload = (event.payload ?? {}) as WebDavSyncStatusUpdatedPayload;
+            const payload = (event.payload ??
+              {}) as WebDavSyncStatusUpdatedPayload;
             await queryClient.invalidateQueries({ queryKey: ["settings"] });
 
             if (payload.source !== "auto" || payload.status !== "error") {
