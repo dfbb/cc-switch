@@ -192,6 +192,8 @@
       "proxy": {
         "title": "Local Proxy",
         "description": "Control proxy service toggle, view status and port info",
+        "enableFeature": "Show Proxy Toggle on Main Page",
+        "enableFeatureDescription": "When enabled, the proxy and failover toggles will appear at the top of the main page",
         "running": "Running",
         "stopped": "Stopped"
       },

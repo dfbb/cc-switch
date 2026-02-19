@@ -212,6 +212,8 @@ export interface Settings {
   launchOnStartup?: boolean;
   // 静默启动（程序启动时不显示主窗口）
   silentStartup?: boolean;
+  // 是否启用主页面本地代理功能（默认关闭）
+  enableLocalProxy?: boolean;
   // 首选语言（可选，默认中文）
   language?: "en" | "zh" | "ja";
 

@@ -192,6 +192,8 @@
       "proxy": {
         "title": "本地代理",
         "description": "控制代理服务开关、查看状态与端口信息",
+        "enableFeature": "在主页面显示本地代理开关",
+        "enableFeatureDescription": "开启后，主页面顶部将显示代理和故障转移开关",
         "running": "运行中",
         "stopped": "已停止"
       },

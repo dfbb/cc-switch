@@ -192,6 +192,8 @@
       "proxy": {
         "title": "ローカルプロキシ",
         "description": "プロキシサービスの切り替え、ステータスとポート情報を表示",
+        "enableFeature": "メインページにプロキシ切り替えを表示",
+        "enableFeatureDescription": "有効にすると、メインページ上部にプロキシとフェイルオーバーの切り替えが表示されます",
         "running": "実行中",
         "stopped": "停止中"
       },

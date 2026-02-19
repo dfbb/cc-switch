@@ -55,6 +55,7 @@ import { useImportExport } from "@/hooks/useImportExport";
 import { useTranslation } from "react-i18next";
 import type { SettingsFormState } from "@/hooks/useSettings";
 import { Switch } from "@/components/ui/switch";
+import { ToggleRow } from "@/components/ui/toggle-row";
 import { Badge } from "@/components/ui/badge";
 import { useProxyStatus } from "@/hooks/useProxyStatus";
 
@@ -356,8 +357,21 @@ export function SettingsPage({
                             />
                           </div>
                         </AccordionPrimitive.Header>
-                        <AccordionContent className="px-6 pb-6 pt-0 border-t border-border/50">
-                          <ProxyPanel />
+                        <AccordionContent className="px-6 pb-6 pt-4 border-t border-border/50">
+                          <ToggleRow
+                            icon={<Zap className="h-4 w-4 text-green-500" />}
+                            title={t("settings.advanced.proxy.enableFeature")}
+                            description={t(
+                              "settings.advanced.proxy.enableFeatureDescription",
+                            )}
+                            checked={settings?.enableLocalProxy ?? false}
+                            onCheckedChange={(checked) =>
+                              handleAutoSave({ enableLocalProxy: checked })
+                            }
+                          />
+                          <div className="mt-4">
+                            <ProxyPanel />
+                          </div>
                         </AccordionContent>
                       </AccordionItem>
 

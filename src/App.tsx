@@ -1046,21 +1046,23 @@ function App() {
             )}
             {currentView === "providers" && (
               <>
-                {activeApp !== "opencode" && activeApp !== "openclaw" && (
-                  <>
-                    <ProxyToggle activeApp={activeApp} />
-                    <div
-                      className={cn(
-                        "transition-all duration-300 ease-in-out overflow-hidden",
-                        isCurrentAppTakeoverActive
-                          ? "opacity-100 max-w-[100px] scale-100"
-                          : "opacity-0 max-w-0 scale-75 pointer-events-none",
-                      )}
-                    >
-                      <FailoverToggle activeApp={activeApp} />
-                    </div>
-                  </>
-                )}
+                {activeApp !== "opencode" &&
+                  activeApp !== "openclaw" &&
+                  settingsData?.enableLocalProxy && (
+                    <>
+                      <ProxyToggle activeApp={activeApp} />
+                      <div
+                        className={cn(
+                          "transition-all duration-300 ease-in-out overflow-hidden",
+                          isCurrentAppTakeoverActive
+                            ? "opacity-100 max-w-[100px] scale-100"
+                            : "opacity-0 max-w-0 scale-75 pointer-events-none",
+                        )}
+                      >
+                        <FailoverToggle activeApp={activeApp} />
+                      </div>
+                    </>
+                  )}
 
                 <AppSwitcher
                   activeApp={activeApp}
