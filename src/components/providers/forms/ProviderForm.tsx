@@ -1517,7 +1517,7 @@ export function ProviderForm({
           </>
         )}
 
-        {category !== "omo" && (
+        {category !== "omo" && appId !== "opencode" && appId !== "openclaw" && (
           <ProviderAdvancedConfig
             testConfig={testConfig}
             proxyConfig={proxyConfig}
