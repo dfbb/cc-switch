@@ -3,12 +3,12 @@ import {
   Check,
   Copy,
   Edit,
-  Loader2,
+  // Loader2, // Hidden: stream check feature disabled
   Minus,
   Play,
   Plus,
   Terminal,
-  TestTube2,
+  // TestTube2, // Hidden: stream check feature disabled
   Trash2,
   Zap,
 } from "lucide-react";
@@ -46,14 +46,14 @@ export function ProviderActions({
   appId,
   isCurrent,
   isInConfig = false,
-  isTesting,
+  isTesting: _isTesting, // Hidden: stream check feature disabled
   isProxyTakeover = false,
   isOmo = false,
   isLastOmo = false,
   onSwitch,
   onEdit,
   onDuplicate,
-  onTest,
+  onTest: _onTest, // Hidden: stream check feature disabled
   onConfigureUsage,
   onDelete,
   onRemoveFromConfig,
@@ -252,6 +252,7 @@ export function ProviderActions({
           <Copy className="h-4 w-4" />
         </Button>
 
+        {/* Hidden: stream check feature disabled
         {onTest && (
           <Button
             size="icon"
@@ -268,6 +269,7 @@ export function ProviderActions({
             )}
           </Button>
         )}
+        */}
 
         <Button
           size="icon"
