@@ -238,22 +238,28 @@ pub async fn set_common_config_snippet(
     if app_type == "omo"
         && state
             .db
-            .get_current_omo_provider("opencode")
+            .get_current_omo_provider("opencode", "omo")
             .map_err(|e| e.to_string())?
             .is_some()
     {
-        crate::services::OmoService::write_config_to_file(state.inner())
-            .map_err(|e| e.to_string())?;
+        crate::services::OmoService::write_config_to_file(
+            state.inner(),
+            &crate::services::omo::STANDARD,
+        )
+        .map_err(|e| e.to_string())?;
     }
     if app_type == "omo-slim"
         && state
             .db
-            .get_current_omo_slim_provider("opencode")
+            .get_current_omo_provider("opencode", "omo-slim")
             .map_err(|e| e.to_string())?
             .is_some()
     {
-        crate::services::OmoService::write_config_to_file_slim(state.inner())
-            .map_err(|e| e.to_string())?;
+        crate::services::OmoService::write_config_to_file(
+            state.inner(),
+            &crate::services::omo::SLIM,
+        )
+        .map_err(|e| e.to_string())?;
     }
     Ok(())
 }

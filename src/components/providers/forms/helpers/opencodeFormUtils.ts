@@ -1,6 +1,5 @@
 import type { OpenCodeModel, OpenCodeProviderConfig } from "@/types";
 import type { OmoGlobalConfig } from "@/types/omo";
-import { parseOmoOtherFieldsObject } from "@/types/omo";
 import type { PricingModelSourceOption } from "../ProviderAdvancedConfig";
 
 // ── Default configs ──────────────────────────────────────────────────
@@ -132,28 +131,7 @@ export function toOpencodeExtraOptions(
   return extra;
 }
 
-export function buildOmoProfilePreview(
-  agents: Record<string, Record<string, unknown>>,
-  categories: Record<string, Record<string, unknown>>,
-  otherFieldsStr: string,
-): Record<string, unknown> {
-  const profileOnly: Record<string, unknown> = {};
-  if (Object.keys(agents).length > 0) {
-    profileOnly.agents = agents;
-  }
-  if (Object.keys(categories).length > 0) {
-    profileOnly.categories = categories;
-  }
-  if (otherFieldsStr.trim()) {
-    try {
-      const other = parseOmoOtherFieldsObject(otherFieldsStr);
-      if (other) {
-        Object.assign(profileOnly, other);
-      }
-    } catch {}
-  }
-  return profileOnly;
-}
+export { buildOmoProfilePreview } from "@/types/omo";
 
 export const normalizePricingSource = (
   value?: string,

@@ -406,21 +406,40 @@ export const OMO_SLIM_DISABLEABLE_HOOKS = [
 export const OMO_SLIM_DEFAULT_SCHEMA_URL =
   "https://raw.githubusercontent.com/alvinunreal/oh-my-opencode-slim/master/assets/oh-my-opencode-slim.schema.json";
 
-export function mergeOmoSlimConfigPreview(
+export function mergeOmoConfigPreview(
   global: OmoGlobalConfig | undefined,
   agents: Record<string, Record<string, unknown>>,
+  categories: Record<string, Record<string, unknown>> | undefined,
   otherFieldsStr: string,
+  options?: { slim?: boolean },
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
+  const isSlim = options?.slim ?? false;
 
   if (global) {
     if (global.schemaUrl) result["$schema"] = global.schemaUrl;
+
+    if (!isSlim) {
+      if (global.sisyphusAgent) result["sisyphus_agent"] = global.sisyphusAgent;
+    }
     if (global.disabledAgents?.length)
       result["disabled_agents"] = global.disabledAgents;
     if (global.disabledMcps?.length)
       result["disabled_mcps"] = global.disabledMcps;
     if (global.disabledHooks?.length)
       result["disabled_hooks"] = global.disabledHooks;
+
+    if (!isSlim) {
+      if (global.disabledSkills?.length)
+        result["disabled_skills"] = global.disabledSkills;
+      if (global.lsp) result["lsp"] = global.lsp;
+      if (global.experimental) result["experimental"] = global.experimental;
+      if (global.backgroundTask)
+        result["background_task"] = global.backgroundTask;
+      if (global.browserAutomationEngine)
+        result["browser_automation_engine"] = global.browserAutomationEngine;
+      if (global.claudeCode) result["claude_code"] = global.claudeCode;
+    }
 
     if (global.otherFields) {
       for (const [k, v] of Object.entries(global.otherFields)) {
@@ -430,6 +449,8 @@ export function mergeOmoSlimConfigPreview(
   }
 
   if (Object.keys(agents).length > 0) result["agents"] = agents;
+  if (!isSlim && categories && Object.keys(categories).length > 0)
+    result["categories"] = categories;
 
   try {
     const other = parseOmoOtherFieldsObject(otherFieldsStr);
@@ -443,67 +464,48 @@ export function mergeOmoSlimConfigPreview(
   return result;
 }
 
+/** @deprecated Use mergeOmoConfigPreview with options.slim=true */
+export function mergeOmoSlimConfigPreview(
+  global: OmoGlobalConfig | undefined,
+  agents: Record<string, Record<string, unknown>>,
+  otherFieldsStr: string,
+): Record<string, unknown> {
+  return mergeOmoConfigPreview(global, agents, undefined, otherFieldsStr, {
+    slim: true,
+  });
+}
+
+export function buildOmoProfilePreview(
+  agents: Record<string, Record<string, unknown>>,
+  categories: Record<string, Record<string, unknown>> | undefined,
+  otherFieldsStr: string,
+  options?: { slim?: boolean },
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  const isSlim = options?.slim ?? false;
+
+  if (Object.keys(agents).length > 0) result["agents"] = agents;
+  if (!isSlim && categories && Object.keys(categories).length > 0)
+    result["categories"] = categories;
+
+  try {
+    const other = parseOmoOtherFieldsObject(otherFieldsStr);
+    if (other) {
+      for (const [k, v] of Object.entries(other)) {
+        result[k] = v;
+      }
+    }
+  } catch {}
+
+  return result;
+}
+
+/** @deprecated Use buildOmoProfilePreview with options.slim=true */
 export function buildOmoSlimProfilePreview(
   agents: Record<string, Record<string, unknown>>,
   otherFieldsStr: string,
 ): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  if (Object.keys(agents).length > 0) result["agents"] = agents;
-
-  try {
-    const other = parseOmoOtherFieldsObject(otherFieldsStr);
-    if (other) {
-      for (const [k, v] of Object.entries(other)) {
-        result[k] = v;
-      }
-    }
-  } catch {}
-
-  return result;
-}
-
-export function mergeOmoConfigPreview(
-  global: OmoGlobalConfig,
-  agents: Record<string, Record<string, unknown>>,
-  categories: Record<string, Record<string, unknown>>,
-  otherFieldsStr: string,
-): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  if (global.schemaUrl) result["$schema"] = global.schemaUrl;
-
-  if (global.sisyphusAgent) result["sisyphus_agent"] = global.sisyphusAgent;
-  if (global.disabledAgents?.length)
-    result["disabled_agents"] = global.disabledAgents;
-  if (global.disabledMcps?.length)
-    result["disabled_mcps"] = global.disabledMcps;
-  if (global.disabledHooks?.length)
-    result["disabled_hooks"] = global.disabledHooks;
-  if (global.disabledSkills?.length)
-    result["disabled_skills"] = global.disabledSkills;
-  if (global.lsp) result["lsp"] = global.lsp;
-  if (global.experimental) result["experimental"] = global.experimental;
-  if (global.backgroundTask) result["background_task"] = global.backgroundTask;
-  if (global.browserAutomationEngine)
-    result["browser_automation_engine"] = global.browserAutomationEngine;
-  if (global.claudeCode) result["claude_code"] = global.claudeCode;
-
-  if (global.otherFields) {
-    for (const [k, v] of Object.entries(global.otherFields)) {
-      result[k] = v;
-    }
-  }
-
-  if (Object.keys(agents).length > 0) result["agents"] = agents;
-  if (Object.keys(categories).length > 0) result["categories"] = categories;
-  try {
-    const other = parseOmoOtherFieldsObject(otherFieldsStr);
-    if (!other) return result;
-    for (const [k, v] of Object.entries(other)) {
-      result[k] = v;
-    }
-  } catch {}
-
-  return result;
+  return buildOmoProfilePreview(agents, undefined, otherFieldsStr, {
+    slim: true,
+  });
 }

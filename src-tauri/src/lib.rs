@@ -512,7 +512,7 @@ pub fn run() {
                     .map(|providers| providers.values().any(|p| p.category.as_deref() == Some("omo")))
                     .unwrap_or(false);
                 if !has_omo {
-                    match crate::services::OmoService::import_from_local(&app_state) {
+                    match crate::services::OmoService::import_from_local(&app_state, &crate::services::omo::STANDARD) {
                         Ok(provider) => {
                             log::info!("✓ Imported OMO config from local as provider '{}'", provider.name);
                         }
@@ -538,7 +538,7 @@ pub fn run() {
                     })
                     .unwrap_or(false);
                 if !has_omo_slim {
-                    match crate::services::OmoService::import_from_local_slim(&app_state) {
+                    match crate::services::OmoService::import_from_local(&app_state, &crate::services::omo::SLIM) {
                         Ok(provider) => {
                             log::info!(
                                 "✓ Imported OMO Slim config from local as provider '{}'",
