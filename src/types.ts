@@ -4,7 +4,8 @@ export type ProviderCategory =
   | "aggregator" // 聚合网站
   | "third_party" // 第三方供应商
   | "custom" // 自定义
-  | "omo"; // Oh My OpenCode
+  | "omo" // Oh My OpenCode
+  | "omo-slim"; // Oh My OpenCode Slim
 
 export interface Provider {
   id: string;

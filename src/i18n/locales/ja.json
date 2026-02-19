@@ -1839,6 +1839,22 @@
       "unspecifiedLow": "未分類の低作業量タスクカテゴリ。他のカテゴリに該当せず作業量が小さいタスクに適用。デフォルトで Claude Sonnet 4.5 を使用。",
       "unspecifiedHigh": "未分類の高作業量タスクカテゴリ。他のカテゴリに該当せず作業量が大きいタスクに適用。デフォルトで Claude Opus 4.6 の max バリアントを使用。",
       "writing": "ライティングカテゴリ。ドキュメント、散文、技術文書に特化。デフォルトで Gemini 3 Flash 高速生成モデルを使用。"
+    },
+    "slimAgentDesc": {
+      "orchestrator": "オーケストレーター",
+      "oracle": "オラクル",
+      "librarian": "ライブラリアン",
+      "explorer": "エクスプローラー",
+      "designer": "デザイナー",
+      "fixer": "フィクサー"
+    },
+    "slimAgentTooltip": {
+      "orchestrator": "実行コードの作成、マルチエージェントワークフローの調整、エキスパートの召喚",
+      "oracle": "根本原因分析、アーキテクチャレビュー、デバッグガイダンス（読み取り専用）",
+      "librarian": "ドキュメント検索、GitHubコード検索（読み取り専用）",
+      "explorer": "正規表現検索、ASTパターンマッチング、ファイル検出（読み取り専用）",
+      "designer": "モダンなレスポンシブデザイン、CSS/Tailwindの専門知識",
+      "fixer": "コード実装、リファクタリング、テスト、検証"
     }
   },
   "openclawConfig": {

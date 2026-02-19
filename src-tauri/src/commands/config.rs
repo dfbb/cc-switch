@@ -215,7 +215,7 @@ pub async fn set_common_config_snippet(
 ) -> Result<(), String> {
     if !snippet.trim().is_empty() {
         match app_type.as_str() {
-            "claude" | "gemini" | "omo" => {
+            "claude" | "gemini" | "omo" | "omo-slim" => {
                 serde_json::from_str::<serde_json::Value>(&snippet)
                     .map_err(invalid_json_format_error)?;
             }
@@ -243,6 +243,16 @@ pub async fn set_common_config_snippet(
             .is_some()
     {
         crate::services::OmoService::write_config_to_file(state.inner())
+            .map_err(|e| e.to_string())?;
+    }
+    if app_type == "omo-slim"
+        && state
+            .db
+            .get_current_omo_slim_provider("opencode")
+            .map_err(|e| e.to_string())?
+            .is_some()
+    {
+        crate::services::OmoService::write_config_to_file_slim(state.inner())
             .map_err(|e| e.to_string())?;
     }
     Ok(())

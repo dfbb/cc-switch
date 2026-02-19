@@ -78,7 +78,7 @@ import {
   useOmoDraftState,
   useOpenclawFormState,
 } from "./hooks";
-import { useOmoGlobalConfig } from "@/lib/query/omo";
+import { useOmoGlobalConfig, useOmoSlimGlobalConfig } from "@/lib/query/omo";
 import {
   CLAUDE_DEFAULT_CONFIG,
   CODEX_DEFAULT_CONFIG,
@@ -184,7 +184,15 @@ export function ProviderForm({
     initialCategory: initialData?.category,
   });
   const isOmoCategory = appId === "opencode" && category === "omo";
-  const { data: queriedOmoGlobalConfig } = useOmoGlobalConfig(isOmoCategory);
+  const isOmoSlimCategory = appId === "opencode" && category === "omo-slim";
+  const isAnyOmoCategory = isOmoCategory || isOmoSlimCategory;
+  const { data: queriedStandardOmoGlobalConfig } =
+    useOmoGlobalConfig(isOmoCategory);
+  const { data: queriedSlimOmoGlobalConfig } =
+    useOmoSlimGlobalConfig(isOmoSlimCategory);
+  const queriedOmoGlobalConfig = isOmoSlimCategory
+    ? queriedSlimOmoGlobalConfig
+    : queriedStandardOmoGlobalConfig;
 
   useEffect(() => {
     setSelectedPresetId(initialData ? null : "custom");
@@ -495,7 +503,7 @@ export function ProviderForm({
     omoModelVariantsMap,
     omoPresetMetaMap,
     existingOpencodeKeys,
-  } = useOmoModelSource({ isOmoCategory, providerId });
+  } = useOmoModelSource({ isOmoCategory: isAnyOmoCategory, providerId });
 
   const opencodeForm = useOpencodeFormState({
     initialData,
@@ -506,7 +514,8 @@ export function ProviderForm({
   });
 
   const initialOmoSettings =
-    appId === "opencode" && initialData?.category === "omo"
+    appId === "opencode" &&
+    (initialData?.category === "omo" || initialData?.category === "omo-slim")
       ? (initialData.settingsConfig as Record<string, unknown> | undefined)
       : undefined;
 
@@ -677,13 +686,19 @@ export function ProviderForm({
       } catch (err) {
         settingsConfig = values.settingsConfig.trim();
       }
-    } else if (appId === "opencode" && category === "omo") {
+    } else if (
+      appId === "opencode" &&
+      (category === "omo" || category === "omo-slim")
+    ) {
       const omoConfig: Record<string, unknown> = {};
       omoConfig.useCommonConfig = omoDraft.useOmoCommonConfig;
       if (Object.keys(omoDraft.omoAgents).length > 0) {
         omoConfig.agents = omoDraft.omoAgents;
       }
-      if (Object.keys(omoDraft.omoCategories).length > 0) {
+      if (
+        category === "omo" &&
+        Object.keys(omoDraft.omoCategories).length > 0
+      ) {
         omoConfig.categories = omoDraft.omoCategories;
       }
       if (omoDraft.omoOtherFieldsStr.trim()) {
@@ -1334,19 +1349,25 @@ export function ProviderForm({
           />
         )}
 
-        {appId === "opencode" && category === "omo" && (
-          <OmoFormFields
-            modelOptions={omoModelOptions}
-            modelVariantsMap={omoModelVariantsMap}
-            presetMetaMap={omoPresetMetaMap}
-            agents={omoDraft.omoAgents}
-            onAgentsChange={omoDraft.setOmoAgents}
-            categories={omoDraft.omoCategories}
-            onCategoriesChange={omoDraft.setOmoCategories}
-            otherFieldsStr={omoDraft.omoOtherFieldsStr}
-            onOtherFieldsStrChange={omoDraft.setOmoOtherFieldsStr}
-          />
-        )}
+        {appId === "opencode" &&
+          (category === "omo" || category === "omo-slim") && (
+            <OmoFormFields
+              modelOptions={omoModelOptions}
+              modelVariantsMap={omoModelVariantsMap}
+              presetMetaMap={omoPresetMetaMap}
+              agents={omoDraft.omoAgents}
+              onAgentsChange={omoDraft.setOmoAgents}
+              categories={
+                category === "omo" ? omoDraft.omoCategories : undefined
+              }
+              onCategoriesChange={
+                category === "omo" ? omoDraft.setOmoCategories : undefined
+              }
+              otherFieldsStr={omoDraft.omoOtherFieldsStr}
+              onOtherFieldsStrChange={omoDraft.setOmoOtherFieldsStr}
+              isSlim={category === "omo-slim"}
+            />
+          )}
 
         {/* OpenClaw 专属字段 */}
         {appId === "openclaw" && (
@@ -1408,7 +1429,8 @@ export function ProviderForm({
             />
             {settingsConfigErrorField}
           </>
-        ) : appId === "opencode" && category === "omo" ? (
+        ) : appId === "opencode" &&
+          (category === "omo" || category === "omo-slim") ? (
           <OmoCommonConfigEditor
             previewValue={omoDraft.mergedOmoJsonPreview}
             useCommonConfig={omoDraft.useOmoCommonConfig}
@@ -1421,8 +1443,11 @@ export function ProviderForm({
             onGlobalConfigStateChange={omoDraft.setOmoGlobalState}
             globalConfigRef={omoDraft.omoGlobalConfigRef}
             fieldsKey={omoDraft.omoFieldsKey}
+            isSlim={category === "omo-slim"}
           />
-        ) : appId === "opencode" && category !== "omo" ? (
+        ) : appId === "opencode" &&
+          category !== "omo" &&
+          category !== "omo-slim" ? (
           <>
             <div className="space-y-2">
               <Label htmlFor="settingsConfig">{t("provider.configJson")}</Label>

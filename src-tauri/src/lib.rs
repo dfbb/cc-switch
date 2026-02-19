@@ -526,7 +526,36 @@ pub fn run() {
                 }
             }
 
-            // 2.3 OpenClaw 供应商导入（累加式模式，需特殊处理）
+            // 2.3 OMO Slim config import (when no omo-slim provider in DB, import from local)
+            {
+                let has_omo_slim = app_state
+                    .db
+                    .get_all_providers("opencode")
+                    .map(|providers| {
+                        providers
+                            .values()
+                            .any(|p| p.category.as_deref() == Some("omo-slim"))
+                    })
+                    .unwrap_or(false);
+                if !has_omo_slim {
+                    match crate::services::OmoService::import_from_local_slim(&app_state) {
+                        Ok(provider) => {
+                            log::info!(
+                                "✓ Imported OMO Slim config from local as provider '{}'",
+                                provider.name
+                            );
+                        }
+                        Err(AppError::OmoConfigNotFound) => {
+                            log::debug!("○ No OMO Slim config to import");
+                        }
+                        Err(e) => {
+                            log::warn!("✗ Failed to import OMO Slim config from local: {e}");
+                        }
+                    }
+                }
+            }
+
+            // 2.4 OpenClaw 供应商导入（累加式模式，需特殊处理）
             // OpenClaw 与 OpenCode 类似：配置文件中可同时存在多个供应商
             // 需要遍历 models.providers 字段下的每个供应商并导入
             match crate::services::provider::import_openclaw_providers_from_live(&app_state) {
@@ -1035,6 +1064,10 @@ pub fn run() {
             commands::get_current_omo_provider_id,
             commands::get_omo_provider_count,
             commands::disable_current_omo,
+            commands::read_omo_slim_local_file,
+            commands::get_current_omo_slim_provider_id,
+            commands::get_omo_slim_provider_count,
+            commands::disable_current_omo_slim,
             // Workspace files (OpenClaw)
             commands::read_workspace_file,
             commands::write_workspace_file,

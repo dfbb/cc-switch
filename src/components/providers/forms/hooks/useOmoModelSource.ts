@@ -133,7 +133,7 @@ export function useOmoModelSource({
     const parseFailedProviders: string[] = [];
 
     for (const [providerKey, provider] of Object.entries(allProviders)) {
-      if (provider.category === "omo") {
+      if (provider.category === "omo" || provider.category === "omo-slim") {
         continue;
       }
       if (liveSet && !liveSet.has(providerKey)) {

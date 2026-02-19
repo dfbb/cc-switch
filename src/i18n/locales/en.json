@@ -1858,6 +1858,22 @@
       "unspecifiedLow": "Uncategorized low-effort task category for tasks that don't fit other categories with small workload. Defaults to Claude Sonnet 4.5.",
       "unspecifiedHigh": "Uncategorized high-effort task category for tasks that don't fit other categories with large workload. Defaults to Claude Opus 4.6 max variant.",
       "writing": "Writing category for documentation, prose and technical writing. Defaults to Gemini 3 Flash fast generation model."
+    },
+    "slimAgentDesc": {
+      "orchestrator": "Orchestrator",
+      "oracle": "Oracle",
+      "librarian": "Librarian",
+      "explorer": "Explorer",
+      "designer": "Designer",
+      "fixer": "Fixer"
+    },
+    "slimAgentTooltip": {
+      "orchestrator": "Writes executable code, orchestrates multi-agent workflow, summons experts",
+      "oracle": "Root cause analysis, architecture review, debugging guidance (read-only)",
+      "librarian": "Documentation lookup, GitHub code search (read-only)",
+      "explorer": "Regex search, AST pattern matching, file discovery (read-only)",
+      "designer": "Modern responsive design, CSS/Tailwind expertise",
+      "fixer": "Code implementation, refactoring, testing, verification"
     }
   },
   "openclawConfig": {

@@ -33,7 +33,12 @@ import {
   useAddToFailoverQueue,
   useRemoveFromFailoverQueue,
 } from "@/lib/query/failover";
-import { useCurrentOmoProviderId, useOmoProviderCount } from "@/lib/query/omo";
+import {
+  useCurrentOmoProviderId,
+  useOmoProviderCount,
+  useCurrentOmoSlimProviderId,
+  useOmoSlimProviderCount,
+} from "@/lib/query/omo";
 import { useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -47,6 +52,7 @@ interface ProviderListProps {
   onDelete: (provider: Provider) => void;
   onRemoveFromConfig?: (provider: Provider) => void;
   onDisableOmo?: () => void;
+  onDisableOmoSlim?: () => void;
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
@@ -68,6 +74,7 @@ export function ProviderList({
   onDelete,
   onRemoveFromConfig,
   onDisableOmo,
+  onDisableOmoSlim,
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
@@ -135,6 +142,8 @@ export function ProviderList({
   const isOpenCode = appId === "opencode";
   const { data: currentOmoId } = useCurrentOmoProviderId(isOpenCode);
   const { data: omoProviderCount } = useOmoProviderCount(isOpenCode);
+  const { data: currentOmoSlimId } = useCurrentOmoSlimProviderId(isOpenCode);
+  const { data: omoSlimProviderCount } = useOmoSlimProviderCount(isOpenCode);
 
   const getFailoverPriority = useCallback(
     (providerId: string): number | undefined => {
@@ -239,13 +248,20 @@ export function ProviderList({
         <div className="space-y-3">
           {filteredProviders.map((provider) => {
             const isOmo = provider.category === "omo";
+            const isOmoSlim = provider.category === "omo-slim";
             const isOmoCurrent = isOmo && provider.id === (currentOmoId || "");
+            const isOmoSlimCurrent =
+              isOmoSlim && provider.id === (currentOmoSlimId || "");
             return (
               <SortableProviderCard
                 key={provider.id}
                 provider={provider}
                 isCurrent={
-                  isOmo ? isOmoCurrent : provider.id === currentProviderId
+                  isOmo
+                    ? isOmoCurrent
+                    : isOmoSlim
+                      ? isOmoSlimCurrent
+                      : provider.id === currentProviderId
                 }
                 appId={appId}
                 isInConfig={isProviderInConfig(provider.id)}
@@ -253,11 +269,18 @@ export function ProviderList({
                 isLastOmo={
                   isOmo && (omoProviderCount ?? 0) <= 1 && isOmoCurrent
                 }
+                isOmoSlim={isOmoSlim}
+                isLastOmoSlim={
+                  isOmoSlim &&
+                  (omoSlimProviderCount ?? 0) <= 1 &&
+                  isOmoSlimCurrent
+                }
                 onSwitch={onSwitch}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onRemoveFromConfig={onRemoveFromConfig}
                 onDisableOmo={onDisableOmo}
+                onDisableOmoSlim={onDisableOmoSlim}
                 onDuplicate={onDuplicate}
                 onConfigureUsage={onConfigureUsage}
                 onOpenWebsite={onOpenWebsite}
@@ -371,11 +394,14 @@ interface SortableProviderCardProps {
   isInConfig: boolean;
   isOmo: boolean;
   isLastOmo: boolean;
+  isOmoSlim: boolean;
+  isLastOmoSlim: boolean;
   onSwitch: (provider: Provider) => void;
   onEdit: (provider: Provider) => void;
   onDelete: (provider: Provider) => void;
   onRemoveFromConfig?: (provider: Provider) => void;
   onDisableOmo?: () => void;
+  onDisableOmoSlim?: () => void;
   onDuplicate: (provider: Provider) => void;
   onConfigureUsage?: (provider: Provider) => void;
   onOpenWebsite: (url: string) => void;
@@ -401,11 +427,14 @@ function SortableProviderCard({
   isInConfig,
   isOmo,
   isLastOmo,
+  isOmoSlim,
+  isLastOmoSlim,
   onSwitch,
   onEdit,
   onDelete,
   onRemoveFromConfig,
   onDisableOmo,
+  onDisableOmoSlim,
   onDuplicate,
   onConfigureUsage,
   onOpenWebsite,
@@ -445,11 +474,14 @@ function SortableProviderCard({
         isInConfig={isInConfig}
         isOmo={isOmo}
         isLastOmo={isLastOmo}
+        isOmoSlim={isOmoSlim}
+        isLastOmoSlim={isLastOmoSlim}
         onSwitch={onSwitch}
         onEdit={onEdit}
         onDelete={onDelete}
         onRemoveFromConfig={onRemoveFromConfig}
         onDisableOmo={onDisableOmo}
+        onDisableOmoSlim={onDisableOmoSlim}
         onDuplicate={onDuplicate}
         onConfigureUsage={
           onConfigureUsage ? (item) => onConfigureUsage(item) : () => undefined

@@ -2,7 +2,11 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import type { OmoGlobalConfig } from "@/types/omo";
-import { mergeOmoConfigPreview } from "@/types/omo";
+import {
+  mergeOmoConfigPreview,
+  mergeOmoSlimConfigPreview,
+  buildOmoSlimProfilePreview,
+} from "@/types/omo";
 import { type OmoGlobalConfigFieldsRef } from "../OmoGlobalConfigFields";
 import * as configApi from "@/lib/api/config";
 import {
@@ -54,6 +58,8 @@ export function useOmoDraftState({
   category,
 }: UseOmoDraftStateParams): OmoDraftState {
   const { t } = useTranslation();
+  const isSlim = category === "omo-slim";
+  const commonConfigKey = isSlim ? "omo_slim" : "omo";
 
   const [omoAgents, setOmoAgents] = useState<
     Record<string, Record<string, unknown>>
@@ -93,6 +99,14 @@ export function useOmoDraftState({
 
   const mergedOmoJsonPreview = useMemo(() => {
     if (useOmoCommonConfig) {
+      if (isSlim) {
+        const merged = mergeOmoSlimConfigPreview(
+          effectiveOmoGlobalConfig,
+          omoAgents,
+          omoOtherFieldsStr,
+        );
+        return JSON.stringify(merged, null, 2);
+      }
       const merged = mergeOmoConfigPreview(
         effectiveOmoGlobalConfig,
         omoAgents,
@@ -101,6 +115,13 @@ export function useOmoDraftState({
       );
       return JSON.stringify(merged, null, 2);
     } else {
+      if (isSlim) {
+        return JSON.stringify(
+          buildOmoSlimProfilePreview(omoAgents, omoOtherFieldsStr),
+          null,
+          2,
+        );
+      }
       return JSON.stringify(
         buildOmoProfilePreview(omoAgents, omoCategories, omoOtherFieldsStr),
         null,
@@ -113,16 +134,22 @@ export function useOmoDraftState({
     omoAgents,
     omoCategories,
     omoOtherFieldsStr,
+    isSlim,
   ]);
 
-  // Auto-detect whether common config has content for new OMO profiles
+  // Auto-detect whether common config has content for new OMO/OMO Slim profiles
   useEffect(() => {
-    if (appId !== "opencode" || category !== "omo" || isEditMode) return;
+    if (
+      appId !== "opencode" ||
+      (category !== "omo" && category !== "omo-slim") ||
+      isEditMode
+    )
+      return;
     let active = true;
     (async () => {
       let next = false;
       try {
-        const raw = await configApi.getCommonConfigSnippet("omo");
+        const raw = await configApi.getCommonConfigSnippet(commonConfigKey);
         if (raw) {
           const parsed = JSON.parse(raw) as Record<string, unknown>;
           next = Object.keys(parsed).some(
@@ -135,14 +162,17 @@ export function useOmoDraftState({
     return () => {
       active = false;
     };
-  }, [appId, category, isEditMode]);
+  }, [appId, category, isEditMode, commonConfigKey]);
 
   const handleOmoGlobalConfigSave = useCallback(async () => {
     if (!omoGlobalConfigRef.current) return;
     setIsOmoSaving(true);
     try {
       const config = omoGlobalConfigRef.current.buildCurrentConfigStrict();
-      await configApi.setCommonConfigSnippet("omo", JSON.stringify(config));
+      await configApi.setCommonConfigSnippet(
+        commonConfigKey,
+        JSON.stringify(config),
+      );
       setIsOmoConfigModalOpen(false);
       toast.success(
         t("omo.globalConfigSaved", { defaultValue: "Global config saved" }),
@@ -152,7 +182,7 @@ export function useOmoDraftState({
     } finally {
       setIsOmoSaving(false);
     }
-  }, [t]);
+  }, [t, commonConfigKey]);
 
   const handleOmoEditClick = useCallback(() => {
     setOmoFieldsKey((k) => k + 1);

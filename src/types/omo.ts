@@ -327,6 +327,142 @@ export function parseOmoOtherFieldsObject(
   return parsed as Record<string, unknown>;
 }
 
+// ============================================================================
+// OMO Slim (oh-my-opencode-slim) definitions
+// ============================================================================
+
+export const OMO_SLIM_BUILTIN_AGENTS: OmoAgentDef[] = [
+  {
+    key: "orchestrator",
+    display: "Orchestrator",
+    descKey: "omo.slimAgentDesc.orchestrator",
+    tooltipKey: "omo.slimAgentTooltip.orchestrator",
+    recommended: "kimi-for-coding/k2p5",
+    group: "main",
+  },
+  {
+    key: "oracle",
+    display: "Oracle",
+    descKey: "omo.slimAgentDesc.oracle",
+    tooltipKey: "omo.slimAgentTooltip.oracle",
+    recommended: "openai/gpt-5.2-codex",
+    group: "sub",
+  },
+  {
+    key: "librarian",
+    display: "Librarian",
+    descKey: "omo.slimAgentDesc.librarian",
+    tooltipKey: "omo.slimAgentTooltip.librarian",
+    recommended: "openai/gpt-5.1-codex-mini",
+    group: "sub",
+  },
+  {
+    key: "explorer",
+    display: "Explorer",
+    descKey: "omo.slimAgentDesc.explorer",
+    tooltipKey: "omo.slimAgentTooltip.explorer",
+    recommended: "openai/gpt-5.1-codex-mini",
+    group: "sub",
+  },
+  {
+    key: "designer",
+    display: "Designer",
+    descKey: "omo.slimAgentDesc.designer",
+    tooltipKey: "omo.slimAgentTooltip.designer",
+    recommended: "kimi-for-coding/k2p5",
+    group: "sub",
+  },
+  {
+    key: "fixer",
+    display: "Fixer",
+    descKey: "omo.slimAgentDesc.fixer",
+    tooltipKey: "omo.slimAgentTooltip.fixer",
+    recommended: "openai/gpt-5.1-codex-mini",
+    group: "sub",
+  },
+];
+
+export const OMO_SLIM_DISABLEABLE_AGENTS = [
+  { value: "orchestrator", label: "Orchestrator" },
+  { value: "oracle", label: "Oracle" },
+  { value: "librarian", label: "Librarian" },
+  { value: "explorer", label: "Explorer" },
+  { value: "designer", label: "Designer" },
+  { value: "fixer", label: "Fixer" },
+] as const;
+
+export const OMO_SLIM_DISABLEABLE_MCPS = [
+  { value: "context7", label: "context7" },
+  { value: "grep_app", label: "grep_app" },
+  { value: "websearch", label: "websearch" },
+] as const;
+
+export const OMO_SLIM_DISABLEABLE_HOOKS = [
+  { value: "auto-update-checker", label: "auto-update-checker" },
+  { value: "phase-reminder", label: "phase-reminder" },
+  { value: "post-read-nudge", label: "post-read-nudge" },
+] as const;
+
+export const OMO_SLIM_DEFAULT_SCHEMA_URL =
+  "https://raw.githubusercontent.com/alvinunreal/oh-my-opencode-slim/master/assets/oh-my-opencode-slim.schema.json";
+
+export function mergeOmoSlimConfigPreview(
+  global: OmoGlobalConfig | undefined,
+  agents: Record<string, Record<string, unknown>>,
+  otherFieldsStr: string,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  if (global) {
+    if (global.schemaUrl) result["$schema"] = global.schemaUrl;
+    if (global.disabledAgents?.length)
+      result["disabled_agents"] = global.disabledAgents;
+    if (global.disabledMcps?.length)
+      result["disabled_mcps"] = global.disabledMcps;
+    if (global.disabledHooks?.length)
+      result["disabled_hooks"] = global.disabledHooks;
+
+    if (global.otherFields) {
+      for (const [k, v] of Object.entries(global.otherFields)) {
+        result[k] = v;
+      }
+    }
+  }
+
+  if (Object.keys(agents).length > 0) result["agents"] = agents;
+
+  try {
+    const other = parseOmoOtherFieldsObject(otherFieldsStr);
+    if (other) {
+      for (const [k, v] of Object.entries(other)) {
+        result[k] = v;
+      }
+    }
+  } catch {}
+
+  return result;
+}
+
+export function buildOmoSlimProfilePreview(
+  agents: Record<string, Record<string, unknown>>,
+  otherFieldsStr: string,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  if (Object.keys(agents).length > 0) result["agents"] = agents;
+
+  try {
+    const other = parseOmoOtherFieldsObject(otherFieldsStr);
+    if (other) {
+      for (const [k, v] of Object.entries(other)) {
+        result[k] = v;
+      }
+    }
+  } catch {}
+
+  return result;
+}
+
 export function mergeOmoConfigPreview(
   global: OmoGlobalConfig,
   agents: Record<string, Record<string, unknown>>,

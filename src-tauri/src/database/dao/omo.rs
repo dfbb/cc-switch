@@ -70,4 +70,23 @@ impl Database {
         self.set_setting("common_config_omo", &json_str)?;
         Ok(())
     }
+
+    // ── OMO Slim global config ──────────────────────────────────
+
+    pub fn get_omo_slim_global_config(&self) -> Result<OmoGlobalConfig, AppError> {
+        let json_str = self.get_setting("common_config_omo_slim")?;
+        match json_str {
+            Some(s) => serde_json::from_str::<OmoGlobalConfig>(&s).map_err(|e| {
+                AppError::Config(format!("Failed to parse common_config_omo_slim: {e}"))
+            }),
+            None => Ok(OmoGlobalConfig::default()),
+        }
+    }
+
+    pub fn save_omo_slim_global_config(&self, config: &OmoGlobalConfig) -> Result<(), AppError> {
+        let json_str = serde_json::to_string(config)
+            .map_err(|e| AppError::Config(format!("JSON serialization failed: {e}")))?;
+        self.set_setting("common_config_omo_slim", &json_str)?;
+        Ok(())
+    }
 }

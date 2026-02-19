@@ -1129,4 +1129,17 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     iconColor: "#8B5CF6",
     isCustomTemplate: true,
   },
+  {
+    name: "Oh My OpenCode Slim",
+    websiteUrl: "https://github.com/alvinunreal/oh-my-opencode-slim",
+    settingsConfig: {
+      npm: "",
+      options: {},
+      models: {},
+    },
+    category: "omo-slim" as ProviderCategory,
+    icon: "opencode",
+    iconColor: "#6366F1",
+    isCustomTemplate: true,
+  },
 ];

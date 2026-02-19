@@ -1858,6 +1858,22 @@
       "unspecifiedLow": "未归类低工作量任务类别，适用于不适合其他类别且工作量较小的任务，默认使用 Claude Sonnet 4.5。",
       "unspecifiedHigh": "未归类高工作量任务类别，适用于不适合其他类别且工作量较大的任务，默认使用 Claude Opus 4.6 的最大变体。",
       "writing": "写作类别，专注于文档、散文和技术写作，默认使用 Gemini 3 Flash 快速生成模型。"
+    },
+    "slimAgentDesc": {
+      "orchestrator": "编排者",
+      "oracle": "神谕者",
+      "librarian": "图书管理员",
+      "explorer": "探索者",
+      "designer": "设计师",
+      "fixer": "修复者"
+    },
+    "slimAgentTooltip": {
+      "orchestrator": "编写执行代码，编排多代理工作流，召唤专家",
+      "oracle": "根本原因分析、架构审查、调试指导（只读）",
+      "librarian": "文档查询、GitHub 代码搜索（只读）",
+      "explorer": "正则搜索、AST 模式匹配、文件发现（只读）",
+      "designer": "现代响应式设计、CSS/Tailwind 精通",
+      "fixer": "代码实现、重构、测试、验证"
     }
   },
   "openclawConfig": {

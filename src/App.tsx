@@ -61,7 +61,10 @@ import { UniversalProviderPanel } from "@/components/universal";
 import { McpIcon } from "@/components/BrandIcons";
 import { Button } from "@/components/ui/button";
 import { SessionManagerPage } from "@/components/sessions/SessionManagerPage";
-import { useDisableCurrentOmo } from "@/lib/query/omo";
+import {
+  useDisableCurrentOmo,
+  useDisableCurrentOmoSlim,
+} from "@/lib/query/omo";
 import WorkspaceFilesPanel from "@/components/workspace/WorkspaceFilesPanel";
 import EnvPanel from "@/components/openclaw/EnvPanel";
 import ToolsPanel from "@/components/openclaw/ToolsPanel";
@@ -234,6 +237,23 @@ function App() {
   const disableOmoMutation = useDisableCurrentOmo();
   const handleDisableOmo = () => {
     disableOmoMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success(t("omo.disabled", { defaultValue: "OMO 已停用" }));
+      },
+      onError: (error: Error) => {
+        toast.error(
+          t("omo.disableFailed", {
+            defaultValue: "停用 OMO 失败: {{error}}",
+            error: extractErrorMessage(error),
+          }),
+        );
+      },
+    });
+  };
+
+  const disableOmoSlimMutation = useDisableCurrentOmoSlim();
+  const handleDisableOmoSlim = () => {
+    disableOmoSlimMutation.mutate(undefined, {
       onSuccess: () => {
         toast.success(t("omo.disabled", { defaultValue: "OMO 已停用" }));
       },
@@ -745,6 +765,11 @@ function App() {
                       }
                       onDisableOmo={
                         activeApp === "opencode" ? handleDisableOmo : undefined
+                      }
+                      onDisableOmoSlim={
+                        activeApp === "opencode"
+                          ? handleDisableOmoSlim
+                          : undefined
                       }
                       onDuplicate={handleDuplicateProvider}
                       onConfigureUsage={setUsageProvider}

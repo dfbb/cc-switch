@@ -481,4 +481,131 @@ impl Database {
             in_failover_queue: false,
         }))
     }
+
+    // ── OMO Slim provider management ────────────────────────────
+
+    pub fn set_omo_slim_provider_current(
+        &self,
+        app_type: &str,
+        provider_id: &str,
+    ) -> Result<(), AppError> {
+        let mut conn = lock_conn!(self.conn);
+        let tx = conn
+            .transaction()
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        tx.execute(
+            "UPDATE providers SET is_current = 0 WHERE app_type = ?1 AND category = 'omo-slim'",
+            params![app_type],
+        )
+        .map_err(|e| AppError::Database(e.to_string()))?;
+        let updated = tx
+            .execute(
+            "UPDATE providers SET is_current = 1 WHERE id = ?1 AND app_type = ?2 AND category = 'omo-slim'",
+            params![provider_id, app_type],
+        )
+            .map_err(|e| AppError::Database(e.to_string()))?;
+        if updated != 1 {
+            return Err(AppError::Database(format!(
+                "Failed to set OMO Slim provider current: provider '{provider_id}' not found in app '{app_type}'"
+            )));
+        }
+        tx.commit().map_err(|e| AppError::Database(e.to_string()))?;
+        Ok(())
+    }
+
+    pub fn is_omo_slim_provider_current(
+        &self,
+        app_type: &str,
+        provider_id: &str,
+    ) -> Result<bool, AppError> {
+        let conn = lock_conn!(self.conn);
+        match conn.query_row(
+            "SELECT is_current FROM providers
+             WHERE id = ?1 AND app_type = ?2 AND category = 'omo-slim'",
+            params![provider_id, app_type],
+            |row| row.get(0),
+        ) {
+            Ok(is_current) => Ok(is_current),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(false),
+            Err(e) => Err(AppError::Database(e.to_string())),
+        }
+    }
+
+    pub fn clear_omo_slim_provider_current(
+        &self,
+        app_type: &str,
+        provider_id: &str,
+    ) -> Result<(), AppError> {
+        let conn = lock_conn!(self.conn);
+        conn.execute(
+            "UPDATE providers SET is_current = 0
+             WHERE id = ?1 AND app_type = ?2 AND category = 'omo-slim'",
+            params![provider_id, app_type],
+        )
+        .map_err(|e| AppError::Database(e.to_string()))?;
+        Ok(())
+    }
+
+    pub fn get_current_omo_slim_provider(
+        &self,
+        app_type: &str,
+    ) -> Result<Option<Provider>, AppError> {
+        let conn = lock_conn!(self.conn);
+        let row_data: Result<OmoProviderRow, rusqlite::Error> = conn.query_row(
+            "SELECT id, name, settings_config, category, created_at, sort_index, notes, meta
+             FROM providers
+             WHERE app_type = ?1 AND category = 'omo-slim' AND is_current = 1
+             LIMIT 1",
+            params![app_type],
+            |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get(6)?,
+                    row.get(7)?,
+                ))
+            },
+        );
+
+        let (id, name, settings_config_str, category, created_at, sort_index, notes, meta_str) =
+            match row_data {
+                Ok(v) => v,
+                Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
+                Err(e) => return Err(AppError::Database(e.to_string())),
+            };
+
+        let settings_config = serde_json::from_str(&settings_config_str).map_err(|e| {
+            AppError::Database(format!(
+                "Failed to parse OMO Slim provider settings_config (provider_id={id}): {e}"
+            ))
+        })?;
+        let meta: crate::provider::ProviderMeta = if meta_str.trim().is_empty() {
+            crate::provider::ProviderMeta::default()
+        } else {
+            serde_json::from_str(&meta_str).map_err(|e| {
+                AppError::Database(format!(
+                    "Failed to parse OMO Slim provider meta (provider_id={id}): {e}"
+                ))
+            })?
+        };
+
+        Ok(Some(Provider {
+            id,
+            name,
+            settings_config,
+            website_url: None,
+            category,
+            created_at,
+            sort_index,
+            notes,
+            meta: Some(meta),
+            icon: None,
+            icon_color: None,
+            in_failover_queue: false,
+        }))
+    }
 }
