@@ -12,10 +12,13 @@ import {
   Power,
   CheckCircle2,
   Circle,
+  Calendar,
+  ChevronRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { workspaceApi } from "@/lib/api/workspace";
 import WorkspaceFileEditor from "./WorkspaceFileEditor";
+import DailyMemoryPanel from "./DailyMemoryPanel";
 
 interface WorkspaceFile {
   filename: string;
@@ -51,6 +54,7 @@ const WorkspaceFilesPanel: React.FC = () => {
   const { t } = useTranslation();
   const [editingFile, setEditingFile] = useState<string | null>(null);
   const [fileExists, setFileExists] = useState<Record<string, boolean>>({});
+  const [showDailyMemory, setShowDailyMemory] = useState(false);
 
   const checkFileExistence = async () => {
     const results: Record<string, boolean> = {};
@@ -117,10 +121,41 @@ const WorkspaceFilesPanel: React.FC = () => {
         })}
       </div>
 
+      {/* Daily Memory section */}
+      <div className="mt-8">
+        <h3 className="text-sm font-medium text-foreground mb-3">
+          {t("workspace.dailyMemory.sectionTitle")}
+        </h3>
+        <button
+          onClick={() => setShowDailyMemory(true)}
+          className="w-full flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-left group"
+        >
+          <div className="mt-0.5 text-muted-foreground group-hover:text-foreground transition-colors">
+            <Calendar className="w-5 h-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="font-medium text-sm text-foreground">
+              {t("workspace.dailyMemory.cardTitle")}
+            </span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {t("workspace.dailyMemory.cardDescription")}
+            </p>
+          </div>
+          <div className="mt-0.5 text-muted-foreground group-hover:text-foreground transition-colors">
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        </button>
+      </div>
+
       <WorkspaceFileEditor
         filename={editingFile ?? ""}
         isOpen={!!editingFile}
         onClose={handleEditorClose}
+      />
+
+      <DailyMemoryPanel
+        isOpen={showDailyMemory}
+        onClose={() => setShowDailyMemory(false)}
       />
     </div>
   );

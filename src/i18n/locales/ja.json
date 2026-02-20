@@ -1166,7 +1166,21 @@
     "editing": "{{filename}} を編集",
     "saveSuccess": "保存しました",
     "saveFailed": "保存に失敗しました",
-    "loadFailed": "読み込みに失敗しました"
+    "loadFailed": "読み込みに失敗しました",
+    "dailyMemory": {
+      "title": "デイリーメモリー",
+      "sectionTitle": "デイリーメモリー",
+      "cardTitle": "デイリーメモリーファイル",
+      "cardDescription": "デイリーメモリーノートの閲覧と管理（memory/YYYY-MM-DD.md）",
+      "createToday": "今日のノート",
+      "empty": "デイリーメモリーファイルはまだありません",
+      "loadFailed": "デイリーメモリーファイルの読み込みに失敗しました",
+      "createFailed": "デイリーメモリーファイルの作成に失敗しました",
+      "deleteSuccess": "デイリーメモリーファイルを削除しました",
+      "deleteFailed": "デイリーメモリーファイルの削除に失敗しました",
+      "confirmDeleteTitle": "デイリーメモリーを削除",
+      "confirmDeleteMessage": "{{date}} のデイリーメモリーを削除しますか？この操作は取り消せません。"
+    }
   },
   "openclaw": {
     "env": {

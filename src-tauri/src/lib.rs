@@ -1071,6 +1071,11 @@ pub fn run() {
             // Workspace files (OpenClaw)
             commands::read_workspace_file,
             commands::write_workspace_file,
+            // Daily memory files (OpenClaw workspace)
+            commands::list_daily_memory_files,
+            commands::read_daily_memory_file,
+            commands::write_daily_memory_file,
+            commands::delete_daily_memory_file,
         ]);
 
     let app = builder

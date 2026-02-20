@@ -1166,7 +1166,21 @@
     "editing": "Edit {{filename}}",
     "saveSuccess": "Saved successfully",
     "saveFailed": "Failed to save",
-    "loadFailed": "Failed to load"
+    "loadFailed": "Failed to load",
+    "dailyMemory": {
+      "title": "Daily Memory",
+      "sectionTitle": "Daily Memory",
+      "cardTitle": "Daily Memory Files",
+      "cardDescription": "Browse and manage daily memory notes (memory/YYYY-MM-DD.md)",
+      "createToday": "Today's Note",
+      "empty": "No daily memory files yet",
+      "loadFailed": "Failed to load daily memory files",
+      "createFailed": "Failed to create daily memory file",
+      "deleteSuccess": "Daily memory file deleted",
+      "deleteFailed": "Failed to delete daily memory file",
+      "confirmDeleteTitle": "Delete Daily Memory",
+      "confirmDeleteMessage": "Delete the daily memory for {{date}}? This cannot be undone."
+    }
   },
   "openclaw": {
     "env": {
