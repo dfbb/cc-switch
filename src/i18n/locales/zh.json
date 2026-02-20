@@ -1171,7 +1171,7 @@
       "title": "每日记忆",
       "sectionTitle": "每日记忆",
       "cardTitle": "每日记忆文件",
-      "cardDescription": "浏览和管理每日记忆笔记（memory/YYYY-MM-DD.md）",
+      "cardDescription": "浏览管理每日记忆",
       "createToday": "今日笔记",
       "empty": "暂无每日记忆文件",
       "loadFailed": "加载每日记忆文件失败",

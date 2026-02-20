@@ -106,8 +106,8 @@ pub async fn list_daily_memory_files() -> Result<Vec<DailyMemoryFileInfo>, Strin
         });
     }
 
-    // Sort by modified_at descending (newest first)
-    files.sort_by(|a, b| b.modified_at.cmp(&a.modified_at));
+    // Sort by filename descending (newest date first, YYYY-MM-DD.md)
+    files.sort_by(|a, b| b.filename.cmp(&a.filename));
 
     Ok(files)
 }

@@ -100,7 +100,7 @@ const DailyMemoryPanel: React.FC<DailyMemoryPanelProps> = ({
     [t],
   );
 
-  // Create today's note
+  // Create today's note (deferred — file is only persisted on save)
   const handleCreateToday = useCallback(async () => {
     const filename = getTodayFilename();
     // Check if already exists in the list
@@ -110,16 +110,10 @@ const DailyMemoryPanel: React.FC<DailyMemoryPanelProps> = ({
       await openFile(filename);
       return;
     }
-    // Create with empty content, then open
-    try {
-      await workspaceApi.writeDailyMemoryFile(filename, "");
-      await loadFiles();
-      await openFile(filename);
-    } catch (err) {
-      console.error("Failed to create daily memory file:", err);
-      toast.error(t("workspace.dailyMemory.createFailed"));
-    }
-  }, [files, openFile, loadFiles, t]);
+    // Open editor with empty content — no file created until user saves
+    setEditingFile(filename);
+    setContent("");
+  }, [files, openFile]);
 
   // Save current file
   const handleSave = useCallback(async () => {

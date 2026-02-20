@@ -1171,7 +1171,7 @@
       "title": "デイリーメモリー",
       "sectionTitle": "デイリーメモリー",
       "cardTitle": "デイリーメモリーファイル",
-      "cardDescription": "デイリーメモリーノートの閲覧と管理（memory/YYYY-MM-DD.md）",
+      "cardDescription": "デイリーメモリーの閲覧・管理",
       "createToday": "今日のノート",
       "empty": "デイリーメモリーファイルはまだありません",
       "loadFailed": "デイリーメモリーファイルの読み込みに失敗しました",

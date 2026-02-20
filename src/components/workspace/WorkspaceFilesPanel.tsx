@@ -119,16 +119,11 @@ const WorkspaceFilesPanel: React.FC = () => {
             </button>
           );
         })}
-      </div>
 
-      {/* Daily Memory section */}
-      <div className="mt-8">
-        <h3 className="text-sm font-medium text-foreground mb-3">
-          {t("workspace.dailyMemory.sectionTitle")}
-        </h3>
+        {/* Daily Memory — inline with workspace files */}
         <button
           onClick={() => setShowDailyMemory(true)}
-          className="w-full flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-left group"
+          className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:bg-accent/50 transition-colors text-left group"
         >
           <div className="mt-0.5 text-muted-foreground group-hover:text-foreground transition-colors">
             <Calendar className="w-5 h-5" />

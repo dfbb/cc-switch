@@ -1171,7 +1171,7 @@
       "title": "Daily Memory",
       "sectionTitle": "Daily Memory",
       "cardTitle": "Daily Memory Files",
-      "cardDescription": "Browse and manage daily memory notes (memory/YYYY-MM-DD.md)",
+      "cardDescription": "Browse & manage daily memories",
       "createToday": "Today's Note",
       "empty": "No daily memory files yet",
       "loadFailed": "Failed to load daily memory files",
