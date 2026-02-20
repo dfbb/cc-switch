@@ -207,7 +207,7 @@ export function ProviderActions({
           onClick={isDefaultModel ? undefined : onSetAsDefault}
           disabled={isDefaultModel}
           className={cn(
-            "w-[4.5rem] px-2.5",
+            "w-fit px-2.5",
             isDefaultModel
               ? "bg-gray-200 text-muted-foreground dark:bg-gray-700 opacity-60 cursor-not-allowed"
               : "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700",
@@ -215,8 +215,8 @@ export function ProviderActions({
         >
           <Zap className="h-4 w-4" />
           {isDefaultModel
-            ? t("provider.isDefault", { defaultValue: "默认" })
-            : t("provider.setAsDefault", { defaultValue: "启用" })}
+            ? t("provider.isDefault", { defaultValue: "当前默认" })
+            : t("provider.setAsDefault", { defaultValue: "设为默认" })}
         </Button>
       )}
 
