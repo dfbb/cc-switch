@@ -15,7 +15,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type { Provider } from "@/types";
 import type { AppId } from "@/lib/api";
 import { providersApi } from "@/lib/api/providers";
@@ -179,6 +180,23 @@ export function ProviderList({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Import current live config as default provider
+  const queryClient = useQueryClient();
+  const importMutation = useMutation({
+    mutationFn: () => providersApi.importDefault(appId),
+    onSuccess: (imported) => {
+      if (imported) {
+        queryClient.invalidateQueries({ queryKey: ["providers", appId] });
+        toast.success(t("provider.importCurrentDescription"));
+      } else {
+        toast.info(t("provider.noProviders"));
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
@@ -231,8 +249,17 @@ export function ProviderList({
     );
   }
 
+  // Only show import button for standard apps (not additive-mode apps like OpenCode/OpenClaw)
+  const showImportButton =
+    appId === "claude" || appId === "codex" || appId === "gemini";
+
   if (sortedProviders.length === 0) {
-    return <ProviderEmptyState onCreate={onCreate} />;
+    return (
+      <ProviderEmptyState
+        onCreate={onCreate}
+        onImport={showImportButton ? () => importMutation.mutate() : undefined}
+      />
+    );
   }
 
   const renderProviderList = () => (
