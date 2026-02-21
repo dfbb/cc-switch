@@ -219,7 +219,11 @@
       },
       "data": {
         "title": "Data Management",
-        "description": "Import/export configurations and backup/restore"
+        "description": "Import/export local configurations and backup/restore"
+      },
+      "cloudSync": {
+        "title": "Cloud Sync",
+        "description": "Sync data across devices via WebDAV"
       },
       "rectifier": {
         "title": "Rectifier",

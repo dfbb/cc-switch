@@ -219,7 +219,11 @@
       },
       "data": {
         "title": "数据管理",
-        "description": "导入导出配置与备份恢复"
+        "description": "导入导出本地配置与备份恢复"
+      },
+      "cloudSync": {
+        "title": "云同步",
+        "description": "通过 WebDAV 在多设备间同步数据"
       },
       "rectifier": {
         "title": "整流器",

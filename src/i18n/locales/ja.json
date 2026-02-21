@@ -219,7 +219,11 @@
       },
       "data": {
         "title": "データ管理",
-        "description": "設定のインポート/エクスポートとバックアップ/復元"
+        "description": "ローカル設定のインポート/エクスポートとバックアップ/復元"
+      },
+      "cloudSync": {
+        "title": "クラウド同期",
+        "description": "WebDAV でデバイス間のデータを同期"
       },
       "rectifier": {
         "title": "整流器",
