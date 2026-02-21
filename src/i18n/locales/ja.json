@@ -187,6 +187,7 @@
     "general": "一般",
     "tabGeneral": "一般",
     "tabAdvanced": "詳細",
+    "tabProxy": "プロキシ",
     "advanced": {
       "configDir": {
         "title": "設定ディレクトリ",

@@ -187,6 +187,7 @@
     "general": "通用",
     "tabGeneral": "通用",
     "tabAdvanced": "高级",
+    "tabProxy": "代理",
     "advanced": {
       "configDir": {
         "title": "配置文件目录",

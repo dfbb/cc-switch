@@ -187,6 +187,7 @@
     "general": "General",
     "tabGeneral": "General",
     "tabAdvanced": "Advanced",
+    "tabProxy": "Proxy",
     "advanced": {
       "configDir": {
         "title": "Configuration Directory",
