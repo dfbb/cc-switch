@@ -215,3 +215,19 @@ export interface LogConfig {
   enabled: boolean;
   level: "error" | "warn" | "info" | "debug" | "trace";
 }
+
+export interface BackupEntry {
+  filename: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
+export const backupsApi = {
+  async listDbBackups(): Promise<BackupEntry[]> {
+    return await invoke("list_db_backups");
+  },
+
+  async restoreDbBackup(filename: string): Promise<string> {
+    return await invoke("restore_db_backup", { filename });
+  },
+};

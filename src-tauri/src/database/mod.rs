@@ -23,7 +23,7 @@
 //!     └── settings.rs
 //! ```
 
-mod backup;
+pub(crate) mod backup;
 mod dao;
 mod migration;
 mod schema;
@@ -110,6 +110,22 @@ impl Database {
             conn: Mutex::new(conn),
         };
         db.create_tables()?;
+
+        // Pre-migration backup: only when upgrading from an existing database
+        {
+            let conn = lock_conn!(db.conn);
+            let version = Self::get_user_version(&conn)?;
+            drop(conn);
+            if version > 0 && version < SCHEMA_VERSION {
+                log::info!(
+                    "Creating pre-migration database backup (v{version} → v{SCHEMA_VERSION})"
+                );
+                if let Err(e) = db.backup_database_file() {
+                    log::warn!("Pre-migration backup failed, continuing migration: {e}");
+                }
+            }
+        }
+
         db.apply_schema_migrations()?;
         db.ensure_model_pricing_seeded()?;
 

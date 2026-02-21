@@ -174,7 +174,8 @@
     "openclawModelsRegistered": "Models have been registered to /model list",
     "openclawDefaultModelSet": "Set as default model",
     "openclawDefaultModelSetFailed": "Failed to set default model",
-    "openclawNoModels": "No models configured"
+    "openclawNoModels": "No models configured",
+    "backfillWarning": "Switched successfully, but failed to save changes back to the previous provider"
   },
   "confirm": {
     "deleteProvider": "Delete Provider",
@@ -295,6 +296,18 @@
     "selectFileFailed": "Please choose a valid SQL backup file",
     "configCorrupted": "SQL file may be corrupted or invalid",
     "backupId": "Backup ID",
+    "backupManager": {
+      "title": "Database Backups",
+      "description": "Automatic database snapshots for restoring to a previous state",
+      "empty": "No backups yet",
+      "restore": "Restore",
+      "restoring": "Restoring...",
+      "confirmTitle": "Confirm Restore",
+      "confirmMessage": "Restoring this backup will overwrite the current database. A safety backup will be created first.",
+      "restoreSuccess": "Restore successful! Safety backup created",
+      "restoreFailed": "Restore failed",
+      "safetyBackupId": "Safety Backup ID"
+    },
     "webdavSync": {
       "title": "WebDAV Cloud Sync",
       "description": "Sync database and skill configurations across devices via WebDAV.",

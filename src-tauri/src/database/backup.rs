@@ -15,6 +15,15 @@ use tempfile::NamedTempFile;
 
 const CC_SWITCH_SQL_EXPORT_HEADER: &str = "-- CC Switch SQLite 导出";
 
+/// A database backup entry for the UI
+#[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackupEntry {
+    pub filename: String,
+    pub size_bytes: u64,
+    pub created_at: String, // ISO 8601
+}
+
 impl Database {
     /// 导出为 SQLite 兼容的 SQL 文本（内存字符串）
     pub fn export_sql_string(&self) -> Result<String, AppError> {
@@ -120,8 +129,41 @@ impl Database {
         ))
     }
 
+    /// Periodic backup: create a new backup if the latest one is older than 24 hours (or none exists)
+    pub(crate) fn periodic_backup_if_needed(&self) -> Result<(), AppError> {
+        let backup_dir = get_app_config_dir().join("backups");
+        if !backup_dir.exists() {
+            self.backup_database_file()?;
+            return Ok(());
+        }
+
+        let latest = fs::read_dir(&backup_dir).ok().and_then(|entries| {
+            entries
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().extension().map(|ext| ext == "db").unwrap_or(false))
+                .filter_map(|e| e.metadata().ok().and_then(|m| m.modified().ok()))
+                .max()
+        });
+
+        let needs_backup = match latest {
+            None => true,
+            Some(last_modified) => {
+                last_modified.elapsed().unwrap_or_default()
+                    > std::time::Duration::from_secs(24 * 3600)
+            }
+        };
+
+        if needs_backup {
+            log::info!(
+                "Periodic backup: latest backup is older than 24 hours, creating new backup"
+            );
+            self.backup_database_file()?;
+        }
+        Ok(())
+    }
+
     /// 生成一致性快照备份，返回备份文件路径（不存在主库时返回 None）
-    fn backup_database_file(&self) -> Result<Option<PathBuf>, AppError> {
+    pub(crate) fn backup_database_file(&self) -> Result<Option<PathBuf>, AppError> {
         let db_path = get_app_config_dir().join("cc-switch.db");
         if !db_path.exists() {
             return Ok(None);
@@ -332,5 +374,92 @@ impl Database {
                 Ok(s)
             }
         }
+    }
+
+    /// List all database backup files, sorted by creation time (newest first)
+    pub fn list_backups() -> Result<Vec<BackupEntry>, AppError> {
+        let backup_dir = get_app_config_dir().join("backups");
+        if !backup_dir.exists() {
+            return Ok(vec![]);
+        }
+
+        let mut entries: Vec<BackupEntry> = fs::read_dir(&backup_dir)
+            .map_err(|e| AppError::io(&backup_dir, e))?
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().map(|ext| ext == "db").unwrap_or(false))
+            .filter_map(|e| {
+                let metadata = e.metadata().ok()?;
+                let filename = e.file_name().to_string_lossy().to_string();
+                let size_bytes = metadata.len();
+                let created_at = metadata
+                    .modified()
+                    .ok()
+                    .map(|t| {
+                        let dt: chrono::DateTime<Utc> = t.into();
+                        dt.to_rfc3339()
+                    })
+                    .unwrap_or_default();
+                Some(BackupEntry {
+                    filename,
+                    size_bytes,
+                    created_at,
+                })
+            })
+            .collect();
+
+        // Sort by created_at descending (newest first)
+        entries.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        Ok(entries)
+    }
+
+    /// Restore database from a backup file. Returns the safety backup ID.
+    pub fn restore_from_backup(&self, filename: &str) -> Result<String, AppError> {
+        // Security: validate filename to prevent path traversal
+        if filename.contains("..")
+            || filename.contains('/')
+            || filename.contains('\\')
+            || !filename.starts_with("db_backup_")
+            || !filename.ends_with(".db")
+        {
+            return Err(AppError::InvalidInput(
+                "Invalid backup filename".to_string(),
+            ));
+        }
+
+        let backup_dir = get_app_config_dir().join("backups");
+        let backup_path = backup_dir.join(filename);
+
+        if !backup_path.exists() {
+            return Err(AppError::InvalidInput(format!(
+                "Backup file not found: {filename}"
+            )));
+        }
+
+        // Step 1: Create safety backup of current database
+        let safety_backup = self.backup_database_file()?;
+        let safety_id = safety_backup
+            .and_then(|p| p.file_stem().map(|s| s.to_string_lossy().to_string()))
+            .unwrap_or_default();
+
+        // Step 2: Open the backup file and restore it to the main database
+        let source_conn =
+            Connection::open(&backup_path).map_err(|e| AppError::Database(e.to_string()))?;
+
+        {
+            let mut main_conn = lock_conn!(self.conn);
+            let backup = Backup::new(&source_conn, &mut main_conn)
+                .map_err(|e| AppError::Database(e.to_string()))?;
+            backup
+                .step(-1)
+                .map_err(|e| AppError::Database(e.to_string()))?;
+        }
+
+        // Step 3: Run schema migrations (backup may be from an older version)
+        self.create_tables()?;
+        self.apply_schema_migrations()?;
+        self.ensure_model_pricing_seeded()?;
+
+        log::info!("Database restored from backup: {filename}, safety backup: {safety_id}");
+        Ok(safety_id)
     }
 }

@@ -174,7 +174,8 @@
     "openclawModelsRegistered": "モデルが /model リストに登録されました",
     "openclawDefaultModelSet": "デフォルトモデルに設定しました",
     "openclawDefaultModelSetFailed": "デフォルトモデルの設定に失敗しました",
-    "openclawNoModels": "モデルが設定されていません"
+    "openclawNoModels": "モデルが設定されていません",
+    "backfillWarning": "切り替え成功しましたが、前のプロバイダーへの設定保存に失敗しました"
   },
   "confirm": {
     "deleteProvider": "プロバイダーを削除",
@@ -295,6 +296,18 @@
     "selectFileFailed": "有効な SQL バックアップファイルを選択してください",
     "configCorrupted": "SQL ファイルが壊れているか形式が無効な可能性があります",
     "backupId": "バックアップ ID",
+    "backupManager": {
+      "title": "データベースバックアップ",
+      "description": "以前の状態に復元するための自動データベーススナップショット",
+      "empty": "バックアップはまだありません",
+      "restore": "復元",
+      "restoring": "復元中...",
+      "confirmTitle": "バックアップの復元を確認",
+      "confirmMessage": "このバックアップを復元すると現在のデータベースが上書きされます。安全バックアップが先に作成されます。",
+      "restoreSuccess": "復元成功！安全バックアップが作成されました",
+      "restoreFailed": "復元に失敗しました",
+      "safetyBackupId": "安全バックアップID"
+    },
     "webdavSync": {
       "title": "WebDAV クラウド同期",
       "description": "WebDAV を使ってデバイス間でデータベースとスキル設定を同期します。",
