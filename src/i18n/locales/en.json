@@ -515,7 +515,7 @@
   },
   "sessionManager": {
     "title": "Session Manager",
-    "subtitle": "Manage Claude Code, Codex, OpenCode and OpenClaw sessions",
+    "subtitle": "Manage Claude Code, Codex, OpenCode, OpenClaw and Gemini CLI sessions",
     "searchPlaceholder": "Search by content, directory, or ID",
     "searchSessions": "Search sessions",
     "providerFilterAll": "All",

@@ -46,7 +46,13 @@ import {
   getSessionKey,
 } from "./utils";
 
-type ProviderFilter = "all" | "codex" | "claude" | "opencode" | "openclaw";
+type ProviderFilter =
+  | "all"
+  | "codex"
+  | "claude"
+  | "opencode"
+  | "openclaw"
+  | "gemini";
 
 export function SessionManagerPage({ appId }: { appId: string }) {
   const { t } = useTranslation();
@@ -327,6 +333,16 @@ export function SessionManagerPage({ appId }: { appId: string }) {
                                 size={14}
                               />
                               <span>OpenClaw</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="gemini">
+                            <div className="flex items-center gap-2">
+                              <ProviderIcon
+                                icon="gemini"
+                                name="gemini"
+                                size={14}
+                              />
+                              <span>Gemini CLI</span>
                             </div>
                           </SelectItem>
                         </SelectContent>

@@ -4,7 +4,7 @@ pub mod terminal;
 use serde::Serialize;
 use std::path::Path;
 
-use providers::{claude, codex, openclaw, opencode};
+use providers::{claude, codex, gemini, openclaw, opencode};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -42,6 +42,7 @@ pub fn scan_sessions() -> Vec<SessionMeta> {
     sessions.extend(claude::scan_sessions());
     sessions.extend(opencode::scan_sessions());
     sessions.extend(openclaw::scan_sessions());
+    sessions.extend(gemini::scan_sessions());
 
     sessions.sort_by(|a, b| {
         let a_ts = a.last_active_at.or(a.created_at).unwrap_or(0);
@@ -59,6 +60,7 @@ pub fn load_messages(provider_id: &str, source_path: &str) -> Result<Vec<Session
         "claude" => claude::load_messages(path),
         "opencode" => opencode::load_messages(path),
         "openclaw" => openclaw::load_messages(path),
+        "gemini" => gemini::load_messages(path),
         _ => Err(format!("Unsupported provider: {provider_id}")),
     }
 }
