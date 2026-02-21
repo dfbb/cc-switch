@@ -63,7 +63,11 @@ export function AppSwitcher({
             name={appDisplayName[app]}
             size={iconSize}
           />
-          {!compact && <span>{appDisplayName[app]}</span>}
+          {!compact && (
+            <span className="transition-all duration-200 whitespace-nowrap">
+              {appDisplayName[app]}
+            </span>
+          )}
         </button>
       ))}
     </div>
