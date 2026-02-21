@@ -48,7 +48,7 @@ import {
 
 type ProviderFilter = "all" | "codex" | "claude" | "opencode" | "openclaw";
 
-export function SessionManagerPage() {
+export function SessionManagerPage({ appId }: { appId: string }) {
   const { t } = useTranslation();
   const { data, isLoading, refetch } = useSessionsQuery();
   const sessions = data ?? [];
@@ -63,7 +63,9 @@ export function SessionManagerPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const [search, setSearch] = useState("");
-  const [providerFilter, setProviderFilter] = useState<ProviderFilter>("all");
+  const [providerFilter, setProviderFilter] = useState<ProviderFilter>(
+    appId as ProviderFilter,
+  );
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   // 使用 FlexSearch 全文搜索

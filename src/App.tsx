@@ -724,7 +724,7 @@ function App() {
           );
 
         case "sessions":
-          return <SessionManagerPage />;
+          return <SessionManagerPage key={activeApp} appId={activeApp} />;
         case "workspace":
           return <WorkspaceFilesPanel />;
         case "openclawEnv":
