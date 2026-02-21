@@ -1,3 +1,4 @@
+import { useState } from "react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { Server, Activity, ChevronDown, Zap, Globe } from "lucide-react";
 import { motion } from "framer-motion";
@@ -17,6 +18,7 @@ import { AutoFailoverConfigPanel } from "@/components/proxy/AutoFailoverConfigPa
 import { FailoverQueueManager } from "@/components/proxy/FailoverQueueManager";
 import { RectifierConfigPanel } from "@/components/settings/RectifierConfigPanel";
 import { GlobalProxySettings } from "@/components/settings/GlobalProxySettings";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { useProxyStatus } from "@/hooks/useProxyStatus";
 import type { SettingsFormState } from "@/hooks/useSettings";
 
@@ -30,6 +32,7 @@ export function ProxyTabContent({
   onAutoSave,
 }: ProxyTabContentProps) {
   const { t } = useTranslation();
+  const [showProxyConfirm, setShowProxyConfirm] = useState(false);
 
   const {
     isRunning,
@@ -42,11 +45,23 @@ export function ProxyTabContent({
     try {
       if (!checked) {
         await stopWithRestore();
+      } else if (!settings?.proxyConfirmed) {
+        setShowProxyConfirm(true);
       } else {
         await startProxyServer();
       }
     } catch (error) {
       console.error("Toggle proxy failed:", error);
+    }
+  };
+
+  const handleProxyConfirm = async () => {
+    setShowProxyConfirm(false);
+    try {
+      await onAutoSave({ proxyConfirmed: true });
+      await startProxyServer();
+    } catch (error) {
+      console.error("Proxy confirm failed:", error);
     }
   };
 
@@ -269,6 +284,16 @@ export function ProxyTabContent({
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      <ConfirmDialog
+        isOpen={showProxyConfirm}
+        variant="info"
+        title={t("confirm.proxy.title")}
+        message={t("confirm.proxy.message")}
+        confirmText={t("confirm.proxy.confirm")}
+        onConfirm={() => void handleProxyConfirm()}
+        onCancel={() => setShowProxyConfirm(false)}
+      />
     </motion.div>
   );
 }

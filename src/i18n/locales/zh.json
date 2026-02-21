@@ -180,7 +180,17 @@
     "deleteProvider": "删除供应商",
     "deleteProviderMessage": "确定要删除供应商 \"{{name}}\" 吗？此操作无法撤销。",
     "removeProvider": "移除供应商",
-    "removeProviderMessage": "确定要从配置中移除供应商 \"{{name}}\" 吗？\n\n移除后该供应商将不再生效，但配置数据会保留在 CC Switch 中，您可以随时重新添加。"
+    "removeProviderMessage": "确定要从配置中移除供应商 \"{{name}}\" 吗？\n\n移除后该供应商将不再生效，但配置数据会保留在 CC Switch 中，您可以随时重新添加。",
+    "proxy": {
+      "title": "启用本地代理服务",
+      "message": "本地代理是一项高级功能，启用前请确保您已了解其工作原理。\n\n建议先查阅相关文档或咨询您的供应商，以获取正确的配置方式。",
+      "confirm": "我已了解，继续启用"
+    },
+    "usage": {
+      "title": "配置用量查询",
+      "message": "用量查询需要配置专用的查询脚本或 API 参数，请确保您已从供应商处获取相关信息。\n\n如不确定如何配置，请先查阅供应商文档。",
+      "confirm": "我已了解，继续配置"
+    }
   },
   "settings": {
     "title": "设置",
