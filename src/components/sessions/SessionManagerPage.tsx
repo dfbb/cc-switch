@@ -46,7 +46,7 @@ import {
   getSessionKey,
 } from "./utils";
 
-type ProviderFilter = "all" | "codex" | "claude";
+type ProviderFilter = "all" | "codex" | "claude" | "opencode" | "openclaw";
 
 export function SessionManagerPage() {
   const { t } = useTranslation();
@@ -265,9 +265,7 @@ export function SessionManagerPage() {
                                 icon={
                                   providerFilter === "all"
                                     ? "apps"
-                                    : providerFilter === "codex"
-                                      ? "openai"
-                                      : "claude"
+                                    : getProviderIconName(providerFilter)
                                 }
                                 name={providerFilter}
                                 size={14}
@@ -307,6 +305,26 @@ export function SessionManagerPage() {
                                 size={14}
                               />
                               <span>Claude Code</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="opencode">
+                            <div className="flex items-center gap-2">
+                              <ProviderIcon
+                                icon="opencode"
+                                name="opencode"
+                                size={14}
+                              />
+                              <span>OpenCode</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="openclaw">
+                            <div className="flex items-center gap-2">
+                              <ProviderIcon
+                                icon="openclaw"
+                                name="openclaw"
+                                size={14}
+                              />
+                              <span>OpenClaw</span>
                             </div>
                           </SelectItem>
                         </SelectContent>

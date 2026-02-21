@@ -515,7 +515,7 @@
   },
   "sessionManager": {
     "title": "会话管理",
-    "subtitle": "管理 Codex 与 Claude Code 会话记录",
+    "subtitle": "管理 Claude Code、Codex、OpenCode 与 OpenClaw 会话记录",
     "searchPlaceholder": "搜索会话内容、目录或 ID",
     "searchSessions": "搜索会话",
     "providerFilterAll": "全部",
