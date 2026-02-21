@@ -14,12 +14,16 @@ export function useAutoCompact(
 ): boolean {
   const [compact, setCompact] = useState(false);
   const normalWidthRef = useRef(0);
+  const lockUntilRef = useRef(0);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const ro = new ResizeObserver(() => {
+      // During expand animation, ignore resize events to prevent flicker
+      if (Date.now() < lockUntilRef.current) return;
+
       if (!compact) {
         // Cache the total content width in normal mode
         normalWidthRef.current = el.scrollWidth;
@@ -31,6 +35,8 @@ export function useAutoCompact(
         // In compact mode: only recover to normal if
         // available space >= what normal mode needed
         if (el.clientWidth >= normalWidthRef.current) {
+          // Lock out resize events during the expand animation (200ms + 50ms margin)
+          lockUntilRef.current = Date.now() + 250;
           setCompact(false);
         }
       }
