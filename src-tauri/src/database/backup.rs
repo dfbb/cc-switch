@@ -2,7 +2,7 @@
 //!
 //! 提供 SQL 导出/导入和二进制快照备份功能。
 
-use super::{lock_conn, Database, DB_BACKUP_RETAIN};
+use super::{lock_conn, Database};
 use crate::config::get_app_config_dir;
 use crate::error::AppError;
 use chrono::Utc;
@@ -129,8 +129,13 @@ impl Database {
         ))
     }
 
-    /// Periodic backup: create a new backup if the latest one is older than 24 hours (or none exists)
+    /// Periodic backup: create a new backup if the latest one is older than the configured interval
     pub(crate) fn periodic_backup_if_needed(&self) -> Result<(), AppError> {
+        let interval_hours = crate::settings::effective_backup_interval_hours();
+        if interval_hours == 0 {
+            return Ok(()); // Auto-backup disabled
+        }
+
         let backup_dir = get_app_config_dir().join("backups");
         if !backup_dir.exists() {
             self.backup_database_file()?;
@@ -145,17 +150,18 @@ impl Database {
                 .max()
         });
 
+        let interval_secs = u64::from(interval_hours) * 3600;
         let needs_backup = match latest {
             None => true,
             Some(last_modified) => {
                 last_modified.elapsed().unwrap_or_default()
-                    > std::time::Duration::from_secs(24 * 3600)
+                    > std::time::Duration::from_secs(interval_secs)
             }
         };
 
         if needs_backup {
             log::info!(
-                "Periodic backup: latest backup is older than 24 hours, creating new backup"
+                "Periodic backup: latest backup is older than {interval_hours} hours, creating new backup"
             );
             self.backup_database_file()?;
         }
@@ -203,6 +209,7 @@ impl Database {
 
     /// 清理旧的数据库备份，保留最新的 N 个
     fn cleanup_db_backups(dir: &Path) -> Result<(), AppError> {
+        let retain = crate::settings::effective_backup_retain_count();
         let entries = match fs::read_dir(dir) {
             Ok(iter) => iter
                 .filter_map(|entry| entry.ok())
@@ -217,11 +224,11 @@ impl Database {
             Err(_) => return Ok(()),
         };
 
-        if entries.len() <= DB_BACKUP_RETAIN {
+        if entries.len() <= retain {
             return Ok(());
         }
 
-        let remove_count = entries.len().saturating_sub(DB_BACKUP_RETAIN);
+        let remove_count = entries.len().saturating_sub(retain);
         let mut sorted = entries;
         sorted.sort_by_key(|entry| entry.metadata().and_then(|m| m.modified()).ok());
 
@@ -418,7 +425,6 @@ impl Database {
         if filename.contains("..")
             || filename.contains('/')
             || filename.contains('\\')
-            || !filename.starts_with("db_backup_")
             || !filename.ends_with(".db")
         {
             return Err(AppError::InvalidInput(
@@ -461,5 +467,68 @@ impl Database {
 
         log::info!("Database restored from backup: {filename}, safety backup: {safety_id}");
         Ok(safety_id)
+    }
+
+    /// Rename a backup file. Returns the new filename.
+    pub fn rename_backup(old_filename: &str, new_name: &str) -> Result<String, AppError> {
+        // Validate old filename (path traversal + .db suffix)
+        if old_filename.contains("..")
+            || old_filename.contains('/')
+            || old_filename.contains('\\')
+            || !old_filename.ends_with(".db")
+        {
+            return Err(AppError::InvalidInput(
+                "Invalid backup filename".to_string(),
+            ));
+        }
+
+        // Clean new name
+        let trimmed = new_name.trim();
+        if trimmed.is_empty() {
+            return Err(AppError::InvalidInput(
+                "New name cannot be empty".to_string(),
+            ));
+        }
+
+        // Length limit (without .db suffix)
+        let name_part = trimmed.strip_suffix(".db").unwrap_or(trimmed);
+        if name_part.len() > 100 {
+            return Err(AppError::InvalidInput(
+                "Name too long (max 100 characters)".to_string(),
+            ));
+        }
+
+        // Prevent path traversal in new name
+        if name_part.contains("..")
+            || name_part.contains('/')
+            || name_part.contains('\\')
+            || name_part.contains('\0')
+        {
+            return Err(AppError::InvalidInput(
+                "Invalid characters in new name".to_string(),
+            ));
+        }
+
+        let new_filename = format!("{name_part}.db");
+
+        let backup_dir = get_app_config_dir().join("backups");
+        let old_path = backup_dir.join(old_filename);
+        let new_path = backup_dir.join(&new_filename);
+
+        if !old_path.exists() {
+            return Err(AppError::InvalidInput(format!(
+                "Backup file not found: {old_filename}"
+            )));
+        }
+
+        if new_path.exists() {
+            return Err(AppError::InvalidInput(format!(
+                "A backup named '{new_filename}' already exists"
+            )));
+        }
+
+        fs::rename(&old_path, &new_path).map_err(|e| AppError::io(&old_path, e))?;
+        log::info!("Renamed backup: {old_filename} -> {new_filename}");
+        Ok(new_filename)
     }
 }

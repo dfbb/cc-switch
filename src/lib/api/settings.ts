@@ -230,4 +230,8 @@ export const backupsApi = {
   async restoreDbBackup(filename: string): Promise<string> {
     return await invoke("restore_db_backup", { filename });
   },
+
+  async renameDbBackup(oldFilename: string, newName: string): Promise<string> {
+    return await invoke("rename_db_backup", { oldFilename, newName });
+  },
 };

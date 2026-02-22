@@ -251,6 +251,12 @@ export interface Settings {
   // ===== WebDAV v2 同步设置 =====
   webdavSync?: WebDavSyncSettings;
 
+  // ===== 备份策略设置 =====
+  // Auto-backup interval in hours (0=disabled, default 24)
+  backupIntervalHours?: number;
+  // Maximum backup files to retain (default 10)
+  backupRetainCount?: number;
+
   // ===== 终端设置 =====
   // 首选终端应用（可选，默认使用系统默认终端）
   // macOS: "terminal" | "iterm2" | "warp" | "alacritty" | "kitty" | "ghostty"

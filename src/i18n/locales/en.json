@@ -230,7 +230,11 @@
       },
       "data": {
         "title": "Data Management",
-        "description": "Import/export local configurations and backup/restore"
+        "description": "Import and export local configuration data"
+      },
+      "backup": {
+        "title": "Backup & Restore",
+        "description": "Manage automatic backups, view and restore database snapshots"
       },
       "cloudSync": {
         "title": "Cloud Sync",
@@ -306,7 +310,16 @@
       "confirmMessage": "Restoring this backup will overwrite the current database. A safety backup will be created first.",
       "restoreSuccess": "Restore successful! Safety backup created",
       "restoreFailed": "Restore failed",
-      "safetyBackupId": "Safety Backup ID"
+      "safetyBackupId": "Safety Backup ID",
+      "intervalLabel": "Auto-backup Interval",
+      "retainLabel": "Backup Retention",
+      "intervalDisabled": "Disabled",
+      "intervalHours": "{{hours}} hours",
+      "intervalDays": "{{days}} days",
+      "rename": "Rename",
+      "renameSuccess": "Backup renamed",
+      "renameFailed": "Rename failed",
+      "namePlaceholder": "Enter new name"
     },
     "webdavSync": {
       "title": "WebDAV Cloud Sync",

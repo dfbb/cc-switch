@@ -230,7 +230,11 @@
       },
       "data": {
         "title": "データ管理",
-        "description": "ローカル設定のインポート/エクスポートとバックアップ/復元"
+        "description": "ローカル設定データのインポートとエクスポート"
+      },
+      "backup": {
+        "title": "バックアップと復元",
+        "description": "自動バックアップの管理、データベーススナップショットの表示と復元"
       },
       "cloudSync": {
         "title": "クラウド同期",
@@ -306,7 +310,16 @@
       "confirmMessage": "このバックアップを復元すると現在のデータベースが上書きされます。安全バックアップが先に作成されます。",
       "restoreSuccess": "復元成功！安全バックアップが作成されました",
       "restoreFailed": "復元に失敗しました",
-      "safetyBackupId": "安全バックアップID"
+      "safetyBackupId": "安全バックアップID",
+      "intervalLabel": "自動バックアップ間隔",
+      "retainLabel": "バックアップ保持数",
+      "intervalDisabled": "無効",
+      "intervalHours": "{{hours}} 時間",
+      "intervalDays": "{{days}} 日",
+      "rename": "名前変更",
+      "renameSuccess": "バックアップの名前を変更しました",
+      "renameFailed": "名前変更に失敗しました",
+      "namePlaceholder": "新しい名前を入力"
     },
     "webdavSync": {
       "title": "WebDAV クラウド同期",

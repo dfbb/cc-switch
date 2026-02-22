@@ -23,10 +23,23 @@ export function useBackupManager() {
     },
   });
 
+  const renameMutation = useMutation({
+    mutationFn: ({
+      oldFilename,
+      newName,
+    }: {
+      oldFilename: string;
+      newName: string;
+    }) => backupsApi.renameDbBackup(oldFilename, newName),
+    onSuccess: () => refetch(),
+  });
+
   return {
     backups,
     isLoading,
     restore: restoreMutation.mutateAsync,
     isRestoring: restoreMutation.isPending,
+    rename: renameMutation.mutateAsync,
+    isRenaming: renameMutation.isPending,
   };
 }

@@ -230,7 +230,11 @@
       },
       "data": {
         "title": "数据管理",
-        "description": "导入导出本地配置与备份恢复"
+        "description": "导入和导出本地配置数据"
+      },
+      "backup": {
+        "title": "备份与恢复",
+        "description": "管理自动备份，查看和恢复数据库快照"
       },
       "cloudSync": {
         "title": "云同步",
@@ -306,7 +310,16 @@
       "confirmMessage": "恢复到此备份将覆盖当前数据库。恢复前会自动创建安全备份。",
       "restoreSuccess": "恢复成功！安全备份已创建",
       "restoreFailed": "恢复失败",
-      "safetyBackupId": "安全备份ID"
+      "safetyBackupId": "安全备份ID",
+      "intervalLabel": "自动备份间隔",
+      "retainLabel": "备份保留数量",
+      "intervalDisabled": "禁用",
+      "intervalHours": "{{hours}} 小时",
+      "intervalDays": "{{days}} 天",
+      "rename": "重命名",
+      "renameSuccess": "备份重命名成功",
+      "renameFailed": "重命名失败",
+      "namePlaceholder": "输入新名称"
     },
     "webdavSync": {
       "title": "WebDAV 云同步",

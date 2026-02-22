@@ -141,3 +141,12 @@ pub async fn restore_db_backup(
         .map_err(|e| format!("Restore failed: {e}"))?
         .map_err(|e: AppError| e.to_string())
 }
+
+/// Rename a database backup file
+#[tauri::command]
+pub fn rename_db_backup(
+    #[allow(non_snake_case)] oldFilename: String,
+    #[allow(non_snake_case)] newName: String,
+) -> Result<String, String> {
+    Database::rename_backup(&oldFilename, &newName).map_err(|e| e.to_string())
+}

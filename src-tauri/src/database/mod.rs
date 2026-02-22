@@ -43,9 +43,6 @@ use std::sync::Mutex;
 
 // DAO 方法通过 impl Database 提供，无需额外导出
 
-/// 数据库备份保留数量
-const DB_BACKUP_RETAIN: usize = 10;
-
 /// 当前 Schema 版本号
 /// 每次修改表结构时递增，并在 schema.rs 中添加相应的迁移逻辑
 pub(crate) const SCHEMA_VERSION: i32 = 5;

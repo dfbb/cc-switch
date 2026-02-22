@@ -7,6 +7,7 @@ import {
   Database,
   Cloud,
   ScrollText,
+  HardDriveDownload,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -325,7 +326,39 @@ export function SettingsPage({
                             onExport={exportConfig}
                             onClear={clearSelection}
                           />
-                          <BackupListSection />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem
+                        value="backup"
+                        className="rounded-xl glass-card overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                          <div className="flex items-center gap-3">
+                            <HardDriveDownload className="h-5 w-5 text-amber-500" />
+                            <div className="text-left">
+                              <h3 className="text-base font-semibold">
+                                {t("settings.advanced.backup.title", {
+                                  defaultValue: "Backup & Restore",
+                                })}
+                              </h3>
+                              <p className="text-sm text-muted-foreground font-normal">
+                                {t("settings.advanced.backup.description", {
+                                  defaultValue:
+                                    "Manage automatic backups, view and restore database snapshots",
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6 pt-4 border-t border-border/50">
+                          <BackupListSection
+                            backupIntervalHours={settings.backupIntervalHours}
+                            backupRetainCount={settings.backupRetainCount}
+                            onSettingsChange={(updates) =>
+                              handleAutoSave(updates)
+                            }
+                          />
                         </AccordionContent>
                       </AccordionItem>
 

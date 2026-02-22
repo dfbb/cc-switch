@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { HardDriveDownload, RotateCcw } from "lucide-react";
+import { Pencil, RotateCcw, Check, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,9 +10,27 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useBackupManager } from "@/hooks/useBackupManager";
 import { extractErrorMessage } from "@/utils/errorUtils";
+
+interface BackupListSectionProps {
+  backupIntervalHours?: number;
+  backupRetainCount?: number;
+  onSettingsChange: (updates: {
+    backupIntervalHours?: number;
+    backupRetainCount?: number;
+  }) => void;
+}
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -29,10 +47,31 @@ function formatBackupDate(isoString: string): string {
   }
 }
 
-export function BackupListSection() {
+/** Parse display name from backup filename */
+function getDisplayName(filename: string): string {
+  // Try to parse db_backup_YYYYMMDD_HHMMSS format
+  const match = filename.match(
+    /^db_backup_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})(\d{2})(?:_\d+)?\.db$/,
+  );
+  if (match) {
+    const [, y, m, d, hh, mm, ss] = match;
+    return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+  }
+  // Otherwise show filename without .db suffix
+  return filename.replace(/\.db$/, "");
+}
+
+export function BackupListSection({
+  backupIntervalHours,
+  backupRetainCount,
+  onSettingsChange,
+}: BackupListSectionProps) {
   const { t } = useTranslation();
-  const { backups, isLoading, restore, isRestoring } = useBackupManager();
+  const { backups, isLoading, restore, isRestoring, rename, isRenaming } =
+    useBackupManager();
   const [confirmFilename, setConfirmFilename] = useState<string | null>(null);
+  const [editingFilename, setEditingFilename] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   const handleRestore = async () => {
     if (!confirmFilename) return;
@@ -61,66 +100,234 @@ export function BackupListSection() {
     }
   };
 
+  const handleStartRename = (filename: string) => {
+    setEditingFilename(filename);
+    setEditValue(getDisplayName(filename));
+  };
+
+  const handleCancelRename = () => {
+    setEditingFilename(null);
+    setEditValue("");
+  };
+
+  const handleConfirmRename = async () => {
+    if (!editingFilename || !editValue.trim()) return;
+    try {
+      await rename({ oldFilename: editingFilename, newName: editValue.trim() });
+      setEditingFilename(null);
+      setEditValue("");
+      toast.success(
+        t("settings.backupManager.renameSuccess", {
+          defaultValue: "Backup renamed",
+        }),
+      );
+    } catch (error) {
+      const detail =
+        extractErrorMessage(error) ||
+        t("settings.backupManager.renameFailed", {
+          defaultValue: "Rename failed",
+        });
+      toast.error(detail);
+    }
+  };
+
+  const intervalValue = String(backupIntervalHours ?? 24);
+  const retainValue = String(backupRetainCount ?? 10);
+
   return (
-    <div className="mt-4 pt-4 border-t border-border/50">
-      <div className="flex items-center gap-2 mb-3">
-        <HardDriveDownload className="h-4 w-4 text-muted-foreground" />
-        <h4 className="text-sm font-medium">
+    <div className="space-y-4">
+      {/* Backup policy settings */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label className="text-sm">
+            {t("settings.backupManager.intervalLabel", {
+              defaultValue: "Auto-backup Interval",
+            })}
+          </Label>
+          <Select
+            value={intervalValue}
+            onValueChange={(v) =>
+              onSettingsChange({ backupIntervalHours: Number(v) })
+            }
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">
+                {t("settings.backupManager.intervalDisabled", {
+                  defaultValue: "Disabled",
+                })}
+              </SelectItem>
+              <SelectItem value="6">
+                {t("settings.backupManager.intervalHours", {
+                  hours: 6,
+                  defaultValue: "6 hours",
+                })}
+              </SelectItem>
+              <SelectItem value="12">
+                {t("settings.backupManager.intervalHours", {
+                  hours: 12,
+                  defaultValue: "12 hours",
+                })}
+              </SelectItem>
+              <SelectItem value="24">
+                {t("settings.backupManager.intervalHours", {
+                  hours: 24,
+                  defaultValue: "24 hours",
+                })}
+              </SelectItem>
+              <SelectItem value="48">
+                {t("settings.backupManager.intervalHours", {
+                  hours: 48,
+                  defaultValue: "48 hours",
+                })}
+              </SelectItem>
+              <SelectItem value="168">
+                {t("settings.backupManager.intervalDays", {
+                  days: 7,
+                  defaultValue: "7 days",
+                })}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-sm">
+            {t("settings.backupManager.retainLabel", {
+              defaultValue: "Backup Retention",
+            })}
+          </Label>
+          <Select
+            value={retainValue}
+            onValueChange={(v) =>
+              onSettingsChange({ backupRetainCount: Number(v) })
+            }
+          >
+            <SelectTrigger className="h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[3, 5, 10, 15, 20, 30, 50].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Backup list */}
+      <div>
+        <h4 className="text-sm font-medium mb-2">
           {t("settings.backupManager.title", {
             defaultValue: "Database Backups",
           })}
         </h4>
-      </div>
-      <p className="text-xs text-muted-foreground mb-3">
-        {t("settings.backupManager.description", {
-          defaultValue:
-            "Automatic database snapshots for restoring to a previous state",
-        })}
-      </p>
 
-      {isLoading ? (
-        <div className="text-sm text-muted-foreground py-2">Loading...</div>
-      ) : backups.length === 0 ? (
-        <div className="text-sm text-muted-foreground py-2">
-          {t("settings.backupManager.empty", {
-            defaultValue: "No backups yet",
-          })}
-        </div>
-      ) : (
-        <div className="space-y-1.5 max-h-48 overflow-y-auto">
-          {backups.map((backup) => (
-            <div
-              key={backup.filename}
-              className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-sm"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="font-mono text-xs truncate">
-                  {formatBackupDate(backup.createdAt)}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {formatBytes(backup.sizeBytes)}
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs shrink-0"
-                disabled={isRestoring}
-                onClick={() => setConfirmFilename(backup.filename)}
+        {isLoading ? (
+          <div className="text-sm text-muted-foreground py-2">Loading...</div>
+        ) : backups.length === 0 ? (
+          <div className="text-sm text-muted-foreground py-2">
+            {t("settings.backupManager.empty", {
+              defaultValue: "No backups yet",
+            })}
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+            {backups.map((backup) => (
+              <div
+                key={backup.filename}
+                className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors text-sm"
               >
-                <RotateCcw className="h-3 w-3 mr-1" />
-                {isRestoring
-                  ? t("settings.backupManager.restoring", {
-                      defaultValue: "Restoring...",
-                    })
-                  : t("settings.backupManager.restore", {
-                      defaultValue: "Restore",
-                    })}
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
+                <div className="flex-1 min-w-0">
+                  {editingFilename === backup.filename ? (
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleConfirmRename();
+                          if (e.key === "Escape") handleCancelRename();
+                        }}
+                        className="h-7 text-xs"
+                        placeholder={t(
+                          "settings.backupManager.namePlaceholder",
+                          { defaultValue: "Enter new name" },
+                        )}
+                        autoFocus
+                        disabled={isRenaming}
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={handleConfirmRename}
+                        disabled={isRenaming || !editValue.trim()}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 shrink-0"
+                        onClick={handleCancelRename}
+                        disabled={isRenaming}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="font-mono text-xs truncate">
+                        {getDisplayName(backup.filename)}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatBackupDate(backup.createdAt)} &middot;{" "}
+                        {formatBytes(backup.sizeBytes)}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {editingFilename !== backup.filename && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => handleStartRename(backup.filename)}
+                      disabled={isRestoring || isRenaming}
+                      title={t("settings.backupManager.rename", {
+                        defaultValue: "Rename",
+                      })}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      disabled={isRestoring}
+                      onClick={() => setConfirmFilename(backup.filename)}
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" />
+                      {isRestoring
+                        ? t("settings.backupManager.restoring", {
+                            defaultValue: "Restoring...",
+                          })
+                        : t("settings.backupManager.restore", {
+                            defaultValue: "Restore",
+                          })}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Confirmation Dialog */}
       <Dialog
