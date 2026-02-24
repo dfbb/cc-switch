@@ -1205,7 +1205,14 @@
       "deleteSuccess": "每日记忆文件已删除",
       "deleteFailed": "删除每日记忆文件失败",
       "confirmDeleteTitle": "删除每日记忆",
-      "confirmDeleteMessage": "确定删除 {{date}} 的每日记忆吗？此操作不可撤销。"
+      "confirmDeleteMessage": "确定删除 {{date}} 的每日记忆吗？此操作不可撤销。",
+      "searchPlaceholder": "搜索全文内容...",
+      "searchScopeHint": "全文搜索所有每日记忆 ⌘F",
+      "searchCloseHint": "Esc 关闭",
+      "noSearchResults": "没有找到匹配的每日记忆。",
+      "searching": "搜索中...",
+      "searchFailed": "搜索失败",
+      "matchCount": "{{count}} 处匹配"
     }
   },
   "openclaw": {

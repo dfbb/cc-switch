@@ -1205,7 +1205,14 @@
       "deleteSuccess": "Daily memory file deleted",
       "deleteFailed": "Failed to delete daily memory file",
       "confirmDeleteTitle": "Delete Daily Memory",
-      "confirmDeleteMessage": "Delete the daily memory for {{date}}? This cannot be undone."
+      "confirmDeleteMessage": "Delete the daily memory for {{date}}? This cannot be undone.",
+      "searchPlaceholder": "Search full content...",
+      "searchScopeHint": "Full-text search across all daily memories. ⌘F",
+      "searchCloseHint": "Esc to close",
+      "noSearchResults": "No daily memories match your search.",
+      "searching": "Searching...",
+      "searchFailed": "Search failed",
+      "matchCount": "{{count}} match(es)"
     }
   },
   "openclaw": {
