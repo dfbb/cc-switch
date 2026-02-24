@@ -49,4 +49,8 @@ export const workspaceApi = {
       query,
     });
   },
+
+  async openDirectory(subdir: "workspace" | "memory"): Promise<void> {
+    await invoke("open_workspace_directory", { subdir });
+  },
 };

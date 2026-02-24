@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Calendar, Trash2, Plus, Search, X } from "lucide-react";
+import { Calendar, Trash2, Plus, Search, X, FolderOpen } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -352,8 +352,13 @@ const DailyMemoryPanel: React.FC<DailyMemoryPanelProps> = ({
         <div className="space-y-4">
           {/* Header with path, search, and create button */}
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-muted-foreground shrink-0">
+            <p
+              className="text-sm text-muted-foreground shrink-0 cursor-pointer hover:text-foreground transition-colors inline-flex items-center gap-1"
+              onClick={() => workspaceApi.openDirectory("memory")}
+              title={t("workspace.openDirectory")}
+            >
               ~/.openclaw/workspace/memory/
+              <FolderOpen className="w-3.5 h-3.5" />
             </p>
             <div className="flex items-center gap-1.5">
               <Button
