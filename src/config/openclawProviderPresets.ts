@@ -1052,8 +1052,54 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         "aicodemirror/claude-opus-4-6": { alias: "Opus" },
       },
     },
-  },
 
+  },
+  {
+    name: "AICoding",
+    websiteUrl: "https://www.aicoding.sh",
+    apiKeyUrl: "https://www.aicoding.sh/i/CCSWITCH",
+    settingsConfig: {
+      baseUrl: "https://api.aicoding.sh",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-sonnet-4-5-20250929",
+          name: "Claude Sonnet 4.5",
+          contextWindow: 200000,
+          cost: { input: 3, output: 15 },
+        },
+        {
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
+          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
+        },
+      ],
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "aicoding",
+    icon: "aicoding",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "aicoding/claude-sonnet-4-5-20250929",
+        fallbacks: ["aicoding/claude-opus-4-6"],
+      },
+      modelCatalog: {
+        "aicoding/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
+        "aicoding/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
+  },
   // ========== Cloud Providers ==========
   {
     name: "AWS Bedrock",

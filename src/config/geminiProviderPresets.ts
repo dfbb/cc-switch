@@ -140,6 +140,28 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     iconColor: "#000000",
   },
   {
+    name: "AICoding",
+    websiteUrl: "https://www.aicoding.sh",
+    apiKeyUrl: "https://www.aicoding.sh/i/CCSWITCH",
+    settingsConfig: {
+      env: {
+        GOOGLE_GEMINI_BASE_URL: "https://api.aicoding.sh",
+        GEMINI_MODEL: "gemini-3-pro",
+      },
+    },
+    baseURL: "https://api.aicoding.sh",
+    model: "gemini-3-pro",
+    description: "AICoding",
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "aicoding",
+    endpointCandidates: [
+      "https://api.aicoding.sh",
+    ],
+    icon: "aicoding",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",
