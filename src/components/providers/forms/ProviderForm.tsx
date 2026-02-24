@@ -40,7 +40,10 @@ import {
 import { OpenCodeFormFields } from "./OpenCodeFormFields";
 import { OpenClawFormFields } from "./OpenClawFormFields";
 import type { UniversalProviderPreset } from "@/config/universalProviderPresets";
-import { applyTemplateValues } from "@/utils/providerConfigUtils";
+import {
+  applyTemplateValues,
+  hasApiKeyField,
+} from "@/utils/providerConfigUtils";
 import { mergeProviderMeta } from "@/utils/providerMetaUtils";
 import { getCodexCustomTemplate } from "@/config/codexTemplates";
 import CodexConfigEditor from "./CodexConfigEditor";
@@ -594,7 +597,8 @@ export function ProviderForm({
     }
 
     // 非官方供应商必填校验：端点和 API Key
-    if (category !== "official") {
+    // cloud_provider（如 Bedrock）通过模板变量处理认证，跳过通用校验
+    if (category !== "official" && category !== "cloud_provider") {
       if (appId === "claude") {
         if (!baseUrl.trim()) {
           toast.error(
@@ -843,7 +847,8 @@ export function ProviderForm({
     );
   }, [groupedPresets]);
 
-  const shouldShowSpeedTest = category !== "official";
+  const shouldShowSpeedTest =
+    category !== "official" && category !== "cloud_provider";
 
   const {
     shouldShowApiKeyLink: shouldShowClaudeApiKeyLink,
@@ -1233,10 +1238,13 @@ export function ProviderForm({
         {appId === "claude" && (
           <ClaudeFormFields
             providerId={providerId}
-            shouldShowApiKey={shouldShowApiKey(
-              form.getValues("settingsConfig"),
-              isEditMode,
-            )}
+            shouldShowApiKey={
+              hasApiKeyField(form.getValues("settingsConfig"), "claude") &&
+              shouldShowApiKey(
+                form.getValues("settingsConfig"),
+                isEditMode,
+              )
+            }
             apiKey={apiKey}
             onApiKeyChange={handleApiKeyChange}
             category={category}
