@@ -551,7 +551,7 @@ export function ProviderForm({
       return;
     }
 
-    if (appId === "opencode" && category !== "omo") {
+    if (appId === "opencode" && !isAnyOmoCategory) {
       const keyPattern = /^[a-z0-9]+(-[a-z0-9]+)*$/;
       if (!opencodeForm.opencodeProviderKey.trim()) {
         toast.error(t("opencode.providerKeyRequired"));
@@ -732,9 +732,10 @@ export function ProviderForm({
     };
 
     if (appId === "opencode") {
-      if (category === "omo") {
+      if (isAnyOmoCategory) {
         if (!isEditMode) {
-          payload.providerKey = `omo-${crypto.randomUUID().slice(0, 8)}`;
+          const prefix = category === "omo" ? "omo" : "omo-slim";
+          payload.providerKey = `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
         }
       } else {
         payload.providerKey = opencodeForm.opencodeProviderKey;
@@ -743,8 +744,8 @@ export function ProviderForm({
       payload.providerKey = openclawForm.openclawProviderKey;
     }
 
-    if (category === "omo" && !payload.presetCategory) {
-      payload.presetCategory = "omo";
+    if (isAnyOmoCategory && !payload.presetCategory) {
+      payload.presetCategory = category;
     }
 
     if (activePreset) {
@@ -1000,10 +1001,10 @@ export function ProviderForm({
       const preset = entry.preset as OpenCodeProviderPreset;
       const config = preset.settingsConfig;
 
-      if (preset.category === "omo") {
+      if (preset.category === "omo" || preset.category === "omo-slim") {
         omoDraft.resetOmoDraftState();
         form.reset({
-          name: "OMO",
+          name: preset.category === "omo" ? "OMO" : "OMO Slim",
           websiteUrl: preset.websiteUrl ?? "",
           settingsConfig: JSON.stringify({}, null, 2),
           icon: preset.icon ?? "",
@@ -1113,7 +1114,7 @@ export function ProviderForm({
         <BasicFormFields
           form={form}
           beforeNameSlot={
-            appId === "opencode" && category !== "omo" ? (
+            appId === "opencode" && !isAnyOmoCategory ? (
               <div className="space-y-2">
                 <Label htmlFor="opencode-key">
                   {t("opencode.providerKey")}
@@ -1337,7 +1338,7 @@ export function ProviderForm({
           />
         )}
 
-        {appId === "opencode" && category !== "omo" && (
+        {appId === "opencode" && !isAnyOmoCategory && (
           <OpenCodeFormFields
             npm={opencodeForm.opencodeNpm}
             onNpmChange={opencodeForm.handleOpencodeNpmChange}
@@ -1531,7 +1532,7 @@ export function ProviderForm({
           </>
         )}
 
-        {category !== "omo" && appId !== "opencode" && appId !== "openclaw" && (
+        {!isAnyOmoCategory && appId !== "opencode" && appId !== "openclaw" && (
           <ProviderAdvancedConfig
             testConfig={testConfig}
             proxyConfig={proxyConfig}
