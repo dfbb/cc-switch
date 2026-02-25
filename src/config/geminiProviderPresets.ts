@@ -184,6 +184,30 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     iconColor: "#000000",
   },
   {
+    name: "SSSAiCode",
+    websiteUrl: "https://www.sssaicode.com",
+    apiKeyUrl: "https://www.sssaicode.com/register?ref=DCP0SM",
+    settingsConfig: {
+      env: {
+        GOOGLE_GEMINI_BASE_URL: "https://node-hk.sssaicode.com/api",
+        GEMINI_MODEL: "gemini-3-pro",
+      },
+    },
+    baseURL: "https://node-hk.sssaicode.com/api",
+    model: "gemini-3-pro",
+    description: "SSSAiCode",
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "sssaicode",
+    endpointCandidates: [
+      "https://node-hk.sssaicode.com/api",
+      "https://claude2.sssaicode.com/api",
+      "https://anti.sssaicode.com/api",
+    ],
+    icon: "sssaicode",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

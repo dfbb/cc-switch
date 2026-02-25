@@ -264,6 +264,27 @@ requires_openai_auth = true`,
     iconColor: "#000000",
   },
   {
+    name: "SSSAiCode",
+    websiteUrl: "https://www.sssaicode.com",
+    apiKeyUrl: "https://www.sssaicode.com/register?ref=DCP0SM",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "sssaicode",
+      "https://node-hk.sssaicode.com/api",
+      "gpt-5.3-codex",
+    ),
+    endpointCandidates: [
+      "https://node-hk.sssaicode.com/api/v1",
+      "https://claude2.sssaicode.com/api/v1",
+      "https://anti.sssaicode.com/api/v1",
+    ],
+    category: "third_party",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "sssaicode", // 促销信息 i18n key
+    icon: "sssaicode",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

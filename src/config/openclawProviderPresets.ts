@@ -1108,6 +1108,20 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       baseUrl: "https://crazyrouter.com",
       apiKey: "",
       api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-sonnet-4-5-20250929",
+          name: "Claude Sonnet 4.5",
+          contextWindow: 200000,
+          cost: { input: 3, output: 15 },
+        },
+        {
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
+          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
+        },
+      ],
     },
     category: "third_party",
     isPartner: true,
@@ -1129,6 +1143,52 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       modelCatalog: {
         "crazyrouter/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
         "crazyrouter/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
+  },
+  {
+    name: "SSSAiCode",
+    websiteUrl: "https://www.sssaicode.com",
+    apiKeyUrl: "https://www.sssaicode.com/register?ref=DCP0SM",
+    settingsConfig: {
+      baseUrl: "https://node-hk.sssaicode.com/api",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-sonnet-4-5-20250929",
+          name: "Claude Sonnet 4.5",
+          contextWindow: 200000,
+          cost: { input: 3, output: 15 },
+        },
+        {
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
+          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
+        },
+      ],
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "sssaicode",
+    icon: "sssaicode",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "sssaicode/claude-sonnet-4-5-20250929",
+        fallbacks: ["sssaicode/claude-opus-4-6"],
+      },
+      modelCatalog: {
+        "sssaicode/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
+        "sssaicode/claude-opus-4-6": { alias: "Opus" },
       },
     },
   },
