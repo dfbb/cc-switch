@@ -890,7 +890,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
@@ -917,7 +917,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
@@ -944,7 +944,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "anthropic/claude-sonnet-4.5": { name: "Claude Sonnet 4.5" },
+        "anthropic/claude-sonnet-4.6": { name: "Claude Sonnet 4.6" },
         "anthropic/claude-opus-4.6": { name: "Claude Opus 4.6" },
       },
     },
@@ -998,7 +998,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
@@ -1026,7 +1026,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
@@ -1055,7 +1055,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
@@ -1116,7 +1116,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4.5": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4.6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4.6": { name: "Claude Opus 4.6" },
       },
     },
@@ -1145,7 +1145,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
@@ -1174,7 +1174,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
@@ -1203,7 +1203,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "claude-sonnet-4-5-20250929": { name: "Claude Sonnet 4.5" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
         "claude-opus-4-6": { name: "Claude Opus 4.6" },
       },
     },
