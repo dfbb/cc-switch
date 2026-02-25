@@ -162,6 +162,28 @@ export const geminiProviderPresets: GeminiProviderPreset[] = [
     iconColor: "#000000",
   },
   {
+    name: "CrazyRouter",
+    websiteUrl: "https://www.crazyrouter.com",
+    apiKeyUrl: "https://www.crazyrouter.com/register?aff=OZcm&ref=cc-switch",
+    settingsConfig: {
+      env: {
+        GOOGLE_GEMINI_BASE_URL: "https://crazyrouter.com",
+        GEMINI_MODEL: "gemini-3-pro",
+      },
+    },
+    baseURL: "https://crazyrouter.com",
+    model: "gemini-3-pro",
+    description: "CrazyRouter",
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "crazyrouter",
+    endpointCandidates: [
+      "https://crazyrouter.com",
+    ],
+    icon: "crazyrouter",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

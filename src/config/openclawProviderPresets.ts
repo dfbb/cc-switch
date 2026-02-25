@@ -1100,6 +1100,38 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       },
     },
   },
+  {
+    name: "CrazyRouter",
+    websiteUrl: "https://www.crazyrouter.com",
+    apiKeyUrl: "https://www.crazyrouter.com/register?aff=OZcm&ref=cc-switch",
+    settingsConfig: {
+      baseUrl: "https://crazyrouter.com",
+      apiKey: "",
+      api: "anthropic-messages",
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "crazyrouter",
+    icon: "crazyrouter",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "crazyrouter/claude-sonnet-4-5-20250929",
+        fallbacks: ["crazyrouter/claude-opus-4-6"],
+      },
+      modelCatalog: {
+        "crazyrouter/claude-sonnet-4-5-20250929": { alias: "Sonnet" },
+        "crazyrouter/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
+  },
   // ========== Cloud Providers ==========
   {
     name: "AWS Bedrock",
