@@ -1231,7 +1231,8 @@ export function ProviderForm({
           <ClaudeFormFields
             providerId={providerId}
             shouldShowApiKey={
-              hasApiKeyField(form.getValues("settingsConfig"), "claude") &&
+              (category !== "cloud_provider" ||
+                hasApiKeyField(form.getValues("settingsConfig"), "claude")) &&
               shouldShowApiKey(form.getValues("settingsConfig"), isEditMode)
             }
             apiKey={apiKey}
