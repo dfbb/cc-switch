@@ -52,6 +52,7 @@
   "claudeConfig": {
     "configLabel": "Claude Code 配置 (JSON) *",
     "fullSettingsHint": "完整的 Claude Code settings.json 配置内容",
+    "fragmentSettingsHint": "此供应商的配置片段，激活后将写入 settings.json",
     "hideAttribution": "隐藏 AI 署名",
     "alwaysThinking": "扩展思考",
     "enableTeammates": "Teammates 模式"

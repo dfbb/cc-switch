@@ -52,6 +52,7 @@
   "claudeConfig": {
     "configLabel": "Claude Code settings.json (JSON) *",
     "fullSettingsHint": "Full Claude Code settings.json content",
+    "fragmentSettingsHint": "Config snippet for this provider; will be written to settings.json when activated",
     "hideAttribution": "Hide AI Attribution",
     "alwaysThinking": "Extended Thinking",
     "enableTeammates": "Teammates Mode"

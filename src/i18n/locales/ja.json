@@ -52,6 +52,7 @@
   "claudeConfig": {
     "configLabel": "Claude Code settings.json (JSON) *",
     "fullSettingsHint": "Claude Code の settings.json 全文",
+    "fragmentSettingsHint": "このプロバイダーの設定スニペット。有効化時に settings.json に書き込まれます",
     "hideAttribution": "AI署名を非表示",
     "alwaysThinking": "拡張思考",
     "enableTeammates": "Teammates モード"

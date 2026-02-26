@@ -118,6 +118,7 @@ interface ProviderFormProps {
     iconColor?: string;
   };
   showButtons?: boolean;
+  isCurrent?: boolean;
 }
 
 export function ProviderForm({
@@ -130,6 +131,7 @@ export function ProviderForm({
   onManageUniversalProviders,
   initialData,
   showButtons = true,
+  isCurrent = false,
 }: ProviderFormProps) {
   const { t } = useTranslation();
   const isEditMode = Boolean(initialData);
@@ -1496,7 +1498,7 @@ export function ProviderForm({
               <Label htmlFor="settingsConfig">
                 {t("claudeConfig.configLabel")}
               </Label>
-              {isEditMode && (
+              {isEditMode && isCurrent && (
                 <ClaudeQuickToggles
                   onPatchApplied={(patch) => {
                     try {
@@ -1527,7 +1529,7 @@ export function ProviderForm({
                 language="json"
               />
               <p className="text-xs text-muted-foreground">
-                {t("claudeConfig.fullSettingsHint")}
+                {t(isCurrent ? "claudeConfig.fullSettingsHint" : "claudeConfig.fragmentSettingsHint")}
               </p>
             </div>
             {settingsConfigErrorField}
