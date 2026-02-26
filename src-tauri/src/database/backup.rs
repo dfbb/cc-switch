@@ -5,7 +5,7 @@
 use super::{lock_conn, Database};
 use crate::config::get_app_config_dir;
 use crate::error::AppError;
-use chrono::Utc;
+use chrono::{Local, Utc};
 use rusqlite::backup::Backup;
 use rusqlite::types::ValueRef;
 use rusqlite::Connection;
@@ -182,7 +182,7 @@ impl Database {
 
         fs::create_dir_all(&backup_dir).map_err(|e| AppError::io(&backup_dir, e))?;
 
-        let base_id = format!("db_backup_{}", Utc::now().format("%Y%m%d_%H%M%S"));
+        let base_id = format!("db_backup_{}", Local::now().format("%Y%m%d_%H%M%S"));
         let mut backup_id = base_id.clone();
         let mut backup_path = backup_dir.join(format!("{backup_id}.db"));
         let mut counter = 1;
