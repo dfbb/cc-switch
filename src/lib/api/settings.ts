@@ -223,6 +223,10 @@ export interface BackupEntry {
 }
 
 export const backupsApi = {
+  async createDbBackup(): Promise<string> {
+    return await invoke("create_db_backup");
+  },
+
   async listDbBackups(): Promise<BackupEntry[]> {
     return await invoke("list_db_backups");
   },
