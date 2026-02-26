@@ -168,3 +168,9 @@ pub fn rename_db_backup(
 ) -> Result<String, String> {
     Database::rename_backup(&oldFilename, &newName).map_err(|e| e.to_string())
 }
+
+/// Delete a database backup file
+#[tauri::command]
+pub fn delete_db_backup(filename: String) -> Result<(), String> {
+    Database::delete_backup(&filename).map_err(|e| e.to_string())
+}

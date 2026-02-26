@@ -911,9 +911,11 @@ pub fn run() {
             commands::save_file_dialog,
             commands::open_file_dialog,
             commands::open_zip_file_dialog,
+            commands::create_db_backup,
             commands::list_db_backups,
             commands::restore_db_backup,
             commands::rename_db_backup,
+            commands::delete_db_backup,
             commands::sync_current_providers_live,
             // Deep link import
             commands::parse_deeplink,

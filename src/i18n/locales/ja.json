@@ -308,7 +308,17 @@
       "rename": "名前変更",
       "renameSuccess": "バックアップの名前を変更しました",
       "renameFailed": "名前変更に失敗しました",
-      "namePlaceholder": "新しい名前を入力"
+      "namePlaceholder": "新しい名前を入力",
+      "createBackup": "今すぐバックアップ",
+      "creating": "バックアップ中...",
+      "createSuccess": "バックアップが作成されました",
+      "createFailed": "バックアップに失敗しました",
+      "delete": "削除",
+      "deleting": "削除中...",
+      "deleteSuccess": "バックアップを削除しました",
+      "deleteFailed": "削除に失敗しました",
+      "deleteConfirmTitle": "バックアップの削除を確認",
+      "deleteConfirmMessage": "このバックアップは完全に削除されます。この操作は取り消せません。"
     },
     "webdavSync": {
       "title": "WebDAV クラウド同期",

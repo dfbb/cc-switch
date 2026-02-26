@@ -531,4 +531,29 @@ impl Database {
         log::info!("Renamed backup: {old_filename} -> {new_filename}");
         Ok(new_filename)
     }
+
+    /// Delete a backup file permanently.
+    pub fn delete_backup(filename: &str) -> Result<(), AppError> {
+        // Validate filename (path traversal + .db suffix)
+        if filename.contains("..")
+            || filename.contains('/')
+            || filename.contains('\\')
+            || !filename.ends_with(".db")
+        {
+            return Err(AppError::InvalidInput(
+                "Invalid backup filename".to_string(),
+            ));
+        }
+
+        let backup_path = get_app_config_dir().join("backups").join(filename);
+        if !backup_path.exists() {
+            return Err(AppError::InvalidInput(format!(
+                "Backup file not found: {filename}"
+            )));
+        }
+
+        fs::remove_file(&backup_path).map_err(|e| AppError::io(&backup_path, e))?;
+        log::info!("Deleted backup: {filename}");
+        Ok(())
+    }
 }

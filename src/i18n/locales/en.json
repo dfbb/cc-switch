@@ -308,7 +308,17 @@
       "rename": "Rename",
       "renameSuccess": "Backup renamed",
       "renameFailed": "Rename failed",
-      "namePlaceholder": "Enter new name"
+      "namePlaceholder": "Enter new name",
+      "createBackup": "Backup Now",
+      "creating": "Backing up...",
+      "createSuccess": "Backup created successfully",
+      "createFailed": "Backup failed",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "deleteSuccess": "Backup deleted",
+      "deleteFailed": "Delete failed",
+      "deleteConfirmTitle": "Confirm Delete",
+      "deleteConfirmMessage": "This backup will be permanently deleted. This action cannot be undone."
     },
     "webdavSync": {
       "title": "WebDAV Cloud Sync",
