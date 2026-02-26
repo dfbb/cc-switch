@@ -89,7 +89,7 @@ This release introduces **OpenClaw** as the fifth supported application, a full 
 
 #### Architecture
 
-- **Partial Key-Field Merging**: Provider switching now uses partial key-field merging instead of full config overwrite, preserving user's non-provider settings (plugins, MCP, permissions). Removes 6 frontend files and ~150 lines of backend dead code (#1098)
+- **Partial Key-Field Merging (⚠️ Breaking)**: Provider switching now uses partial key-field merging instead of full config overwrite, preserving user's non-provider settings (plugins, MCP, permissions). The "Common Config Snippet" feature has been removed as it is no longer needed. Removes 6 frontend files and ~150 lines of backend dead code (#1098)
 - **Manual Import**: Replaced auto-import on startup with manual “Import Current Config” button in empty state, reducing ~47 lines of startup code
 - **OMO Variant Parameterization**: Eliminated ~250 lines of OMO/OMO Slim code duplication via `OmoVariant` struct with STANDARD/SLIM constants
 - **OMO Common Config Removal**: Removed the two-layer merge system for OMO common config (-1,733 lines across 21 files)

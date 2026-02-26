@@ -22,7 +22,7 @@ CC Switch v3.11.0 is a major update that adds full management support for **Open
 - **Session Manager**: Browse conversation history across all five apps with table-of-contents navigation and in-session search
 - **Backup Management**: Independent backup panel with configurable policies, periodic backups, and pre-migration auto-backup
 - **Oh My OpenCode Integration**: Full OMO config management with OMO Slim lightweight mode support
-- **Partial Key-Field Merging**: Provider switching now preserves user's non-provider settings
+- **Partial Key-Field Merging (⚠️ Breaking Change)**: Provider switching now only replaces provider-related fields, preserving all other settings; the "Common Config Snippet" feature has been removed
 - **Settings Page Refactoring**: 5-tab layout with ~40% code reduction
 - **6 New Provider Presets**: AWS Bedrock, SSAI Code, CrazyRouter, AICoding, and more
 - **Thinking Budget Rectifier**: Fine-grained thinking budget control
@@ -114,9 +114,20 @@ Full Oh My OpenCode config file management.
 
 ## Architecture Improvements
 
-### Partial Key-Field Merging (Important Change)
+### Partial Key-Field Merging (⚠️ Breaking Change)
 
-Provider switching now uses partial key-field merging instead of full config overwrite (#1098). When switching providers, only provider-related key-values are updated, preserving user's non-provider settings (plugins, MCP, permissions, etc.). This refactoring removed 6 frontend files and ~150 lines of backend dead code.
+Provider switching now uses partial key-field merging instead of full config overwrite (#1098).
+
+**Before**: Switching providers overwrote the entire `settings_config` to the live config file. This meant that any non-provider settings the user manually added to the live file (plugins, MCP config, permissions, etc.) would be lost on every switch. To work around this, previous versions offered a "Common Config Snippet" feature that let users define shared config to be merged on every switch.
+
+**After**: Switching providers now only replaces provider-related key-values (API keys, endpoints, models, etc.), leaving all other settings intact. The "Common Config Snippet" feature is therefore no longer needed and has been removed.
+
+**Impact & Migration**:
+- If you **didn't use** Common Config Snippets, this change is fully transparent — switching just works better now
+- If you **used** Common Config Snippets to preserve custom settings (MCP config, permissions, etc.), those settings are now automatically preserved during switches — no action needed
+- If you used Common Config Snippets for other purposes (e.g., injecting extra config on every switch), please manually add those settings to your live config file after upgrading
+
+This refactoring removed 6 frontend files (3 components + 3 hooks) and ~150 lines of backend dead code.
 
 ### Manual Import Replaces Auto-Import
 
@@ -224,7 +235,7 @@ Refactored settings page to a 5-tab layout (General | Proxy | Advanced | Usage |
 ## Notes & Considerations
 
 - **OpenClaw is a newly supported app**: OpenClaw CLI must be installed first to use related features.
-- **Partial key-field merging is an important architecture change**: Provider switching no longer overwrites the entire config file, but only merges provider-related key-values. Please note this change if you previously relied on full overwrite behavior.
+- **⚠️ Common Config Snippet feature has been removed**: Since provider switching now uses partial key-field merging (only replacing API keys, endpoints, models, etc.), user's other settings are automatically preserved, making Common Config Snippets unnecessary. See the "Architecture Improvements" section above for migration details.
 - **Auto-import changed to manual**: External configurations are no longer auto-imported on startup. Click "Import Current Config" manually when needed.
 - **OMO and OMO Slim are mutually exclusive**: Only one can be active at a time. Switching to one automatically disables the other.
 - **Backup is enabled by default**: Automatic hourly backup during runtime. Adjust the policy in the Backup panel.
