@@ -79,7 +79,7 @@ export const OMO_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Oracle",
     descKey: "omo.agentDesc.oracle",
     tooltipKey: "omo.agentTooltip.oracle",
-    recommended: "gpt-5.3",
+    recommended: "gpt-5.2",
     group: "sub",
   },
   {
@@ -87,7 +87,7 @@ export const OMO_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Librarian",
     descKey: "omo.agentDesc.librarian",
     tooltipKey: "omo.agentTooltip.librarian",
-    recommended: "glm-4.7",
+    recommended: "gemini-3-flash",
     group: "sub",
   },
   {
@@ -103,7 +103,7 @@ export const OMO_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Multimodal-Looker",
     descKey: "omo.agentDesc.multimodalLooker",
     tooltipKey: "omo.agentTooltip.multimodalLooker",
-    recommended: "gemini-3-flash",
+    recommended: "kimi-k2.5",
     group: "sub",
   },
   {
@@ -119,7 +119,7 @@ export const OMO_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Momus",
     descKey: "omo.agentDesc.momus",
     tooltipKey: "omo.agentTooltip.momus",
-    recommended: "gpt-5.3",
+    recommended: "gpt-5.2",
     group: "sub",
   },
   {
@@ -144,7 +144,7 @@ export const OMO_BUILTIN_CATEGORIES: OmoCategoryDef[] = [
     display: "Ultrabrain",
     descKey: "omo.categoryDesc.ultrabrain",
     tooltipKey: "omo.categoryTooltip.ultrabrain",
-    recommended: "claude-opus-4-6",
+    recommended: "gpt-5.3-codex",
   },
   {
     key: "deep",
@@ -158,35 +158,35 @@ export const OMO_BUILTIN_CATEGORIES: OmoCategoryDef[] = [
     display: "Artistry",
     descKey: "omo.categoryDesc.artistry",
     tooltipKey: "omo.categoryTooltip.artistry",
-    recommended: "claude-opus-4-6",
+    recommended: "gemini-3-pro",
   },
   {
     key: "quick",
     display: "Quick",
     descKey: "omo.categoryDesc.quick",
     tooltipKey: "omo.categoryTooltip.quick",
-    recommended: "gemini-3-flash",
+    recommended: "claude-haiku-4-5",
   },
   {
     key: "unspecified-low",
     display: "Unspecified Low",
     descKey: "omo.categoryDesc.unspecifiedLow",
     tooltipKey: "omo.categoryTooltip.unspecifiedLow",
-    recommended: "gemini-3-flash",
+    recommended: "claude-sonnet-4-6",
   },
   {
     key: "unspecified-high",
     display: "Unspecified High",
     descKey: "omo.categoryDesc.unspecifiedHigh",
     tooltipKey: "omo.categoryTooltip.unspecifiedHigh",
-    recommended: "gpt-5.3-codex",
+    recommended: "claude-opus-4-6",
   },
   {
     key: "writing",
     display: "Writing",
     descKey: "omo.categoryDesc.writing",
     tooltipKey: "omo.categoryTooltip.writing",
-    recommended: "claude-opus-4-6",
+    recommended: "gemini-3-flash",
   },
 ];
 
@@ -337,7 +337,7 @@ export const OMO_SLIM_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Orchestrator",
     descKey: "omo.slimAgentDesc.orchestrator",
     tooltipKey: "omo.slimAgentTooltip.orchestrator",
-    recommended: "kimi-for-coding/k2p5",
+    recommended: "claude-opus-4-6",
     group: "main",
   },
   {
@@ -345,7 +345,7 @@ export const OMO_SLIM_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Oracle",
     descKey: "omo.slimAgentDesc.oracle",
     tooltipKey: "omo.slimAgentTooltip.oracle",
-    recommended: "openai/gpt-5.2-codex",
+    recommended: "gpt-5.2",
     group: "sub",
   },
   {
@@ -353,7 +353,7 @@ export const OMO_SLIM_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Librarian",
     descKey: "omo.slimAgentDesc.librarian",
     tooltipKey: "omo.slimAgentTooltip.librarian",
-    recommended: "openai/gpt-5.1-codex-mini",
+    recommended: "gemini-3-flash",
     group: "sub",
   },
   {
@@ -361,7 +361,7 @@ export const OMO_SLIM_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Explorer",
     descKey: "omo.slimAgentDesc.explorer",
     tooltipKey: "omo.slimAgentTooltip.explorer",
-    recommended: "openai/gpt-5.1-codex-mini",
+    recommended: "grok-code-fast-1",
     group: "sub",
   },
   {
@@ -369,7 +369,7 @@ export const OMO_SLIM_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Designer",
     descKey: "omo.slimAgentDesc.designer",
     tooltipKey: "omo.slimAgentTooltip.designer",
-    recommended: "kimi-for-coding/k2p5",
+    recommended: "gemini-3-pro",
     group: "sub",
   },
   {
@@ -377,7 +377,7 @@ export const OMO_SLIM_BUILTIN_AGENTS: OmoAgentDef[] = [
     display: "Fixer",
     descKey: "omo.slimAgentDesc.fixer",
     tooltipKey: "omo.slimAgentTooltip.fixer",
-    recommended: "openai/gpt-5.1-codex-mini",
+    recommended: "gpt-5.3-codex",
     group: "sub",
   },
 ];
