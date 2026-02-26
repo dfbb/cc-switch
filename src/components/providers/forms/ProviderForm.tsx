@@ -1243,10 +1243,7 @@ export function ProviderForm({
             providerId={providerId}
             shouldShowApiKey={
               hasApiKeyField(form.getValues("settingsConfig"), "claude") &&
-              shouldShowApiKey(
-                form.getValues("settingsConfig"),
-                isEditMode,
-              )
+              shouldShowApiKey(form.getValues("settingsConfig"), isEditMode)
             }
             apiKey={apiKey}
             onApiKeyChange={handleApiKeyChange}
@@ -1529,7 +1526,11 @@ export function ProviderForm({
                 language="json"
               />
               <p className="text-xs text-muted-foreground">
-                {t(isCurrent ? "claudeConfig.fullSettingsHint" : "claudeConfig.fragmentSettingsHint")}
+                {t(
+                  isCurrent
+                    ? "claudeConfig.fullSettingsHint"
+                    : "claudeConfig.fragmentSettingsHint",
+                )}
               </p>
             </div>
             {settingsConfigErrorField}

@@ -16,10 +16,8 @@ use super::utils::{
 const PROVIDER_ID: &str = "codex";
 
 static UUID_RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
-    )
-    .unwrap()
+    Regex::new(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+        .unwrap()
 });
 
 pub fn scan_sessions() -> Vec<SessionMeta> {
@@ -132,13 +130,10 @@ fn parse_session(path: &Path) -> Option<SessionMeta> {
         if last_active_at.is_none() {
             last_active_at = value.get("timestamp").and_then(parse_timestamp_to_ms);
         }
-        if summary.is_none()
-            && value.get("type").and_then(Value::as_str) == Some("response_item")
-        {
+        if summary.is_none() && value.get("type").and_then(Value::as_str) == Some("response_item") {
             if let Some(payload) = value.get("payload") {
                 if payload.get("type").and_then(Value::as_str) == Some("message") {
-                    let text =
-                        payload.get("content").map(extract_text).unwrap_or_default();
+                    let text = payload.get("content").map(extract_text).unwrap_or_default();
                     if !text.trim().is_empty() {
                         summary = Some(text);
                     }

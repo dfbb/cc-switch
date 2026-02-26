@@ -1052,7 +1052,6 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         "aicodemirror/claude-opus-4-6": { alias: "Opus" },
       },
     },
-
   },
   {
     name: "AICoding",

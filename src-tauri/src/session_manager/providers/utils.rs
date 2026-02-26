@@ -27,11 +27,7 @@ pub fn read_head_tail_lines(
 
     // Read head lines from the beginning
     let reader = BufReader::new(file);
-    let head: Vec<String> = reader
-        .lines()
-        .take(head_n)
-        .map_while(Result::ok)
-        .collect();
+    let head: Vec<String> = reader.lines().take(head_n).map_while(Result::ok).collect();
 
     // Seek to last ~16 KB for tail lines
     let seek_pos = file_len.saturating_sub(16_384);
