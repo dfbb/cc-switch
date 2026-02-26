@@ -120,8 +120,6 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       ],
     },
     category: "cn_official",
-    isPartner: true,
-    partnerPromotionKey: "zhipu",
     icon: "zhipu",
     iconColor: "#0F62FE",
     templateValues: {
@@ -160,8 +158,6 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       ],
     },
     category: "cn_official",
-    isPartner: true,
-    partnerPromotionKey: "zhipu",
     icon: "zhipu",
     iconColor: "#0F62FE",
     templateValues: {
