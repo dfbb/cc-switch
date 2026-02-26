@@ -1496,22 +1496,24 @@ export function ProviderForm({
               <Label htmlFor="settingsConfig">
                 {t("claudeConfig.configLabel")}
               </Label>
-              <ClaudeQuickToggles
-                onPatchApplied={(patch) => {
-                  try {
-                    const cfg = JSON.parse(
-                      form.getValues("settingsConfig") || "{}",
-                    );
-                    jsonMergePatch(cfg, patch);
-                    form.setValue(
-                      "settingsConfig",
-                      JSON.stringify(cfg, null, 2),
-                    );
-                  } catch {
-                    // invalid JSON in editor — skip mirror
-                  }
-                }}
-              />
+              {isEditMode && (
+                <ClaudeQuickToggles
+                  onPatchApplied={(patch) => {
+                    try {
+                      const cfg = JSON.parse(
+                        form.getValues("settingsConfig") || "{}",
+                      );
+                      jsonMergePatch(cfg, patch);
+                      form.setValue(
+                        "settingsConfig",
+                        JSON.stringify(cfg, null, 2),
+                      );
+                    } catch {
+                      // invalid JSON in editor — skip mirror
+                    }
+                  }}
+                />
+              )}
               <JsonEditor
                 value={form.watch("settingsConfig")}
                 onChange={(value) => form.setValue("settingsConfig", value)}
