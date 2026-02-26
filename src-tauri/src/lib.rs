@@ -1035,11 +1035,9 @@ pub fn run() {
             commands::set_window_theme,
             commands::read_omo_local_file,
             commands::get_current_omo_provider_id,
-            commands::get_omo_provider_count,
             commands::disable_current_omo,
             commands::read_omo_slim_local_file,
             commands::get_current_omo_slim_provider_id,
-            commands::get_omo_slim_provider_count,
             commands::disable_current_omo_slim,
             // Workspace files (OpenClaw)
             commands::read_workspace_file,

@@ -260,18 +260,6 @@ impl ProviderService {
                         state
                             .db
                             .is_omo_provider_current(app_type.as_str(), id, "omo")?;
-                    let omo_count = state
-                        .db
-                        .get_all_providers(app_type.as_str())?
-                        .values()
-                        .filter(|p| p.category.as_deref() == Some("omo"))
-                        .count();
-
-                    if omo_count <= 1 && was_current {
-                        return Err(AppError::Message(
-                            "无法删除当前启用的最后一个 OMO 配置，请先停用".to_string(),
-                        ));
-                    }
 
                     state.db.delete_provider(app_type.as_str(), id)?;
                     if was_current {
@@ -287,18 +275,6 @@ impl ProviderService {
                         state
                             .db
                             .is_omo_provider_current(app_type.as_str(), id, "omo-slim")?;
-                    let slim_count = state
-                        .db
-                        .get_all_providers(app_type.as_str())?
-                        .values()
-                        .filter(|p| p.category.as_deref() == Some("omo-slim"))
-                        .count();
-
-                    if slim_count <= 1 && was_current {
-                        return Err(AppError::Message(
-                            "无法删除当前启用的最后一个 OMO Slim 配置，请先停用".to_string(),
-                        ));
-                    }
 
                     state.db.delete_provider(app_type.as_str(), id)?;
                     if was_current {

@@ -7,7 +7,6 @@ function createOmoQueryKeys(prefix: string) {
   return {
     all: [prefix] as const,
     currentProviderId: () => [prefix, "current-provider-id"] as const,
-    providerCount: () => [prefix, "provider-count"] as const,
   };
 }
 
@@ -20,7 +19,6 @@ function createOmoQueryHooks(
   function invalidateAll(queryClient: ReturnType<typeof useQueryClient>) {
     queryClient.invalidateQueries({ queryKey: ["providers"] });
     queryClient.invalidateQueries({ queryKey: keys.currentProviderId() });
-    queryClient.invalidateQueries({ queryKey: keys.providerCount() });
   }
 
   function useCurrentProviderId(enabled = true) {
@@ -30,17 +28,6 @@ function createOmoQueryHooks(
         "getCurrentOmoProviderId" in api
           ? (api as typeof omoApi).getCurrentOmoProviderId
           : (api as typeof omoSlimApi).getCurrentProviderId,
-      enabled,
-    });
-  }
-
-  function useProviderCount(enabled = true) {
-    return useQuery({
-      queryKey: keys.providerCount(),
-      queryFn:
-        "getOmoProviderCount" in api
-          ? (api as typeof omoApi).getOmoProviderCount
-          : (api as typeof omoSlimApi).getProviderCount,
       enabled,
     });
   }
@@ -65,7 +52,6 @@ function createOmoQueryHooks(
   return {
     keys,
     useCurrentProviderId,
-    useProviderCount,
     useReadLocalFile,
     useDisableCurrent,
   };
@@ -82,11 +68,9 @@ export const omoKeys = omoHooks.keys;
 export const omoSlimKeys = omoSlimHooks.keys;
 
 export const useCurrentOmoProviderId = omoHooks.useCurrentProviderId;
-export const useOmoProviderCount = omoHooks.useProviderCount;
 export const useReadOmoLocalFile = omoHooks.useReadLocalFile;
 export const useDisableCurrentOmo = omoHooks.useDisableCurrent;
 
 export const useCurrentOmoSlimProviderId = omoSlimHooks.useCurrentProviderId;
-export const useOmoSlimProviderCount = omoSlimHooks.useProviderCount;
 export const useReadOmoSlimLocalFile = omoSlimHooks.useReadLocalFile;
 export const useDisableCurrentOmoSlim = omoSlimHooks.useDisableCurrent;
