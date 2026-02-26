@@ -525,9 +525,8 @@ impl ProviderService {
                 .set_omo_provider_current(app_type.as_str(), id, "omo-slim")?;
             crate::services::OmoService::write_config_to_file(state, &crate::services::omo::SLIM)?;
             // OMO ↔ OMO Slim mutually exclusive: remove Standard config
-            let _ = crate::services::OmoService::delete_config_file(
-                &crate::services::omo::STANDARD,
-            );
+            let _ =
+                crate::services::OmoService::delete_config_file(&crate::services::omo::STANDARD);
             return Ok(SwitchResult::default());
         }
 

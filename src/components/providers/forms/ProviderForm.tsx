@@ -57,7 +57,6 @@ import { ClaudeFormFields } from "./ClaudeFormFields";
 import { CodexFormFields } from "./CodexFormFields";
 import { GeminiFormFields } from "./GeminiFormFields";
 import { OmoFormFields } from "./OmoFormFields";
-import { OmoCommonConfigEditor } from "./OmoCommonConfigEditor";
 import { parseOmoOtherFieldsObject } from "@/types/omo";
 import {
   ProviderAdvancedConfig,
@@ -79,7 +78,6 @@ import {
   useOmoDraftState,
   useOpenclawFormState,
 } from "./hooks";
-import { useOmoGlobalConfig, useOmoSlimGlobalConfig } from "@/lib/query/omo";
 import {
   CLAUDE_DEFAULT_CONFIG,
   CODEX_DEFAULT_CONFIG,
@@ -189,13 +187,6 @@ export function ProviderForm({
   const isOmoCategory = appId === "opencode" && category === "omo";
   const isOmoSlimCategory = appId === "opencode" && category === "omo-slim";
   const isAnyOmoCategory = isOmoCategory || isOmoSlimCategory;
-  const { data: queriedStandardOmoGlobalConfig } =
-    useOmoGlobalConfig(isOmoCategory);
-  const { data: queriedSlimOmoGlobalConfig } =
-    useOmoSlimGlobalConfig(isOmoSlimCategory);
-  const queriedOmoGlobalConfig = isOmoSlimCategory
-    ? queriedSlimOmoGlobalConfig
-    : queriedStandardOmoGlobalConfig;
 
   useEffect(() => {
     setSelectedPresetId(initialData ? null : "custom");
@@ -516,7 +507,6 @@ export function ProviderForm({
 
   const omoDraft = useOmoDraftState({
     initialOmoSettings,
-    queriedOmoGlobalConfig,
     isEditMode,
     appId,
     category,
@@ -685,7 +675,6 @@ export function ProviderForm({
       (category === "omo" || category === "omo-slim")
     ) {
       const omoConfig: Record<string, unknown> = {};
-      omoConfig.useCommonConfig = omoDraft.useOmoCommonConfig;
       if (Object.keys(omoDraft.omoAgents).length > 0) {
         omoConfig.agents = omoDraft.omoAgents;
       }
@@ -1423,20 +1412,16 @@ export function ProviderForm({
           </>
         ) : appId === "opencode" &&
           (category === "omo" || category === "omo-slim") ? (
-          <OmoCommonConfigEditor
-            previewValue={omoDraft.mergedOmoJsonPreview}
-            useCommonConfig={omoDraft.useOmoCommonConfig}
-            onCommonConfigToggle={omoDraft.setUseOmoCommonConfig}
-            isModalOpen={omoDraft.isOmoConfigModalOpen}
-            onEditClick={omoDraft.handleOmoEditClick}
-            onModalClose={() => omoDraft.setIsOmoConfigModalOpen(false)}
-            onSave={omoDraft.handleOmoGlobalConfigSave}
-            isSaving={omoDraft.isOmoSaving}
-            onGlobalConfigStateChange={omoDraft.setOmoGlobalState}
-            globalConfigRef={omoDraft.omoGlobalConfigRef}
-            fieldsKey={omoDraft.omoFieldsKey}
-            isSlim={category === "omo-slim"}
-          />
+          <div className="space-y-2">
+            <Label>{t("provider.configJson")}</Label>
+            <JsonEditor
+              value={omoDraft.mergedOmoJsonPreview}
+              onChange={() => {}}
+              rows={14}
+              showValidation={false}
+              language="json"
+            />
+          </div>
         ) : appId === "opencode" &&
           category !== "omo" &&
           category !== "omo-slim" ? (
