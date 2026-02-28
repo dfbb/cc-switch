@@ -1582,7 +1582,7 @@
       "currentProvider": "Current Provider:",
       "waitingFirstRequest": "Current Provider: Waiting for first request...",
       "stoppedTitle": "Proxy Service Stopped",
-      "stoppedDescription": "Use the toggle in the top right to start the service",
+      "stoppedDescription": "Use the toggle above to start the service",
       "openSettings": "Configure Proxy Service",
       "stats": {
         "activeConnections": "Active Connections",
@@ -1673,6 +1673,12 @@
       "restartRequired": "Restart proxy service for address or port changes to take effect"
     },
     "switchFailed": "Switch failed: {{error}}",
+    "takeover": {
+      "hint": "Select apps to take over — once enabled, requests from that app will be routed through the local proxy",
+      "enabled": "{{app}} takeover enabled",
+      "disabled": "{{app}} takeover disabled",
+      "failed": "Failed to toggle takeover"
+    },
     "failover": {
       "proxyRequired": "Proxy service must be started to configure failover",
       "autoSwitch": "Auto Failover",

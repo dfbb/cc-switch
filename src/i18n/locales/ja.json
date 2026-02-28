@@ -1582,7 +1582,7 @@
       "currentProvider": "現在のプロバイダー:",
       "waitingFirstRequest": "現在のプロバイダー: 最初のリクエスト待ち...",
       "stoppedTitle": "プロキシサービス停止中",
-      "stoppedDescription": "右上のトグルでサービスを開始できます",
+      "stoppedDescription": "上のトグルでサービスを開始できます",
       "openSettings": "プロキシサービスを設定",
       "stats": {
         "activeConnections": "アクティブ接続",
@@ -1673,6 +1673,12 @@
       "restartRequired": "アドレスまたはポートの変更を反映するにはプロキシサービスの再起動が必要です"
     },
     "switchFailed": "切り替えに失敗しました: {{error}}",
+    "takeover": {
+      "hint": "テイクオーバーするアプリを選択します。有効にすると、そのアプリのリクエストはローカルプロキシ経由で転送されます",
+      "enabled": "{{app}} テイクオーバー有効",
+      "disabled": "{{app}} テイクオーバー無効",
+      "failed": "テイクオーバーの切り替えに失敗しました"
+    },
     "failover": {
       "proxyRequired": "フェイルオーバーを設定するには、プロキシサービスを先に起動する必要があります",
       "autoSwitch": "自動フェイルオーバー",

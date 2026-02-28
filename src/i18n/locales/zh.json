@@ -1582,7 +1582,7 @@
       "currentProvider": "当前 Provider：",
       "waitingFirstRequest": "当前 Provider：等待首次请求…",
       "stoppedTitle": "代理服务已停止",
-      "stoppedDescription": "使用右上角开关即可启动服务",
+      "stoppedDescription": "使用上方开关即可启动服务",
       "openSettings": "配置代理服务",
       "stats": {
         "activeConnections": "活跃连接",
@@ -1673,6 +1673,12 @@
       "restartRequired": "修改地址或端口后需要重启代理服务才能生效"
     },
     "switchFailed": "切换失败: {{error}}",
+    "takeover": {
+      "hint": "选择要接管的应用，启用后该应用的请求将通过本地代理转发",
+      "enabled": "{{app}} 接管已启用",
+      "disabled": "{{app}} 接管已关闭",
+      "failed": "切换接管状态失败"
+    },
     "failover": {
       "proxyRequired": "需要先启动代理服务才能配置故障转移",
       "autoSwitch": "自动故障转移",
