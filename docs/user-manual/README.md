@@ -1,6 +1,6 @@
 # CC Switch 用户手册
 
-> Claude Code / Codex / Gemini CLI / OpenCode 全方位辅助工具
+> Claude Code / Codex / Gemini CLI / OpenCode / OpenClaw 全方位辅助工具
 
 ## 目录结构
 
