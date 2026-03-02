@@ -1,6 +1,8 @@
 <div align="center">
 
-# All-in-One Assistant for Claude Code, Codex & Gemini CLI
+# CC Switch
+
+### The All-in-One Manager for Claude Code, Codex, Gemini CLI, OpenCode & OpenClaw
 
 [![Version](https://img.shields.io/badge/version-3.11.1-blue.svg)](https://github.com/farion1231/cc-switch/releases)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](https://github.com/farion1231/cc-switch/releases)
@@ -14,6 +16,9 @@ English | [中文](README_ZH.md) | [日本語](README_JA.md) | [Changelog](CHANG
 </div>
 
 ## ❤️Sponsor
+
+<details open>
+<summary>Click to collapse</summary>
 
 [![MiniMax](assets/partners/banners/minimax-en.jpeg)](https://platform.minimax.io/subscribe/coding-plan?code=ClLhgxr2je&source=link)
 
@@ -72,6 +77,22 @@ Claude Code / Codex / Gemini official channels at 38% / 2% / 9% of original pric
 
 </table>
 
+</details>
+
+## Why CC Switch?
+
+Modern AI-powered coding relies on CLI tools like Claude Code, Codex, Gemini CLI, OpenCode, and OpenClaw — but each has its own configuration format. Switching API providers means manually editing JSON, TOML, or `.env` files, and there is no unified way to manage MCP and Skills across multiple tools.
+
+**CC Switch** gives you a single desktop app to manage all five CLI tools. Instead of editing config files by hand, you get a visual interface to import providers with one click, switch between them instantly, with 50+ built-in provider presets, unified MCP and Skills management, and system tray quick switching — all backed by a reliable SQLite database with atomic writes that protect your configs from corruption.
+
+- **One App, Five CLI Tools** — Manage Claude Code, Codex, Gemini CLI, OpenCode, and OpenClaw from a single interface
+- **No More Manual Editing** — 50+ provider presets including AWS Bedrock, NVIDIA NIM, and community relays; just pick and switch
+- **Unified MCP & Skills Management** — One panel to manage MCP servers and Skills across four apps with bidirectional sync
+- **System Tray Quick Switch** — Switch providers instantly from the tray menu, no need to open the full app
+- **Cloud Sync** — Sync provider data across devices via Dropbox, OneDrive, iCloud, or WebDAV servers
+- **Cross-Platform** — Native desktop app for Windows, macOS, and Linux, built with Tauri 2
+- **Built-in Utilities** — Includes various utilities for first-launch login confirmation, signature bypass, plugin extension sync, and more
+
 ## Screenshots
 
 |                  Main Interface                   |                  Add Provider                  |
@@ -80,102 +101,113 @@ Claude Code / Codex / Gemini official channels at 38% / 2% / 9% of original pric
 
 ## Features
 
-### Current Version: v3.11.1 | [Full Changelog](CHANGELOG.md) | [Release Notes](docs/release-note-v3.11.1-en.md)
+[Full Changelog](CHANGELOG.md) | [Release Notes](docs/release-note-v3.11.1-en.md)
 
-**v3.8.0 Major Update (2025-11-28)**
+### Provider Management
 
-**Persistence Architecture Upgrade & Brand New UI**
+- **5 CLI tools, 50+ presets** — Claude Code, Codex, Gemini CLI, OpenCode, OpenClaw; copy your key and import with one click
+- **Universal providers** — One config syncs to multiple apps (OpenCode, OpenClaw)
+- One-click switching, system tray quick access, drag-and-drop sorting, import/export
 
-- **SQLite + JSON Dual-layer Architecture**
-  - Migrated from JSON file storage to SQLite + JSON dual-layer structure
-  - Syncable data (providers, MCP, Prompts, Skills) stored in SQLite
-  - Device-level data (window state, local paths) stored in JSON
-  - Lays the foundation for future cloud sync functionality
-  - Schema version management for database migrations
+### Proxy & Failover
 
-- **Brand New User Interface**
-  - Completely redesigned interface layout
-  - Unified component styles and smoother animations
-  - Optimized visual hierarchy
-  - Tailwind CSS downgraded from v4 to v3.4 for better browser compatibility
+- **Local proxy with hot-switching** — Format conversion, auto-failover, circuit breaker, provider health monitoring, and request rectifier
+- **App-level takeover** — Independently proxy Claude, Codex, or Gemini, down to individual providers
 
-- **Japanese Language Support**
-  - Added Japanese interface support (now supports Chinese/English/Japanese)
+### MCP, Prompts & Skills
 
-- **Auto Launch on Startup**
-  - One-click enable/disable in settings
-  - Platform-native APIs (Registry/LaunchAgent/XDG autostart)
+- **Unified MCP panel** — Manage MCP servers across 4 apps with bidirectional sync and Deep Link import
+- **Prompts** — Markdown editor with cross-app sync (CLAUDE.md / AGENTS.md / GEMINI.md) and backfill protection
+- **Skills** — One-click install from GitHub repos or ZIP files, custom repository management, with symlink and file copy support
 
-- **Skills Recursive Scanning**
-  - Support for multi-level directory structures
-  - Allow same-named skills from different repositories
+### Usage & Cost Tracking
 
-- **Critical Bug Fixes**
-  - Fixed custom endpoints lost when updating providers
-  - Fixed Gemini configuration write issues
-  - Fixed Linux WebKitGTK rendering issues
+- **Usage dashboard** — Track spending, requests, and tokens with trend charts, detailed request logs, and custom per-model pricing
 
-**v3.7.0 Highlights**
+### Session Manager & Workspace
 
-**Six Core Features, 18,000+ Lines of New Code**
+- Browse, search, and restore conversation history across all apps
+- **Workspace editor** (OpenClaw) — Edit agent files (AGENTS.md, SOUL.md, etc.) with Markdown preview
 
-- **Gemini CLI Integration**
-  - Third supported AI CLI (Claude Code / Codex / Gemini)
-  - Dual-file configuration support (`.env` + `settings.json`)
-  - Complete MCP server management
-  - Presets: Google Official (OAuth) / PackyCode / Custom
+### System & Platform
 
-- **Claude Skills Management System**
-  - Auto-scan skills from GitHub repositories (3 pre-configured curated repos)
-  - One-click install/uninstall to `~/.claude/skills/`
-  - Custom repository support + subdirectory scanning
-  - Complete lifecycle management (discover/install/update)
+- **Cloud sync** — Custom config directory (Dropbox, OneDrive, iCloud, NAS) and WebDAV server sync
+- **Deep Link** (`ccswitch://`) — Import providers, MCP servers, prompts, and skills via URL
+- Dark / Light / System theme, auto-launch, auto-updater, atomic writes, auto-backups, i18n (zh/en/ja)
 
-- **Prompts Management System**
-  - Multi-preset system prompt management (unlimited presets, quick switching)
-  - Cross-app support (Claude: `CLAUDE.md` / Codex: `AGENTS.md` / Gemini: `GEMINI.md`)
-  - Markdown editor (CodeMirror 6 + real-time preview)
-  - Smart backfill protection, preserves manual modifications
+## FAQ
 
-- **MCP v3.7.0 Unified Architecture**
-  - Single panel manages MCP servers across three applications
-  - New SSE (Server-Sent Events) transport type
-  - Smart JSON parser + Codex TOML format auto-correction
-  - Unified import/export + bidirectional sync
+<details>
+<summary><strong>Which AI CLI tools does CC Switch support?</strong></summary>
 
-- **Deep Link Protocol**
-  - `ccswitch://` protocol registration (all platforms)
-  - One-click import provider configs via shared links
-  - Security validation + lifecycle integration
+CC Switch supports five tools: **Claude Code**, **Codex**, **Gemini CLI**, **OpenCode**, and **OpenClaw**. Each tool has dedicated provider presets and configuration management.
 
-- **Environment Variable Conflict Detection**
-  - Auto-detect cross-app configuration conflicts (Claude/Codex/Gemini/MCP)
-  - Visual conflict indicators + resolution suggestions
-  - Override warnings + backup before changes
+</details>
 
-**Core Capabilities**
+<details>
+<summary><strong>Do I need to restart the terminal after switching providers?</strong></summary>
 
-- **Provider Management**: One-click switching between Claude Code, Codex, and Gemini API configurations
-- **AWS Bedrock Support**: Built-in AWS Bedrock provider presets with AKSK and API Key authentication, cross-region inference support (global/us/eu/apac), covering Claude Code and OpenCode
-- **Speed Testing**: Measure API endpoint latency with visual quality indicators
-- **Import/Export**: Backup and restore configs with auto-rotation (keep 10 most recent)
-- **i18n Support**: Complete Chinese/English localization (UI, errors, tray)
-- **Claude Plugin Sync**: One-click apply/restore Claude plugin configurations
+For most tools, yes — restart your terminal or the CLI tool for changes to take effect. The exception is **Claude Code**, which currently supports hot-switching of provider data without a restart.
 
-**v3.6 Highlights**
+</details>
 
-- Provider duplication & drag-and-drop sorting
-- Multi-endpoint management & custom config directory (cloud sync ready)
-- Granular model configuration (4-tier: Haiku/Sonnet/Opus/Custom)
-- WSL environment support with auto-sync on directory change
-- 100% hooks test coverage & complete architecture refactoring
+<details>
+<summary><strong>My plugin configuration disappeared after switching providers — what happened?</strong></summary>
 
-**System Features**
+CC Switch provides a "Shared Config Snippet" feature to pass common data (beyond API keys and endpoints) between providers. Go to "Edit Provider" → "Shared Config Panel" → click "Extract from Current Provider" to save all common data. When creating a new provider, check "Write Shared Config" (enabled by default) to include plugin data in the new provider. All your configuration items are preserved in the default provider imported when you first launched the app.
 
-- System tray with quick switching
-- Single instance daemon
-- Built-in auto-updater
-- Atomic writes with rollback protection
+</details>
+
+<details>
+<summary><strong>macOS shows "unidentified developer" warning — how do I fix it?</strong></summary>
+
+The author doesn't have an Apple Developer account yet (registration in progress). Close the warning, then go to **System Settings → Privacy & Security → Open Anyway**. After that, the app will open normally.
+
+</details>
+
+<details>
+<summary><strong>Why can't I delete the currently active provider?</strong></summary>
+
+CC Switch follows a "minimal intrusion" design principle — even if you uninstall the app, your CLI tools will continue to work normally. The system always keeps one active configuration, because deleting all configurations would make the corresponding CLI tool unusable. If you rarely use a specific CLI tool, you can hide it in Settings. To switch back to official login, see the next question.
+
+</details>
+
+<details>
+<summary><strong>How do I switch back to official login?</strong></summary>
+
+Add an official provider from the preset list. After switching to it, run the Log out / Log in flow, and then you can freely switch between the official provider and third-party providers. Codex supports switching between different official providers, making it easy to switch between multiple Plus or Team accounts.
+
+</details>
+
+<details>
+<summary><strong>Where is my data stored?</strong></summary>
+
+- **Database**: `~/.cc-switch/cc-switch.db` (SQLite — providers, MCP, prompts, skills)
+- **Local settings**: `~/.cc-switch/settings.json` (device-level UI preferences)
+- **Backups**: `~/.cc-switch/backups/` (auto-rotated, keeps 10 most recent)
+- **Skills**: `~/.cc-switch/skills/` (symlinked to corresponding apps by default)
+
+</details>
+
+## Quick Start
+
+### Basic Usage
+
+1. **Add Provider**: Click "Add Provider" → Choose a preset or create custom configuration
+2. **Switch Provider**:
+   - Main UI: Select provider → Click "Enable"
+   - System Tray: Click provider name directly (instant effect)
+3. **Takes Effect**: Restart your terminal or the corresponding CLI tool to apply changes (Claude Code does not require a restart)
+4. **Back to Official**: Add an "Official Login" preset, restart the CLI tool, then follow its login/OAuth flow
+
+### MCP, Prompts, Skills & Sessions
+
+- **MCP**: Click the "MCP" button → Add servers via templates or custom config → Toggle per-app sync
+- **Prompts**: Click "Prompts" → Create presets with Markdown editor → Activate to sync to live files
+- **Skills**: Click "Skills" → Browse GitHub repos → One-click install to all apps
+- **Sessions**: Click "Sessions" → Browse, search, and restore conversation history across all apps
+
+> **Note**: On first launch, you can manually import existing CLI tool configs as the default provider.
 
 ## Download & Installation
 
@@ -234,89 +266,8 @@ flatpak install --user ./CC-Switch-v{version}-Linux.flatpak
 flatpak run com.ccswitch.desktop
 ```
 
-## Quick Start
-
-### Basic Usage
-
-1. **Add Provider**: Click "Add Provider" → Choose preset or create custom configuration
-2. **Switch Provider**:
-   - Main UI: Select provider → Click "Enable"
-   - System Tray: Click provider name directly (instant effect)
-3. **Takes Effect**: Restart your terminal or Claude Code / Codex / Gemini clients to apply changes
-4. **Back to Official**: Select the "Official Login" preset (Claude/Codex) or "Google Official" preset (Gemini), restart the corresponding client, then follow its login/OAuth flow
-
-### MCP Management
-
-- **Location**: Click "MCP" button in top-right corner
-- **Add Server**:
-  - Use built-in templates (mcp-fetch, mcp-filesystem, etc.)
-  - Support stdio / http / sse transport types
-  - Configure independent MCP servers for different apps
-- **Enable/Disable**: Toggle switches to control which servers sync to live config
-- **Sync**: Enabled servers auto-sync to each app's live files
-- **Import/Export**: Import existing MCP servers from Claude/Codex/Gemini config files
-
-### Skills Management (v3.7.0 New)
-
-- **Location**: Click "Skills" button in top-right corner
-- **Discover Skills**:
-  - Auto-scan pre-configured GitHub repositories (Anthropic official, ComposioHQ, community, etc.)
-  - Add custom repositories (supports subdirectory scanning)
-- **Install Skills**: Click "Install" to one-click install to `~/.claude/skills/`
-- **Uninstall Skills**: Click "Uninstall" to safely remove and clean up state
-- **Manage Repositories**: Add/remove custom GitHub repositories
-
-### Prompts Management (v3.7.0 New)
-
-- **Location**: Click "Prompts" button in top-right corner
-- **Create Presets**:
-  - Create unlimited system prompt presets
-  - Use Markdown editor to write prompts (syntax highlighting + real-time preview)
-- **Switch Presets**: Select preset → Click "Activate" to apply immediately
-- **Sync Mechanism**:
-  - Claude: `~/.claude/CLAUDE.md`
-  - Codex: `~/.codex/AGENTS.md`
-  - Gemini: `~/.gemini/GEMINI.md`
-- **Protection Mechanism**: Auto-save current prompt content before switching, preserves manual modifications
-
-### Configuration Files
-
-**Claude Code**
-
-- Live config: `~/.claude/settings.json` (or `claude.json`)
-- API key field: `env.ANTHROPIC_AUTH_TOKEN` or `env.ANTHROPIC_API_KEY`
-- MCP servers: `~/.claude.json` → `mcpServers`
-
-**Codex**
-
-- Live config: `~/.codex/auth.json` (required) + `config.toml` (optional)
-- API key field: `OPENAI_API_KEY` in `auth.json`
-- MCP servers: `~/.codex/config.toml` → `[mcp_servers]` tables
-
-**Gemini**
-
-- Live config: `~/.gemini/.env` (API key) + `~/.gemini/settings.json` (auth mode)
-- API key field: `GEMINI_API_KEY` or `GOOGLE_GEMINI_API_KEY` in `.env`
-- Environment variables: Support `GOOGLE_GEMINI_BASE_URL`, `GEMINI_MODEL`, etc.
-- MCP servers: `~/.gemini/settings.json` → `mcpServers`
-- Tray quick switch: Each provider switch rewrites `~/.gemini/.env`, no need to restart Gemini CLI
-
-**CC Switch Storage (v3.8.0 New Architecture)**
-
-- Database (SSOT): `~/.cc-switch/cc-switch.db` (SQLite, stores providers, MCP, Prompts, Skills)
-- Local settings: `~/.cc-switch/settings.json` (device-level settings)
-- Backups: `~/.cc-switch/backups/` (auto-rotate, keep 10)
-
-### Cloud Sync Setup
-
-1. Go to Settings → "Custom Configuration Directory"
-2. Choose your cloud sync folder (Dropbox, OneDrive, iCloud, etc.)
-3. Restart app to apply
-4. Repeat on other devices to enable cross-device sync
-
-> **Note**: First launch auto-imports existing Claude/Codex configs as default provider.
-
-## Architecture Overview
+<details>
+<summary><strong>Architecture Overview</strong></summary>
 
 ### Design Principles
 
@@ -351,16 +302,15 @@ flatpak run com.ccswitch.desktop
 
 - **ProviderService**: Provider CRUD, switching, backfill, sorting
 - **McpService**: MCP server management, import/export, live file sync
+- **ProxyService**: Local proxy mode with hot-switching and format conversion
+- **SessionManager**: Claude Code conversation history browsing
 - **ConfigService**: Config import/export, backup rotation
 - **SpeedtestService**: API endpoint latency measurement
 
-**v3.6 Refactoring**
+</details>
 
-- Backend: 5-phase refactoring (error handling → command split → tests → services → concurrency)
-- Frontend: 4-stage refactoring (test infra → hooks → components → cleanup)
-- Testing: 100% hooks coverage + integration tests (vitest + MSW)
-
-## Development
+<details>
+<summary><strong>Development Guide</strong></summary>
 
 ### Environment Requirements
 
@@ -421,25 +371,13 @@ cargo test test_name
 cargo test --features test-hooks
 ```
 
-### Testing Guide (v3.6 New)
+### Testing Guide
 
 **Frontend Testing**:
 
 - Uses **vitest** as test framework
 - Uses **MSW (Mock Service Worker)** to mock Tauri API calls
 - Uses **@testing-library/react** for component testing
-
-**Test Coverage**:
-
-- Hooks unit tests (100% coverage)
-  - `useProviderActions` - Provider operations
-  - `useMcpActions` - MCP management
-  - `useSettings` series - Settings management
-  - `useImportExport` - Import/export
-- Integration tests
-  - App main application flow
-  - SettingsDialog complete interaction
-  - MCP panel functionality
 
 **Running Tests**:
 
@@ -454,49 +392,56 @@ pnpm test:unit:watch
 pnpm test:unit --coverage
 ```
 
-## Tech Stack
+### Tech Stack
 
-**Frontend**: React 18 · TypeScript · Vite · TailwindCSS 4 · TanStack Query v5 · react-i18next · react-hook-form · zod · shadcn/ui · @dnd-kit
+**Frontend**: React 18 · TypeScript · Vite · TailwindCSS 3.4 · TanStack Query v5 · react-i18next · react-hook-form · zod · shadcn/ui · @dnd-kit
 
 **Backend**: Tauri 2.8 · Rust · serde · tokio · thiserror · tauri-plugin-updater/process/dialog/store/log
 
 **Testing**: vitest · MSW · @testing-library/react
 
-## Project Structure
+</details>
+
+<details>
+<summary><strong>Project Structure</strong></summary>
 
 ```
-├── src/                      # Frontend (React + TypeScript)
-│   ├── components/           # UI components (providers/settings/mcp/ui)
-│   ├── hooks/                # Custom hooks (business logic)
+├── src/                        # Frontend (React + TypeScript)
+│   ├── components/
+│   │   ├── providers/          # Provider management
+│   │   ├── mcp/                # MCP panel
+│   │   ├── prompts/            # Prompts management
+│   │   ├── skills/             # Skills management
+│   │   ├── sessions/           # Session Manager
+│   │   ├── proxy/              # Proxy mode panel
+│   │   ├── openclaw/           # OpenClaw config panels
+│   │   ├── settings/           # Settings (Terminal/Backup/About)
+│   │   ├── deeplink/           # Deep Link import
+│   │   ├── env/                # Environment variable management
+│   │   ├── universal/          # Cross-app configuration
+│   │   ├── usage/              # Usage statistics
+│   │   └── ui/                 # shadcn/ui component library
+│   ├── hooks/                  # Custom hooks (business logic)
 │   ├── lib/
-│   │   ├── api/              # Tauri API wrapper (type-safe)
-│   │   └── query/            # TanStack Query config
-│   ├── i18n/locales/         # Translations (zh/en)
-│   ├── config/               # Presets (providers/mcp)
-│   └── types/                # TypeScript definitions
-├── src-tauri/                # Backend (Rust)
+│   │   ├── api/                # Tauri API wrapper (type-safe)
+│   │   └── query/              # TanStack Query config
+│   ├── locales/                # Translations (zh/en/ja)
+│   ├── config/                 # Presets (providers/mcp)
+│   └── types/                  # TypeScript definitions
+├── src-tauri/                  # Backend (Rust)
 │   └── src/
-│       ├── commands/         # Tauri command layer (by domain)
-│       ├── services/         # Business logic layer
-│       ├── app_config.rs     # Config data models
-│       ├── provider.rs       # Provider domain models
-│       ├── mcp.rs            # MCP sync & validation
-│       └── lib.rs            # App entry & tray menu
-├── tests/                    # Frontend tests
-│   ├── hooks/                # Unit tests
-│   └── components/           # Integration tests
-└── assets/                   # Screenshots & partner resources
+│       ├── commands/           # Tauri command layer (by domain)
+│       ├── services/           # Business logic layer
+│       ├── database/           # SQLite DAO layer
+│       ├── proxy/              # Proxy module
+│       ├── session_manager/    # Session management
+│       ├── deeplink/           # Deep Link handling
+│       └── mcp/                # MCP sync module
+├── tests/                      # Frontend tests
+└── assets/                     # Screenshots & partner resources
 ```
 
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for version update details.
-
-## Legacy Electron Version
-
-[Releases](../../releases) retains v2.0.3 legacy Electron version
-
-If you need legacy Electron code, you can pull the electron-legacy branch
+</details>
 
 ## Contributing
 
@@ -507,7 +452,8 @@ Before submitting PRs, please ensure:
 - Pass type check: `pnpm typecheck`
 - Pass format check: `pnpm format:check`
 - Pass unit tests: `pnpm test:unit`
-- 💡 For new features, please open an issue for discussion before submitting a PR
+
+For new features, please open an issue for discussion before submitting a PR. PRs for features that are not a good fit for the project may be closed.
 
 ## Star History
 
