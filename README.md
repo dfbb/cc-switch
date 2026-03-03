@@ -193,8 +193,6 @@ Add an official provider from the preset list. After switching to it, run the Lo
 
 For detailed guides on every feature, check out the **[User Manual](docs/user-manual/en/README.md)** — covering provider management, MCP/Prompts/Skills, proxy & failover, and more.
 
-> Also available in: [中文](docs/user-manual/zh/README.md) | [日本語](docs/user-manual/ja/README.md)
-
 ## Quick Start
 
 ### Basic Usage
