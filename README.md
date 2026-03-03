@@ -101,7 +101,7 @@ Modern AI-powered coding relies on CLI tools like Claude Code, Codex, Gemini CLI
 
 ## Features
 
-[Full Changelog](CHANGELOG.md) | [Release Notes](docs/release-note-v3.11.1-en.md)
+[Full Changelog](CHANGELOG.md) | [Release Notes](docs/release-notes/v3.11.1-en.md)
 
 ### Provider Management
 
