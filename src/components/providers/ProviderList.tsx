@@ -179,7 +179,8 @@ export function ProviderList({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [showStreamCheckConfirm, setShowStreamCheckConfirm] = useState(false);
-  const [pendingTestProvider, setPendingTestProvider] = useState<Provider | null>(null);
+  const [pendingTestProvider, setPendingTestProvider] =
+    useState<Provider | null>(null);
 
   // Query settings for streamCheckConfirmed flag
   const { data: settings } = useQuery({
