@@ -324,16 +324,27 @@ impl ProviderAdapter for ClaudeAdapter {
         body: serde_json::Value,
         provider: &Provider,
     ) -> Result<serde_json::Value, ProxyError> {
+        // Use meta.prompt_cache_key if set by user, otherwise fall back to provider.id
+        let cache_key = provider
+            .meta
+            .as_ref()
+            .and_then(|m| m.prompt_cache_key.as_deref())
+            .unwrap_or(&provider.id);
+
         match self.get_api_format(provider) {
-            "openai_responses" => super::transform_responses::anthropic_to_responses(body),
-            _ => super::transform::anthropic_to_openai(body),
+            "openai_responses" => {
+                super::transform_responses::anthropic_to_responses(body, Some(cache_key))
+            }
+            _ => super::transform::anthropic_to_openai(body, Some(cache_key)),
         }
     }
 
     fn transform_response(&self, body: serde_json::Value) -> Result<serde_json::Value, ProxyError> {
-        // 响应格式通过检测 "output" vs "choices" 字段区分
-        // "output" 字段 → Responses API 格式
-        // "choices" 字段 → Chat Completions 格式
+        // Heuristic: detect response format by presence of top-level fields.
+        // The ProviderAdapter trait's transform_response doesn't receive the Provider
+        // config, so we can't check api_format here. Instead we rely on the fact that
+        // Responses API always returns "output" while Chat Completions returns "choices".
+        // This is safe because the two formats are structurally disjoint.
         if body.get("output").is_some() {
             super::transform_responses::responses_to_anthropic(body)
         } else {
@@ -622,6 +633,20 @@ mod tests {
             },
         );
         assert!(adapter.needs_transform(&openai_chat_provider));
+
+        // OpenAI Responses format in meta: needs transform
+        let openai_responses_provider = create_provider_with_meta(
+            json!({
+                "env": {
+                    "ANTHROPIC_BASE_URL": "https://api.example.com"
+                }
+            }),
+            ProviderMeta {
+                api_format: Some("openai_responses".to_string()),
+                ..Default::default()
+            },
+        );
+        assert!(adapter.needs_transform(&openai_responses_provider));
 
         // meta takes precedence over legacy settings_config fields
         let meta_precedence_over_settings = create_provider_with_meta(

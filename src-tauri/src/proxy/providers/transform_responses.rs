@@ -12,7 +12,9 @@ use crate::proxy::error::ProxyError;
 use serde_json::{json, Value};
 
 /// Anthropic 请求 → OpenAI Responses 请求
-pub fn anthropic_to_responses(body: Value) -> Result<Value, ProxyError> {
+///
+/// `cache_key`: optional prompt_cache_key to inject for improved cache routing
+pub fn anthropic_to_responses(body: Value, cache_key: Option<&str>) -> Result<Value, ProxyError> {
     let mut result = json!({});
 
     // NOTE: 模型映射由上游统一处理（proxy::model_mapper），格式转换层只做结构转换。
@@ -84,10 +86,118 @@ pub fn anthropic_to_responses(body: Value) -> Result<Value, ProxyError> {
     }
 
     if let Some(v) = body.get("tool_choice") {
-        result["tool_choice"] = v.clone();
+        result["tool_choice"] = map_tool_choice_to_responses(v);
+    }
+
+    // Inject prompt_cache_key for improved cache routing on OpenAI-compatible endpoints
+    if let Some(key) = cache_key {
+        result["prompt_cache_key"] = json!(key);
     }
 
     Ok(result)
+}
+
+fn map_tool_choice_to_responses(tool_choice: &Value) -> Value {
+    match tool_choice {
+        Value::String(_) => tool_choice.clone(),
+        Value::Object(obj) => match obj.get("type").and_then(|t| t.as_str()) {
+            // Anthropic "any" means at least one tool call is required
+            Some("any") => json!("required"),
+            Some("auto") => json!("auto"),
+            Some("none") => json!("none"),
+            // Anthropic forced tool -> Responses function tool selector
+            Some("tool") => {
+                let name = obj.get("name").and_then(|n| n.as_str()).unwrap_or("");
+                json!({
+                    "type": "function",
+                    "name": name
+                })
+            }
+            _ => tool_choice.clone(),
+        },
+        _ => tool_choice.clone(),
+    }
+}
+
+pub(crate) fn map_responses_stop_reason(
+    status: Option<&str>,
+    has_tool_use: bool,
+    incomplete_reason: Option<&str>,
+) -> Option<&'static str> {
+    status.map(|s| match s {
+        "completed" => {
+            if has_tool_use {
+                "tool_use"
+            } else {
+                "end_turn"
+            }
+        }
+        "incomplete" => {
+            if matches!(
+                incomplete_reason,
+                Some("max_output_tokens") | Some("max_tokens")
+            ) || incomplete_reason.is_none()
+            {
+                "max_tokens"
+            } else {
+                "end_turn"
+            }
+        }
+        _ => "end_turn",
+    })
+}
+
+/// Build Anthropic-style usage JSON from Responses API usage, including cache tokens.
+///
+/// Priority order:
+/// 1. OpenAI nested details (`input_tokens_details.cached_tokens`, `prompt_tokens_details.cached_tokens`) as initial value
+/// 2. Direct Anthropic-style fields (`cache_read_input_tokens`, `cache_creation_input_tokens`) override if present
+pub(crate) fn build_anthropic_usage_from_responses(usage: Option<&Value>) -> Value {
+    let u = match usage {
+        Some(v) if !v.is_null() => v,
+        _ => {
+            return json!({
+                "input_tokens": 0,
+                "output_tokens": 0
+            })
+        }
+    };
+
+    let input = u.get("input_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+    let output = u.get("output_tokens").and_then(|v| v.as_u64()).unwrap_or(0);
+
+    let mut result = json!({
+        "input_tokens": input,
+        "output_tokens": output
+    });
+
+    // Step 1: OpenAI nested details as fallback
+    // OpenAI Responses API: input_tokens_details.cached_tokens
+    if let Some(cached) = u
+        .pointer("/input_tokens_details/cached_tokens")
+        .and_then(|v| v.as_u64())
+    {
+        result["cache_read_input_tokens"] = json!(cached);
+    }
+    // OpenAI standard: prompt_tokens_details.cached_tokens
+    if let Some(cached) = u
+        .pointer("/prompt_tokens_details/cached_tokens")
+        .and_then(|v| v.as_u64())
+    {
+        if result.get("cache_read_input_tokens").is_none() {
+            result["cache_read_input_tokens"] = json!(cached);
+        }
+    }
+
+    // Step 2: Direct Anthropic-style fields override (authoritative if present)
+    if let Some(v) = u.get("cache_read_input_tokens") {
+        result["cache_read_input_tokens"] = v.clone();
+    }
+    if let Some(v) = u.get("cache_creation_input_tokens") {
+        result["cache_creation_input_tokens"] = v.clone();
+    }
+
+    result
 }
 
 /// 将 Anthropic messages 数组转换为 Responses API input 数组
@@ -133,6 +243,8 @@ fn convert_messages_to_input(messages: &[Value]) -> Result<Vec<Value>, ProxyErro
                                 } else {
                                     "input_text"
                                 };
+                                // OpenAI Responses API does not accept Anthropic cache_control
+                                // under input[].content[].
                                 message_content.push(json!({ "type": content_type, "text": text }));
                             }
                         }
@@ -239,6 +351,7 @@ pub fn responses_to_anthropic(body: Value) -> Result<Value, ProxyError> {
 
     let mut content = Vec::new();
 
+    let mut has_tool_use = false;
     for item in output {
         let item_type = item.get("type").and_then(|t| t.as_str()).unwrap_or("");
 
@@ -251,6 +364,12 @@ pub fn responses_to_anthropic(body: Value) -> Result<Value, ProxyError> {
                             if let Some(text) = block.get("text").and_then(|t| t.as_str()) {
                                 if !text.is_empty() {
                                     content.push(json!({"type": "text", "text": text}));
+                                }
+                            }
+                        } else if block_type == "refusal" {
+                            if let Some(refusal) = block.get("refusal").and_then(|t| t.as_str()) {
+                                if !refusal.is_empty() {
+                                    content.push(json!({"type": "text", "text": refusal}));
                                 }
                             }
                         }
@@ -273,6 +392,7 @@ pub fn responses_to_anthropic(body: Value) -> Result<Value, ProxyError> {
                     "name": name,
                     "input": input
                 }));
+                has_tool_use = true;
             }
 
             "reasoning" => {
@@ -304,25 +424,14 @@ pub fn responses_to_anthropic(body: Value) -> Result<Value, ProxyError> {
     }
 
     // status → stop_reason
-    let stop_reason = body
-        .get("status")
-        .and_then(|s| s.as_str())
-        .map(|s| match s {
-            "completed" => "end_turn",
-            "incomplete" => "max_tokens",
-            _ => "end_turn",
-        });
+    let stop_reason = map_responses_stop_reason(
+        body.get("status").and_then(|s| s.as_str()),
+        has_tool_use,
+        body.pointer("/incomplete_details/reason")
+            .and_then(|r| r.as_str()),
+    );
 
-    // Usage — Responses API 使用与 Anthropic 相同的字段名
-    let usage = body.get("usage").cloned().unwrap_or(json!({}));
-    let input_tokens = usage
-        .get("input_tokens")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
-    let output_tokens = usage
-        .get("output_tokens")
-        .and_then(|v| v.as_u64())
-        .unwrap_or(0) as u32;
+    let usage_json = build_anthropic_usage_from_responses(body.get("usage"));
 
     let result = json!({
         "id": body.get("id").and_then(|i| i.as_str()).unwrap_or(""),
@@ -332,10 +441,7 @@ pub fn responses_to_anthropic(body: Value) -> Result<Value, ProxyError> {
         "model": body.get("model").and_then(|m| m.as_str()).unwrap_or(""),
         "stop_reason": stop_reason,
         "stop_sequence": null,
-        "usage": {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens
-        }
+        "usage": usage_json
     });
 
     Ok(result)
@@ -353,7 +459,7 @@ mod tests {
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         assert_eq!(result["model"], "gpt-4o");
         assert_eq!(result["max_output_tokens"], 1024);
         assert_eq!(result["input"][0]["role"], "user");
@@ -372,7 +478,7 @@ mod tests {
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         assert_eq!(result["instructions"], "You are a helpful assistant.");
         // system should not appear in input
         assert_eq!(result["input"].as_array().unwrap().len(), 1);
@@ -390,7 +496,7 @@ mod tests {
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         assert_eq!(result["instructions"], "Part 1\n\nPart 2");
     }
 
@@ -407,12 +513,39 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         assert_eq!(result["tools"][0]["type"], "function");
         assert_eq!(result["tools"][0]["name"], "get_weather");
         assert!(result["tools"][0].get("parameters").is_some());
         // input_schema should not appear
         assert!(result["tools"][0].get("input_schema").is_none());
+    }
+
+    #[test]
+    fn test_anthropic_to_responses_tool_choice_any_to_required() {
+        let input = json!({
+            "model": "gpt-4o",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": "Weather?"}],
+            "tool_choice": {"type": "any"}
+        });
+
+        let result = anthropic_to_responses(input, None).unwrap();
+        assert_eq!(result["tool_choice"], "required");
+    }
+
+    #[test]
+    fn test_anthropic_to_responses_tool_choice_tool_to_function() {
+        let input = json!({
+            "model": "gpt-4o",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": "Weather?"}],
+            "tool_choice": {"type": "tool", "name": "get_weather"}
+        });
+
+        let result = anthropic_to_responses(input, None).unwrap();
+        assert_eq!(result["tool_choice"]["type"], "function");
+        assert_eq!(result["tool_choice"]["name"], "get_weather");
     }
 
     #[test]
@@ -429,7 +562,7 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         let input_arr = result["input"].as_array().unwrap();
 
         // Should produce: assistant message (text) + function_call item
@@ -459,7 +592,7 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         let input_arr = result["input"].as_array().unwrap();
 
         // Should produce: function_call_output item (lifted)
@@ -483,7 +616,7 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         let input_arr = result["input"].as_array().unwrap();
 
         // thinking should be discarded, only text remains
@@ -506,7 +639,7 @@ mod tests {
             }]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         let content = result["input"][0]["content"].as_array().unwrap();
 
         assert_eq!(content[0]["type"], "input_text");
@@ -563,6 +696,26 @@ mod tests {
         assert_eq!(result["content"][0]["id"], "call_123");
         assert_eq!(result["content"][0]["name"], "get_weather");
         assert_eq!(result["content"][0]["input"]["location"], "Tokyo");
+        assert_eq!(result["stop_reason"], "tool_use");
+    }
+
+    #[test]
+    fn test_responses_to_anthropic_with_refusal_block() {
+        let input = json!({
+            "id": "resp_123",
+            "status": "completed",
+            "model": "gpt-4o",
+            "output": [{
+                "type": "message",
+                "content": [{"type": "refusal", "refusal": "I can't help with that."}]
+            }],
+            "usage": {"input_tokens": 10, "output_tokens": 5}
+        });
+
+        let result = responses_to_anthropic(input).unwrap();
+        assert_eq!(result["content"][0]["type"], "text");
+        assert_eq!(result["content"][0]["text"], "I can't help with that.");
+        assert_eq!(result["stop_reason"], "end_turn");
     }
 
     #[test]
@@ -619,6 +772,24 @@ mod tests {
     }
 
     #[test]
+    fn test_responses_to_anthropic_incomplete_non_token_reason() {
+        let input = json!({
+            "id": "resp_123",
+            "status": "incomplete",
+            "incomplete_details": {"reason": "content_filter"},
+            "model": "gpt-4o",
+            "output": [{
+                "type": "message",
+                "content": [{"type": "output_text", "text": "Blocked"}]
+            }],
+            "usage": {"input_tokens": 10, "output_tokens": 1}
+        });
+
+        let result = responses_to_anthropic(input).unwrap();
+        assert_eq!(result["stop_reason"], "end_turn");
+    }
+
+    #[test]
     fn test_model_passthrough() {
         let input = json!({
             "model": "o3-mini",
@@ -626,7 +797,104 @@ mod tests {
             "messages": [{"role": "user", "content": "Hello"}]
         });
 
-        let result = anthropic_to_responses(input).unwrap();
+        let result = anthropic_to_responses(input, None).unwrap();
         assert_eq!(result["model"], "o3-mini");
+    }
+
+    #[test]
+    fn test_anthropic_to_responses_with_cache_key() {
+        let input = json!({
+            "model": "gpt-4o",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": "Hello"}]
+        });
+
+        let result = anthropic_to_responses(input, Some("my-provider-id")).unwrap();
+        assert_eq!(result["prompt_cache_key"], "my-provider-id");
+    }
+
+    #[test]
+    fn test_anthropic_to_responses_strip_cache_control_on_tools() {
+        let input = json!({
+            "model": "gpt-4o",
+            "max_tokens": 1024,
+            "messages": [{"role": "user", "content": "Weather?"}],
+            "tools": [{
+                "name": "get_weather",
+                "description": "Get weather",
+                "input_schema": {"type": "object"},
+                "cache_control": {"type": "ephemeral"}
+            }]
+        });
+
+        let result = anthropic_to_responses(input, None).unwrap();
+        assert!(result["tools"][0].get("cache_control").is_none());
+    }
+
+    #[test]
+    fn test_anthropic_to_responses_strip_cache_control_on_text() {
+        let input = json!({
+            "model": "gpt-4o",
+            "max_tokens": 1024,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Hello", "cache_control": {"type": "ephemeral"}}
+                ]
+            }]
+        });
+
+        let result = anthropic_to_responses(input, None).unwrap();
+        assert!(result["input"][0]["content"][0]
+            .get("cache_control")
+            .is_none());
+    }
+
+    #[test]
+    fn test_responses_to_anthropic_with_cache_tokens() {
+        let input = json!({
+            "id": "resp_123",
+            "status": "completed",
+            "model": "gpt-4o",
+            "output": [{
+                "type": "message",
+                "content": [{"type": "output_text", "text": "Hello!"}]
+            }],
+            "usage": {
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "input_tokens_details": {
+                    "cached_tokens": 80
+                }
+            }
+        });
+
+        let result = responses_to_anthropic(input).unwrap();
+        assert_eq!(result["usage"]["input_tokens"], 100);
+        assert_eq!(result["usage"]["output_tokens"], 50);
+        assert_eq!(result["usage"]["cache_read_input_tokens"], 80);
+    }
+
+    #[test]
+    fn test_responses_to_anthropic_with_direct_cache_fields() {
+        let input = json!({
+            "id": "resp_123",
+            "status": "completed",
+            "model": "gpt-4o",
+            "output": [{
+                "type": "message",
+                "content": [{"type": "output_text", "text": "Hello!"}]
+            }],
+            "usage": {
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "cache_read_input_tokens": 60,
+                "cache_creation_input_tokens": 20
+            }
+        });
+
+        let result = responses_to_anthropic(input).unwrap();
+        assert_eq!(result["usage"]["cache_read_input_tokens"], 60);
+        assert_eq!(result["usage"]["cache_creation_input_tokens"], 20);
     }
 }

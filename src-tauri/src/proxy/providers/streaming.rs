@@ -60,6 +60,20 @@ struct Usage {
     prompt_tokens: u32,
     #[serde(default)]
     completion_tokens: u32,
+    #[serde(default)]
+    prompt_tokens_details: Option<PromptTokensDetails>,
+    /// Some compatible servers return Anthropic-style cache fields directly
+    #[serde(default)]
+    cache_read_input_tokens: Option<u32>,
+    #[serde(default)]
+    cache_creation_input_tokens: Option<u32>,
+}
+
+/// Nested token details from OpenAI format
+#[derive(Debug, Deserialize)]
+struct PromptTokensDetails {
+    #[serde(default)]
+    cached_tokens: u32,
 }
 
 /// 创建 Anthropic SSE 流
@@ -115,6 +129,21 @@ pub fn create_anthropic_sse_stream(
 
                                     if let Some(choice) = chunk.choices.first() {
                                         if !has_sent_message_start {
+                                            // Build usage with cache tokens if available from first chunk
+                                            let mut start_usage = json!({
+                                                "input_tokens": 0,
+                                                "output_tokens": 0
+                                            });
+                                            if let Some(u) = &chunk.usage {
+                                                start_usage["input_tokens"] = json!(u.prompt_tokens);
+                                                if let Some(cached) = extract_cache_read_tokens(u) {
+                                                    start_usage["cache_read_input_tokens"] = json!(cached);
+                                                }
+                                                if let Some(created) = u.cache_creation_input_tokens {
+                                                    start_usage["cache_creation_input_tokens"] = json!(created);
+                                                }
+                                            }
+
                                             let event = json!({
                                                 "type": "message_start",
                                                 "message": {
@@ -122,10 +151,7 @@ pub fn create_anthropic_sse_stream(
                                                     "type": "message",
                                                     "role": "assistant",
                                                     "model": current_model.clone().unwrap_or_default(),
-                                                    "usage": {
-                                                        "input_tokens": 0,
-                                                        "output_tokens": 0
-                                                    }
+                                                    "usage": start_usage
                                                 }
                                             });
                                             let sse_data = format!("event: message_start\ndata: {}\n\n",
@@ -272,11 +298,20 @@ pub fn create_anthropic_sse_stream(
                                             }
 
                                             let stop_reason = map_stop_reason(Some(finish_reason));
-                                            // 构建 usage 信息，包含 input_tokens 和 output_tokens
-                                            let usage_json = chunk.usage.as_ref().map(|u| json!({
-                                                "input_tokens": u.prompt_tokens,
-                                                "output_tokens": u.completion_tokens
-                                            }));
+                                            // Build usage with cache token fields
+                                            let usage_json = chunk.usage.as_ref().map(|u| {
+                                                let mut uj = json!({
+                                                    "input_tokens": u.prompt_tokens,
+                                                    "output_tokens": u.completion_tokens
+                                                });
+                                                if let Some(cached) = extract_cache_read_tokens(u) {
+                                                    uj["cache_read_input_tokens"] = json!(cached);
+                                                }
+                                                if let Some(created) = u.cache_creation_input_tokens {
+                                                    uj["cache_creation_input_tokens"] = json!(created);
+                                                }
+                                                uj
+                                            });
                                             let event = json!({
                                                 "type": "message_delta",
                                                 "delta": {
@@ -312,6 +347,20 @@ pub fn create_anthropic_sse_stream(
             }
         }
     }
+}
+
+/// Extract cache_read tokens from Usage, checking both direct field and nested details
+fn extract_cache_read_tokens(usage: &Usage) -> Option<u32> {
+    // Direct field takes priority (compatible servers)
+    if let Some(v) = usage.cache_read_input_tokens {
+        return Some(v);
+    }
+    // OpenAI standard: prompt_tokens_details.cached_tokens
+    usage
+        .prompt_tokens_details
+        .as_ref()
+        .map(|d| d.cached_tokens)
+        .filter(|&v| v > 0)
 }
 
 /// 映射停止原因

@@ -170,6 +170,7 @@
     "settingsSaved": "Settings saved",
     "settingsSaveFailed": "Failed to save settings: {{error}}",
     "openAIChatFormatHint": "This provider uses OpenAI Chat format and requires the proxy service to be enabled",
+    "openAIFormatHint": "This provider uses OpenAI-compatible format and requires the proxy service to be enabled",
     "openLinkFailed": "Failed to open link",
     "openclawModelsRegistered": "Models have been registered to /model list",
     "openclawDefaultModelSet": "Set as default model",

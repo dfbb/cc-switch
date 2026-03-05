@@ -155,11 +155,11 @@ export function useProviderActions(activeApp: AppId) {
           (provider.meta?.apiFormat === "openai_chat" ||
             provider.meta?.apiFormat === "openai_responses")
         ) {
-          // OpenAI Chat 格式供应商：显示代理提示
+          // OpenAI format provider: show proxy hint
           toast.info(
-            t("notifications.openAIChatFormatHint", {
+            t("notifications.openAIFormatHint", {
               defaultValue:
-                "此供应商使用 OpenAI Chat 格式，需要开启代理服务才能正常使用",
+                "此供应商使用 OpenAI 兼容格式，需要开启代理服务才能正常使用",
             }),
             {
               duration: 5000,
