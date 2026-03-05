@@ -47,7 +47,8 @@ export interface ProviderPreset {
   // Claude API 格式（仅 Claude 供应商使用）
   // - "anthropic" (默认): Anthropic Messages API 格式，直接透传
   // - "openai_chat": OpenAI Chat Completions 格式，需要格式转换
-  apiFormat?: "anthropic" | "openai_chat";
+  // - "openai_responses": OpenAI Responses API 格式，需要格式转换
+  apiFormat?: "anthropic" | "openai_chat" | "openai_responses";
 }
 
 export const providerPresets: ProviderPreset[] = [

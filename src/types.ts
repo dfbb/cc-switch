@@ -145,7 +145,8 @@ export interface ProviderMeta {
   // Claude API 格式（仅 Claude 供应商使用）
   // - "anthropic": 原生 Anthropic Messages API 格式，直接透传
   // - "openai_chat": OpenAI Chat Completions 格式，需要格式转换
-  apiFormat?: "anthropic" | "openai_chat";
+  // - "openai_responses": OpenAI Responses API 格式，需要格式转换
+  apiFormat?: "anthropic" | "openai_chat" | "openai_responses";
 }
 
 // Skill 同步方式
@@ -154,7 +155,8 @@ export type SkillSyncMethod = "auto" | "symlink" | "copy";
 // Claude API 格式类型
 // - "anthropic": 原生 Anthropic Messages API 格式，直接透传
 // - "openai_chat": OpenAI Chat Completions 格式，需要格式转换
-export type ClaudeApiFormat = "anthropic" | "openai_chat";
+// - "openai_responses": OpenAI Responses API 格式，需要格式转换
+export type ClaudeApiFormat = "anthropic" | "openai_chat" | "openai_responses";
 
 // 主页面显示的应用配置
 export interface VisibleApps {

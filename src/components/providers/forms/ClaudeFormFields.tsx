@@ -164,9 +164,11 @@ export function ClaudeFormFields({
           onChange={onBaseUrlChange}
           placeholder={t("providerForm.apiEndpointPlaceholder")}
           hint={
-            apiFormat === "openai_chat"
-              ? t("providerForm.apiHintOAI")
-              : t("providerForm.apiHint")
+            apiFormat === "openai_responses"
+              ? t("providerForm.apiHintResponses")
+              : apiFormat === "openai_chat"
+                ? t("providerForm.apiHintOAI")
+                : t("providerForm.apiHint")
           }
           onManageClick={() => onEndpointModalToggle(true)}
         />
@@ -207,6 +209,11 @@ export function ClaudeFormFields({
               <SelectItem value="openai_chat">
                 {t("providerForm.apiFormatOpenAIChat", {
                   defaultValue: "OpenAI Chat Completions (需转换)",
+                })}
+              </SelectItem>
+              <SelectItem value="openai_responses">
+                {t("providerForm.apiFormatOpenAIResponses", {
+                  defaultValue: "OpenAI Responses API (需转换)",
                 })}
               </SelectItem>
             </SelectContent>

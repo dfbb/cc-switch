@@ -789,7 +789,13 @@ impl RequestForwarder {
 
         let effective_endpoint =
             if needs_transform && adapter.name() == "Claude" && endpoint == "/v1/messages" {
-                "/v1/chat/completions"
+                // 根据 api_format 选择目标端点
+                let api_format = super::providers::get_claude_api_format(provider);
+                if api_format == "openai_responses" {
+                    "/v1/responses"
+                } else {
+                    "/v1/chat/completions"
+                }
             } else {
                 endpoint
             };

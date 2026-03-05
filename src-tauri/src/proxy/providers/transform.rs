@@ -210,7 +210,7 @@ fn convert_message_to_openai(
 }
 
 /// 清理 JSON schema（移除不支持的 format）
-fn clean_schema(mut schema: Value) -> Value {
+pub fn clean_schema(mut schema: Value) -> Value {
     if let Some(obj) = schema.as_object_mut() {
         // 移除 "format": "uri"
         if obj.get("format").and_then(|v| v.as_str()) == Some("uri") {

@@ -1,10 +1,11 @@
 //! Claude (Anthropic) Provider Adapter
 //!
-//! 支持透传模式和 OpenAI Chat Completions 格式转换模式
+//! 支持透传模式和 OpenAI 格式转换模式
 //!
 //! ## API 格式
 //! - **anthropic** (默认): Anthropic Messages API 格式，直接透传
 //! - **openai_chat**: OpenAI Chat Completions 格式，需要 Anthropic ↔ OpenAI 转换
+//! - **openai_responses**: OpenAI Responses API 格式，需要 Anthropic ↔ Responses 转换
 //!
 //! ## 认证模式
 //! - **Claude**: Anthropic 官方 API (x-api-key + anthropic-version)
@@ -15,6 +16,54 @@ use super::{AuthInfo, AuthStrategy, ProviderAdapter, ProviderType};
 use crate::provider::Provider;
 use crate::proxy::error::ProxyError;
 use reqwest::RequestBuilder;
+
+/// 获取 Claude 供应商的 API 格式
+///
+/// 供 handler/forwarder 外部使用的公开函数。
+/// 优先级：meta.apiFormat > settings_config.api_format > openrouter_compat_mode > 默认 "anthropic"
+pub fn get_claude_api_format(provider: &Provider) -> &'static str {
+    // 1) Preferred: meta.apiFormat (SSOT, never written to Claude Code config)
+    if let Some(meta) = provider.meta.as_ref() {
+        if let Some(api_format) = meta.api_format.as_deref() {
+            return match api_format {
+                "openai_chat" => "openai_chat",
+                "openai_responses" => "openai_responses",
+                _ => "anthropic",
+            };
+        }
+    }
+
+    // 2) Backward compatibility: legacy settings_config.api_format
+    if let Some(api_format) = provider
+        .settings_config
+        .get("api_format")
+        .and_then(|v| v.as_str())
+    {
+        return match api_format {
+            "openai_chat" => "openai_chat",
+            "openai_responses" => "openai_responses",
+            _ => "anthropic",
+        };
+    }
+
+    // 3) Backward compatibility: legacy openrouter_compat_mode (bool/number/string)
+    let raw = provider.settings_config.get("openrouter_compat_mode");
+    let enabled = match raw {
+        Some(serde_json::Value::Bool(v)) => *v,
+        Some(serde_json::Value::Number(num)) => num.as_i64().unwrap_or(0) != 0,
+        Some(serde_json::Value::String(value)) => {
+            let normalized = value.trim().to_lowercase();
+            normalized == "true" || normalized == "1"
+        }
+        _ => false,
+    };
+
+    if enabled {
+        "openai_chat"
+    } else {
+        "anthropic"
+    }
+}
 
 /// Claude 适配器
 pub struct ClaudeAdapter;
@@ -57,48 +106,9 @@ impl ClaudeAdapter {
     /// 从 provider.meta.api_format 读取格式设置：
     /// - "anthropic" (默认): Anthropic Messages API 格式，直接透传
     /// - "openai_chat": OpenAI Chat Completions 格式，需要格式转换
+    /// - "openai_responses": OpenAI Responses API 格式，需要格式转换
     fn get_api_format(&self, provider: &Provider) -> &'static str {
-        // 1) Preferred: meta.apiFormat (SSOT, never written to Claude Code config)
-        if let Some(meta) = provider.meta.as_ref() {
-            if let Some(api_format) = meta.api_format.as_deref() {
-                return if api_format == "openai_chat" {
-                    "openai_chat"
-                } else {
-                    "anthropic"
-                };
-            }
-        }
-
-        // 2) Backward compatibility: legacy settings_config.api_format
-        if let Some(api_format) = provider
-            .settings_config
-            .get("api_format")
-            .and_then(|v| v.as_str())
-        {
-            return if api_format == "openai_chat" {
-                "openai_chat"
-            } else {
-                "anthropic"
-            };
-        }
-
-        // 3) Backward compatibility: legacy openrouter_compat_mode (bool/number/string)
-        let raw = provider.settings_config.get("openrouter_compat_mode");
-        let enabled = match raw {
-            Some(serde_json::Value::Bool(v)) => *v,
-            Some(serde_json::Value::Number(num)) => num.as_i64().unwrap_or(0) != 0,
-            Some(serde_json::Value::String(value)) => {
-                let normalized = value.trim().to_lowercase();
-                normalized == "true" || normalized == "1"
-            }
-            _ => false,
-        };
-
-        if enabled {
-            "openai_chat"
-        } else {
-            "anthropic"
-        }
+        get_claude_api_format(provider)
     }
 
     /// 检测是否为仅 Bearer 认证模式
@@ -301,20 +311,34 @@ impl ProviderAdapter for ClaudeAdapter {
     fn needs_transform(&self, provider: &Provider) -> bool {
         // 根据 api_format 配置决定是否需要格式转换
         // - "anthropic" (默认): 直接透传，无需转换
-        // - "openai_chat": 需要 Anthropic ↔ OpenAI 格式转换
-        self.get_api_format(provider) == "openai_chat"
+        // - "openai_chat": 需要 Anthropic ↔ OpenAI Chat Completions 格式转换
+        // - "openai_responses": 需要 Anthropic ↔ OpenAI Responses API 格式转换
+        matches!(
+            self.get_api_format(provider),
+            "openai_chat" | "openai_responses"
+        )
     }
 
     fn transform_request(
         &self,
         body: serde_json::Value,
-        _provider: &Provider,
+        provider: &Provider,
     ) -> Result<serde_json::Value, ProxyError> {
-        super::transform::anthropic_to_openai(body)
+        match self.get_api_format(provider) {
+            "openai_responses" => super::transform_responses::anthropic_to_responses(body),
+            _ => super::transform::anthropic_to_openai(body),
+        }
     }
 
     fn transform_response(&self, body: serde_json::Value) -> Result<serde_json::Value, ProxyError> {
-        super::transform::openai_to_anthropic(body)
+        // 响应格式通过检测 "output" vs "choices" 字段区分
+        // "output" 字段 → Responses API 格式
+        // "choices" 字段 → Chat Completions 格式
+        if body.get("output").is_some() {
+            super::transform_responses::responses_to_anthropic(body)
+        } else {
+            super::transform::openai_to_anthropic(body)
+        }
     }
 }
 

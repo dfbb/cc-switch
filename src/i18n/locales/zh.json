@@ -697,6 +697,8 @@
     "apiFormatHint": "选择供应商 API 的输入格式",
     "apiFormatAnthropic": "Anthropic Messages (原生)",
     "apiFormatOpenAIChat": "OpenAI Chat Completions (需开启代理)",
+    "apiFormatOpenAIResponses": "OpenAI Responses API (需开启代理)",
+    "apiHintResponses": "💡 填写兼容 OpenAI Responses API 的服务端点地址，不要以斜杠结尾",
     "anthropicDefaultHaikuModel": "Haiku 默认模型",
     "anthropicDefaultSonnetModel": "Sonnet 默认模型",
     "anthropicDefaultOpusModel": "Opus 默认模型",

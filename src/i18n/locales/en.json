@@ -697,6 +697,8 @@
     "apiFormatHint": "Select the input format for the provider's API",
     "apiFormatAnthropic": "Anthropic Messages (Native)",
     "apiFormatOpenAIChat": "OpenAI Chat Completions (Requires proxy)",
+    "apiFormatOpenAIResponses": "OpenAI Responses API (Requires proxy)",
+    "apiHintResponses": "💡 Fill in OpenAI Responses API compatible service endpoint, avoid trailing slash",
     "anthropicDefaultHaikuModel": "Default Haiku Model",
     "anthropicDefaultSonnetModel": "Default Sonnet Model",
     "anthropicDefaultOpusModel": "Default Opus Model",

@@ -152,7 +152,8 @@ export function useProviderActions(activeApp: AppId) {
         if (
           activeApp === "claude" &&
           provider.category !== "official" &&
-          provider.meta?.apiFormat === "openai_chat"
+          (provider.meta?.apiFormat === "openai_chat" ||
+            provider.meta?.apiFormat === "openai_responses")
         ) {
           // OpenAI Chat 格式供应商：显示代理提示
           toast.info(
