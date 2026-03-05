@@ -272,16 +272,49 @@ pub fn openai_to_anthropic(body: Value) -> Result<Value, ProxyError> {
         .ok_or_else(|| ProxyError::TransformError("No message in choice".to_string()))?;
 
     let mut content = Vec::new();
+    let mut has_tool_use = false;
 
-    // 文本内容
-    if let Some(text) = message.get("content").and_then(|c| c.as_str()) {
-        if !text.is_empty() {
-            content.push(json!({"type": "text", "text": text}));
+    // 文本/拒绝内容
+    if let Some(msg_content) = message.get("content") {
+        if let Some(text) = msg_content.as_str() {
+            if !text.is_empty() {
+                content.push(json!({"type": "text", "text": text}));
+            }
+        } else if let Some(parts) = msg_content.as_array() {
+            for part in parts {
+                let part_type = part.get("type").and_then(|t| t.as_str()).unwrap_or("");
+                match part_type {
+                    "text" | "output_text" => {
+                        if let Some(text) = part.get("text").and_then(|t| t.as_str()) {
+                            if !text.is_empty() {
+                                content.push(json!({"type": "text", "text": text}));
+                            }
+                        }
+                    }
+                    "refusal" => {
+                        if let Some(refusal) = part.get("refusal").and_then(|r| r.as_str()) {
+                            if !refusal.is_empty() {
+                                content.push(json!({"type": "text", "text": refusal}));
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+    // Some providers put refusal at message-level.
+    if let Some(refusal) = message.get("refusal").and_then(|r| r.as_str()) {
+        if !refusal.is_empty() {
+            content.push(json!({"type": "text", "text": refusal}));
         }
     }
 
-    // 工具调用
+    // 工具调用（tool_calls）
     if let Some(tool_calls) = message.get("tool_calls").and_then(|t| t.as_array()) {
+        if !tool_calls.is_empty() {
+            has_tool_use = true;
+        }
         for tc in tool_calls {
             let id = tc.get("id").and_then(|i| i.as_str()).unwrap_or("");
             let empty_obj = json!({});
@@ -301,6 +334,33 @@ pub fn openai_to_anthropic(body: Value) -> Result<Value, ProxyError> {
             }));
         }
     }
+    // 兼容旧格式（function_call）
+    if !has_tool_use {
+        if let Some(function_call) = message.get("function_call") {
+            let id = function_call.get("id").and_then(|i| i.as_str()).unwrap_or("");
+            let name = function_call
+                .get("name")
+                .and_then(|n| n.as_str())
+                .unwrap_or("");
+            let has_arguments = function_call.get("arguments").is_some();
+
+            let input = match function_call.get("arguments") {
+                Some(Value::String(s)) => serde_json::from_str(s).unwrap_or(json!({})),
+                Some(v @ Value::Object(_)) | Some(v @ Value::Array(_)) => v.clone(),
+                _ => json!({}),
+            };
+
+            if !name.is_empty() || has_arguments {
+                content.push(json!({
+                    "type": "tool_use",
+                    "id": id,
+                    "name": name,
+                    "input": input
+                }));
+                has_tool_use = true;
+            }
+        }
+    }
 
     // 映射 finish_reason → stop_reason
     let stop_reason = choice
@@ -309,9 +369,14 @@ pub fn openai_to_anthropic(body: Value) -> Result<Value, ProxyError> {
         .map(|r| match r {
             "stop" => "end_turn",
             "length" => "max_tokens",
-            "tool_calls" => "tool_use",
-            other => other,
-        });
+            "tool_calls" | "function_call" => "tool_use",
+            "content_filter" => "end_turn",
+            other => {
+                log::warn!("[Claude/OpenAI] Unknown finish_reason in non-streaming response: {other}");
+                "end_turn"
+            }
+        })
+        .or(if has_tool_use { Some("tool_use") } else { None });
 
     // usage — map cache tokens from OpenAI format to Anthropic format
     let usage = body.get("usage").cloned().unwrap_or(json!({}));
@@ -631,5 +696,75 @@ mod tests {
         let result = openai_to_anthropic(input).unwrap();
         assert_eq!(result["usage"]["cache_read_input_tokens"], 60);
         assert_eq!(result["usage"]["cache_creation_input_tokens"], 20);
+    }
+
+    #[test]
+    fn test_openai_to_anthropic_finish_reason_content_filter_maps_end_turn() {
+        let input = json!({
+            "id": "chatcmpl-123",
+            "model": "gpt-4",
+            "choices": [{
+                "index": 0,
+                "message": {"role": "assistant", "content": "Blocked"},
+                "finish_reason": "content_filter"
+            }],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 1}
+        });
+
+        let result = openai_to_anthropic(input).unwrap();
+        assert_eq!(result["stop_reason"], "end_turn");
+    }
+
+    #[test]
+    fn test_openai_to_anthropic_with_legacy_function_call() {
+        let input = json!({
+            "id": "chatcmpl-123",
+            "model": "gpt-4",
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": null,
+                    "function_call": {
+                        "name": "get_weather",
+                        "arguments": "{\"location\":\"Tokyo\"}"
+                    }
+                },
+                "finish_reason": "function_call"
+            }],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5}
+        });
+
+        let result = openai_to_anthropic(input).unwrap();
+        assert_eq!(result["content"][0]["type"], "tool_use");
+        assert_eq!(result["content"][0]["name"], "get_weather");
+        assert_eq!(result["content"][0]["input"]["location"], "Tokyo");
+        assert_eq!(result["stop_reason"], "tool_use");
+    }
+
+    #[test]
+    fn test_openai_to_anthropic_with_content_parts_and_refusal() {
+        let input = json!({
+            "id": "chatcmpl-123",
+            "model": "gpt-4",
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": [
+                        {"type": "text", "text": "Hello"},
+                        {"type": "refusal", "refusal": "I can't do that"}
+                    ]
+                },
+                "finish_reason": "stop"
+            }],
+            "usage": {"prompt_tokens": 10, "completion_tokens": 5}
+        });
+
+        let result = openai_to_anthropic(input).unwrap();
+        assert_eq!(result["content"][0]["type"], "text");
+        assert_eq!(result["content"][0]["text"], "Hello");
+        assert_eq!(result["content"][1]["type"], "text");
+        assert_eq!(result["content"][1]["text"], "I can't do that");
     }
 }
