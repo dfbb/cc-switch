@@ -483,6 +483,23 @@ export interface OpenClawModelCatalogEntry {
   alias?: string;
 }
 
+export interface OpenClawHealthWarning {
+  code: string;
+  message: string;
+  path?: string;
+}
+
+export interface OpenClawWriteOutcome {
+  backupPath?: string;
+  warnings: OpenClawHealthWarning[];
+}
+
+export type OpenClawToolsProfile =
+  | "minimal"
+  | "coding"
+  | "messaging"
+  | "full";
+
 // OpenClaw 供应商配置（settings_config 结构）
 // 对应 OpenClaw 的 models.providers.<provider-id> 配置
 export interface OpenClawProviderConfig {
@@ -496,6 +513,8 @@ export interface OpenClawProviderConfig {
 export interface OpenClawAgentsDefaults {
   model?: OpenClawDefaultModel;
   models?: Record<string, OpenClawModelCatalogEntry>;
+  timeoutSeconds?: number;
+  timeout?: number;
   [key: string]: unknown; // preserve unknown fields
 }
 
@@ -506,7 +525,7 @@ export interface OpenClawEnvConfig {
 
 // OpenClaw tools 配置（openclaw.json 的 tools 节点）
 export interface OpenClawToolsConfig {
-  profile?: string;
+  profile?: OpenClawToolsProfile | string;
   allow?: string[];
   deny?: string[];
   [key: string]: unknown; // preserve unknown fields

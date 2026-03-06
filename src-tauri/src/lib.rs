@@ -1054,6 +1054,8 @@ pub fn run() {
             // OpenClaw specific
             commands::import_openclaw_providers_from_live,
             commands::get_openclaw_live_provider_ids,
+            commands::get_openclaw_live_provider,
+            commands::scan_openclaw_config_health,
             commands::get_openclaw_default_model,
             commands::set_openclaw_default_model,
             commands::get_openclaw_model_catalog,

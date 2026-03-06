@@ -65,6 +65,12 @@ export const useAddProviderMutation = (appId: AppId) => {
         });
       }
 
+      if (appId === "openclaw") {
+        await queryClient.invalidateQueries({
+          queryKey: openclawKeys.health,
+        });
+      }
+
       try {
         await providersApi.updateTrayMenu();
       } catch (trayError) {
@@ -106,6 +112,11 @@ export const useUpdateProviderMutation = (appId: AppId) => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["providers", appId] });
+      if (appId === "openclaw") {
+        await queryClient.invalidateQueries({
+          queryKey: openclawKeys.health,
+        });
+      }
       toast.success(
         t("notifications.updateSuccess", {
           defaultValue: "供应商更新成功",
@@ -150,6 +161,12 @@ export const useDeleteProviderMutation = (appId: AppId) => {
         });
         await queryClient.invalidateQueries({
           queryKey: ["omo-slim", "provider-count"],
+        });
+      }
+
+      if (appId === "openclaw") {
+        await queryClient.invalidateQueries({
+          queryKey: openclawKeys.health,
         });
       }
 
@@ -212,6 +229,9 @@ export const useSwitchProviderMutation = (appId: AppId) => {
         });
         await queryClient.invalidateQueries({
           queryKey: openclawKeys.defaultModel,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: openclawKeys.health,
         });
       }
 

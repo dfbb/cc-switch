@@ -80,6 +80,9 @@ export function useProviderActions(activeApp: AppId) {
             const existingCatalog = (await openclawApi.getModelCatalog()) || {};
             const mergedCatalog = { ...existingCatalog, ...modelCatalog };
             await openclawApi.setModelCatalog(mergedCatalog);
+            await queryClient.invalidateQueries({
+              queryKey: openclawKeys.health,
+            });
             modelsRegistered = true;
           }
 
@@ -88,6 +91,9 @@ export function useProviderActions(activeApp: AppId) {
             const existingDefault = await openclawApi.getDefaultModel();
             if (!existingDefault?.primary) {
               await openclawApi.setDefaultModel(model);
+              await queryClient.invalidateQueries({
+                queryKey: openclawKeys.health,
+              });
             }
           }
 
@@ -109,7 +115,7 @@ export function useProviderActions(activeApp: AppId) {
         }
       }
     },
-    [addProviderMutation, activeApp, t],
+    [addProviderMutation, activeApp, queryClient, t],
   );
 
   // 更新供应商
@@ -255,15 +261,26 @@ export function useProviderActions(activeApp: AppId) {
       };
 
       try {
-        await openclawApi.setDefaultModel(model);
+        const outcome = await openclawApi.setDefaultModel(model);
         await queryClient.invalidateQueries({
           queryKey: openclawKeys.defaultModel,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: openclawKeys.health,
         });
         toast.success(
           t("notifications.openclawDefaultModelSet", {
             defaultValue: "已设为默认模型",
           }),
-          { closeButton: true },
+          {
+            closeButton: true,
+            description: outcome.backupPath
+              ? t("openclaw.backupCreated", {
+                  path: outcome.backupPath,
+                  defaultValue: "Backup created: {{path}}",
+                })
+              : undefined,
+          },
         );
       } catch (error) {
         const detail =
