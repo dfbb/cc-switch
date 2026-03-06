@@ -1244,6 +1244,7 @@
     }
   },
   "openclaw": {
+    "backupCreated": "Backup created: {{path}}",
     "providerKey": "Provider Key",
     "providerKeyPlaceholder": "my-provider",
     "providerKeyHint": "Unique identifier in config file. Cannot be changed after creation. Use lowercase letters, numbers, and hyphens only.",
@@ -1277,6 +1278,10 @@
     "env": {
       "title": "Environment Variables",
       "description": "Manage environment variables in openclaw.json (API keys, custom variables, etc.)",
+      "editorHint": "Edit the full env section as JSON. Nested objects such as env.vars and env.shellEnv are supported.",
+      "objectRequired": "OpenClaw env must be a JSON object.",
+      "invalidJson": "OpenClaw env must be valid JSON.",
+      "empty": "OpenClaw env cannot be empty. Use {} for an empty object.",
       "keyPlaceholder": "Variable name",
       "valuePlaceholder": "Value",
       "add": "Add Variable",
@@ -1289,6 +1294,14 @@
       "title": "Tool Permissions",
       "description": "Manage tool permissions in openclaw.json (allow/deny lists)",
       "profile": "Permission Profile",
+      "profileMinimal": "Minimal",
+      "profileCoding": "Coding",
+      "profileMessaging": "Messaging",
+      "profileFull": "Full",
+      "profileUnset": "Not set",
+      "unsupportedProfileTitle": "Unsupported tools profile detected",
+      "unsupportedProfileDescription": "The current tools.profile value '{{value}}' is not in the supported OpenClaw list. It will be preserved until you choose a new value.",
+      "unsupportedProfileLabel": "unsupported",
       "profiles": {
         "default": "Default",
         "strict": "Strict",
@@ -1321,9 +1334,19 @@
       "timeout": "Timeout (seconds)",
       "contextTokens": "Context Tokens",
       "maxConcurrent": "Max Concurrent",
+      "legacyTimeoutTitle": "Legacy timeout detected",
+      "legacyTimeoutDescription": "This config still uses agents.defaults.timeout. Saving here will migrate it to timeoutSeconds.",
       "saveSuccess": "Agents config saved",
       "saveFailed": "Failed to save agents config",
       "loadFailed": "Failed to load agents config"
+    },
+    "health": {
+      "title": "OpenClaw config warnings detected",
+      "invalidToolsProfile": "tools.profile contains an unsupported value. OpenClaw currently expects minimal, coding, messaging, or full.",
+      "legacyTimeout": "agents.defaults.timeout is deprecated. Save the Agents panel to migrate it to timeoutSeconds.",
+      "stringifiedEnvVars": "env.vars should be an object, but the current value looks stringified or malformed.",
+      "stringifiedShellEnv": "env.shellEnv should be an object, but the current value looks stringified or malformed.",
+      "parseFailed": "openclaw.json could not be parsed as valid JSON5. Fix the file before editing it here."
     }
   },
   "env": {

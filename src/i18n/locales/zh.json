@@ -1244,6 +1244,7 @@
     }
   },
   "openclaw": {
+    "backupCreated": "已创建备份：{{path}}",
     "providerKey": "供应商标识",
     "providerKeyPlaceholder": "my-provider",
     "providerKeyHint": "配置文件中的唯一标识符，创建后无法修改，只能使用小写字母、数字和连字符",
@@ -1277,6 +1278,10 @@
     "env": {
       "title": "环境变量",
       "description": "管理 openclaw.json 中的环境变量配置（API Key、自定义变量等）",
+      "editorHint": "以 JSON 形式编辑整个 env 节点。支持 env.vars、env.shellEnv 等嵌套对象。",
+      "objectRequired": "OpenClaw 的 env 必须是 JSON 对象。",
+      "invalidJson": "OpenClaw 的 env 必须是合法 JSON。",
+      "empty": "OpenClaw 的 env 不能为空。空对象请使用 {}。",
       "keyPlaceholder": "变量名",
       "valuePlaceholder": "值",
       "add": "添加变量",
@@ -1289,6 +1294,14 @@
       "title": "工具权限",
       "description": "管理 openclaw.json 中的工具权限配置（允许/拒绝列表）",
       "profile": "权限模式",
+      "profileMinimal": "最小权限",
+      "profileCoding": "编码",
+      "profileMessaging": "对话",
+      "profileFull": "完全访问",
+      "profileUnset": "未设置",
+      "unsupportedProfileTitle": "检测到不受支持的工具配置",
+      "unsupportedProfileDescription": "当前 tools.profile 的值“{{value}}”不在 OpenClaw 支持列表内。在你手动选择新值之前，它会被保留。",
+      "unsupportedProfileLabel": "不受支持",
       "profiles": {
         "default": "默认",
         "strict": "严格",
@@ -1321,9 +1334,19 @@
       "timeout": "超时时间（秒）",
       "contextTokens": "上下文 Token 数",
       "maxConcurrent": "最大并发数",
+      "legacyTimeoutTitle": "检测到旧版超时字段",
+      "legacyTimeoutDescription": "当前配置仍在使用 agents.defaults.timeout。保存本页面时会迁移为 timeoutSeconds。",
       "saveSuccess": "Agents 配置已保存",
       "saveFailed": "保存 Agents 配置失败",
       "loadFailed": "读取 Agents 配置失败"
+    },
+    "health": {
+      "title": "检测到 OpenClaw 配置警告",
+      "invalidToolsProfile": "tools.profile 使用了不受支持的值。OpenClaw 当前只支持 minimal、coding、messaging、full。",
+      "legacyTimeout": "agents.defaults.timeout 已废弃。打开并保存 Agents 面板即可迁移到 timeoutSeconds。",
+      "stringifiedEnvVars": "env.vars 应为对象，但当前值看起来像被字符串化或已损坏。",
+      "stringifiedShellEnv": "env.shellEnv 应为对象，但当前值看起来像被字符串化或已损坏。",
+      "parseFailed": "openclaw.json 不是合法 JSON5。请先修复文件，再通过这里编辑。"
     }
   },
   "env": {

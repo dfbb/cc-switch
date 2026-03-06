@@ -1244,6 +1244,7 @@
     }
   },
   "openclaw": {
+    "backupCreated": "バックアップを作成しました: {{path}}",
     "providerKey": "プロバイダーキー",
     "providerKeyPlaceholder": "my-provider",
     "providerKeyHint": "設定ファイル内のユニーク識別子。作成後は変更できません。小文字、数字、ハイフンのみ使用可能。",
@@ -1277,6 +1278,10 @@
     "env": {
       "title": "環境変数",
       "description": "openclaw.json の環境変数設定を管理（APIキー、カスタム変数など）",
+      "editorHint": "env セクション全体を JSON として編集します。env.vars や env.shellEnv などのネストしたオブジェクトにも対応しています。",
+      "objectRequired": "OpenClaw の env は JSON オブジェクトである必要があります。",
+      "invalidJson": "OpenClaw の env は有効な JSON である必要があります。",
+      "empty": "OpenClaw の env は空にできません。空オブジェクトの場合は {} を使用してください。",
       "keyPlaceholder": "変数名",
       "valuePlaceholder": "値",
       "add": "変数を追加",
@@ -1289,6 +1294,14 @@
       "title": "ツール権限",
       "description": "openclaw.json のツール権限設定を管理（許可/拒否リスト）",
       "profile": "権限プロファイル",
+      "profileMinimal": "最小",
+      "profileCoding": "コーディング",
+      "profileMessaging": "メッセージ",
+      "profileFull": "フルアクセス",
+      "profileUnset": "未設定",
+      "unsupportedProfileTitle": "未対応のツールプロファイルを検出しました",
+      "unsupportedProfileDescription": "現在の tools.profile の値 '{{value}}' は OpenClaw の対応リストにありません。新しい値を選択するまでこの値を保持します。",
+      "unsupportedProfileLabel": "未対応",
       "profiles": {
         "default": "デフォルト",
         "strict": "厳格",
@@ -1321,9 +1334,19 @@
       "timeout": "タイムアウト（秒）",
       "contextTokens": "コンテキストトークン数",
       "maxConcurrent": "最大同時実行数",
+      "legacyTimeoutTitle": "旧タイムアウト設定を検出しました",
+      "legacyTimeoutDescription": "この設定ではまだ agents.defaults.timeout を使用しています。ここで保存すると timeoutSeconds に移行されます。",
       "saveSuccess": "Agents 設定を保存しました",
       "saveFailed": "Agents 設定の保存に失敗しました",
       "loadFailed": "Agents 設定の読み込みに失敗しました"
+    },
+    "health": {
+      "title": "OpenClaw 設定の警告を検出しました",
+      "invalidToolsProfile": "tools.profile に未対応の値が設定されています。OpenClaw が現在サポートしているのは minimal、coding、messaging、full です。",
+      "legacyTimeout": "agents.defaults.timeout は非推奨です。Agents パネルを保存すると timeoutSeconds に移行されます。",
+      "stringifiedEnvVars": "env.vars はオブジェクトである必要がありますが、現在の値は文字列化または破損しているようです。",
+      "stringifiedShellEnv": "env.shellEnv はオブジェクトである必要がありますが、現在の値は文字列化または破損しているようです。",
+      "parseFailed": "openclaw.json を有効な JSON5 として解析できませんでした。ここで編集する前にファイルを修正してください。"
     }
   },
   "env": {
