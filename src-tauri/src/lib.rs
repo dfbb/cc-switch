@@ -1038,6 +1038,7 @@ pub fn run() {
             // Session manager
             commands::list_sessions,
             commands::get_session_messages,
+            commands::delete_session,
             commands::launch_session_terminal,
             commands::get_tool_versions,
             // Provider terminal
