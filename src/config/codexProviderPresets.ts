@@ -266,7 +266,7 @@ requires_openai_auth = true`,
     auth: generateThirdPartyAuth(""),
     config: generateThirdPartyConfig(
       "sssaicode",
-      "https://node-hk.sssaicode.com/api",
+      "https://node-hk.sssaicode.com/api/v1",
       "gpt-5.3-codex",
     ),
     endpointCandidates: [

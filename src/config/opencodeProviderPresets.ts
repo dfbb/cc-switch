@@ -1225,7 +1225,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
       npm: "@ai-sdk/anthropic",
       name: "SSSAiCode",
       options: {
-        baseURL: "https://node-hk.sssaicode.com/api",
+        baseURL: "https://node-hk.sssaicode.com/api/v1",
         apiKey: "",
       },
       models: {
