@@ -805,16 +805,18 @@ pub fn run() {
                     log::warn!("Periodic backup failed on startup: {e}");
                 }
 
-                // Periodic backup timer: check every hour while the app is running
+                // Periodic maintenance timer: run once per day while the app is running
                 let db_for_timer = state.db.clone();
                 tauri::async_runtime::spawn(async move {
-                    let mut interval =
-                        tokio::time::interval(std::time::Duration::from_secs(3600));
+                    const PERIODIC_MAINTENANCE_INTERVAL_SECS: u64 = 24 * 60 * 60;
+                    let mut interval = tokio::time::interval(std::time::Duration::from_secs(
+                        PERIODIC_MAINTENANCE_INTERVAL_SECS,
+                    ));
                     interval.tick().await; // skip immediate first tick (already checked above)
                     loop {
                         interval.tick().await;
                         if let Err(e) = db_for_timer.periodic_backup_if_needed() {
-                            log::warn!("Periodic backup timer failed: {e}");
+                            log::warn!("Periodic maintenance timer failed: {e}");
                         }
                     }
                 });

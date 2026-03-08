@@ -227,46 +227,60 @@ impl Database {
     /// Periodic backup: create a new backup if the latest one is older than the configured interval
     pub(crate) fn periodic_backup_if_needed(&self) -> Result<(), AppError> {
         let interval_hours = crate::settings::effective_backup_interval_hours();
-        if interval_hours == 0 {
-            return Ok(()); // Auto-backup disabled
-        }
+        if interval_hours > 0 {
+            let backup_dir = get_app_config_dir().join("backups");
+            if !backup_dir.exists() {
+                self.backup_database_file()?;
+            } else {
+                let latest = fs::read_dir(&backup_dir).ok().and_then(|entries| {
+                    entries
+                        .filter_map(|e| e.ok())
+                        .filter(|e| e.path().extension().map(|ext| ext == "db").unwrap_or(false))
+                        .filter_map(|e| e.metadata().ok().and_then(|m| m.modified().ok()))
+                        .max()
+                });
 
-        let backup_dir = get_app_config_dir().join("backups");
-        if !backup_dir.exists() {
-            self.backup_database_file()?;
-            return Ok(());
-        }
+                let interval_secs = u64::from(interval_hours) * 3600;
+                let needs_backup = match latest {
+                    None => true,
+                    Some(last_modified) => {
+                        last_modified.elapsed().unwrap_or_default()
+                            > std::time::Duration::from_secs(interval_secs)
+                    }
+                };
 
-        let latest = fs::read_dir(&backup_dir).ok().and_then(|entries| {
-            entries
-                .filter_map(|e| e.ok())
-                .filter(|e| e.path().extension().map(|ext| ext == "db").unwrap_or(false))
-                .filter_map(|e| e.metadata().ok().and_then(|m| m.modified().ok()))
-                .max()
-        });
-
-        let interval_secs = u64::from(interval_hours) * 3600;
-        let needs_backup = match latest {
-            None => true,
-            Some(last_modified) => {
-                last_modified.elapsed().unwrap_or_default()
-                    > std::time::Duration::from_secs(interval_secs)
+                if needs_backup {
+                    log::info!(
+                        "Periodic backup: latest backup is older than {interval_hours} hours, creating new backup"
+                    );
+                    self.backup_database_file()?;
+                }
             }
-        };
-
-        if needs_backup {
-            log::info!(
-                "Periodic backup: latest backup is older than {interval_hours} hours, creating new backup"
-            );
-            self.backup_database_file()?;
         }
 
-        // Periodic cleanup: prune old logs alongside backup cycle
-        if let Err(e) = self.cleanup_old_stream_check_logs(7) {
-            log::warn!("Periodic stream_check_logs cleanup failed: {e}");
+        // Periodic maintenance is always enabled, regardless of auto-backup settings.
+        let mut reclaimed_rows = 0u64;
+        match self.cleanup_old_stream_check_logs(7) {
+            Ok(deleted) => {
+                reclaimed_rows += deleted;
+            }
+            Err(e) => {
+                log::warn!("Periodic stream_check_logs cleanup failed: {e}");
+            }
         }
-        if let Err(e) = self.rollup_and_prune(30) {
-            log::warn!("Periodic rollup_and_prune failed: {e}");
+        match self.rollup_and_prune(30) {
+            Ok(deleted) => {
+                reclaimed_rows += deleted;
+            }
+            Err(e) => {
+                log::warn!("Periodic rollup_and_prune failed: {e}");
+            }
+        }
+        if reclaimed_rows > 0 {
+            let conn = lock_conn!(self.conn);
+            if let Err(e) = conn.execute_batch("PRAGMA incremental_vacuum;") {
+                log::warn!("Periodic incremental vacuum failed: {e}");
+            }
         }
 
         Ok(())
@@ -669,6 +683,8 @@ impl Database {
 mod tests {
     use super::Database;
     use crate::error::AppError;
+    use crate::settings::{update_settings, AppSettings};
+    use serial_test::serial;
 
     #[test]
     fn sync_import_preserves_local_only_tables() -> Result<(), AppError> {
@@ -753,6 +769,81 @@ mod tests {
             stream_logs, 1,
             "local stream check logs should be preserved"
         );
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn periodic_maintenance_runs_even_when_auto_backup_disabled() -> Result<(), AppError> {
+        let old_test_home = std::env::var_os("CC_SWITCH_TEST_HOME");
+        let test_home =
+            std::env::temp_dir().join("cc-switch-periodic-maintenance-backup-disabled-test");
+        let _ = std::fs::remove_dir_all(&test_home);
+        std::fs::create_dir_all(&test_home).expect("create test home");
+        std::env::set_var("CC_SWITCH_TEST_HOME", &test_home);
+
+        let mut settings = AppSettings::default();
+        settings.backup_interval_hours = Some(0);
+        update_settings(settings).expect("disable auto backup");
+
+        let db = Database::memory()?;
+        let now = chrono::Utc::now().timestamp();
+        let old_ts = now - 40 * 86400;
+        let old_stream_ts = now - 8 * 86400;
+
+        {
+            let conn = crate::database::lock_conn!(db.conn);
+            conn.execute(
+                "INSERT INTO proxy_request_logs (
+                    request_id, provider_id, app_type, model,
+                    input_tokens, output_tokens, total_cost_usd,
+                    latency_ms, status_code, created_at
+                ) VALUES ('old-req', 'p1', 'claude', 'claude-3', 100, 50, '0.01', 100, 200, ?1)",
+                [old_ts],
+            )?;
+            conn.execute(
+                "INSERT INTO stream_check_logs (
+                    provider_id, provider_name, app_type, status, success, message,
+                    response_time_ms, http_status, model_used, retry_count, tested_at
+                ) VALUES ('p1', 'Provider 1', 'claude', 'operational', 1, 'ok', 42, 200, 'claude-3', 0, ?1)",
+                [old_stream_ts],
+            )?;
+        }
+
+        db.periodic_backup_if_needed()?;
+
+        let (remaining_request_logs, stream_logs, rollups): (i64, i64, i64) = {
+            let conn = crate::database::lock_conn!(db.conn);
+            let remaining_request_logs =
+                conn.query_row("SELECT COUNT(*) FROM proxy_request_logs", [], |row| {
+                    row.get(0)
+                })?;
+            let stream_logs =
+                conn.query_row("SELECT COUNT(*) FROM stream_check_logs", [], |row| {
+                    row.get(0)
+                })?;
+            let rollups =
+                conn.query_row("SELECT COUNT(*) FROM usage_daily_rollups", [], |row| {
+                    row.get(0)
+                })?;
+            (remaining_request_logs, stream_logs, rollups)
+        };
+
+        assert_eq!(
+            remaining_request_logs, 0,
+            "old request logs should still be pruned when auto backup is disabled"
+        );
+        assert_eq!(
+            stream_logs, 0,
+            "old stream check logs should still be pruned when auto backup is disabled"
+        );
+        assert_eq!(rollups, 1, "old request logs should be rolled up");
+
+        match old_test_home {
+            Some(value) => std::env::set_var("CC_SWITCH_TEST_HOME", value),
+            None => std::env::remove_var("CC_SWITCH_TEST_HOME"),
+        }
 
         Ok(())
     }
