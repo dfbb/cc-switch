@@ -315,6 +315,23 @@ requires_openai_auth = true`,
     iconColor: "#000000",
   },
   {
+    name: "X-Code",
+    websiteUrl: "https://www.x-code.cn",
+    apiKeyUrl: "https://www.x-code.cn",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "x-code",
+      "https://www.x-code.cn/v1",
+      "gpt-5.4",
+    ),
+    endpointCandidates: ["https://www.x-code.cn/v1"],
+    category: "third_party",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "x-code", // 促销信息 i18n key
+    icon: "x-code",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",
