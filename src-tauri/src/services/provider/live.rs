@@ -39,11 +39,11 @@ fn json_is_subset(target: &Value, source: &Value) -> bool {
             let Some(target_map) = target.as_object() else {
                 return false;
             };
-            source_map
-                .iter()
-                .all(|(key, source_value)| target_map.get(key).is_some_and(|target_value| {
-                    json_is_subset(target_value, source_value)
-                }))
+            source_map.iter().all(|(key, source_value)| {
+                target_map
+                    .get(key)
+                    .is_some_and(|target_value| json_is_subset(target_value, source_value))
+            })
         }
         Value::Array(source_arr) => {
             let Some(target_arr) = target.as_array() else {
@@ -163,9 +163,13 @@ fn toml_array_contains_subset(target: &toml_edit::Array, source: &toml_edit::Arr
     let target_items: Vec<&toml_edit::Value> = target.iter().collect();
 
     source.iter().all(|source_item| {
-        if let Some((index, _)) = target_items.iter().enumerate().find(|(index, target_item)| {
-            !matched[*index] && toml_value_is_subset(target_item, source_item)
-        }) {
+        if let Some((index, _)) = target_items
+            .iter()
+            .enumerate()
+            .find(|(index, target_item)| {
+                !matched[*index] && toml_value_is_subset(target_item, source_item)
+            })
+        {
             matched[index] = true;
             true
         } else {
@@ -204,7 +208,9 @@ fn toml_item_is_subset(target: &Item, source: &Item) -> bool {
     }
 
     match (target.as_value(), source.as_value()) {
-        (Some(target_value), Some(source_value)) => toml_value_is_subset(target_value, source_value),
+        (Some(target_value), Some(source_value)) => {
+            toml_value_is_subset(target_value, source_value)
+        }
         _ => false,
     }
 }
@@ -251,7 +257,9 @@ fn remove_toml_item(target: &mut Item, source: &Item) {
                     toml_remove_array_items(target_arr, source_arr);
                     remove_item = target_arr.is_empty();
                 }
-                (target_value, source_value) if toml_value_is_subset(target_value, source_value) => {
+                (target_value, source_value)
+                    if toml_value_is_subset(target_value, source_value) =>
+                {
                     remove_item = true;
                 }
                 _ => {}
@@ -370,7 +378,9 @@ pub(crate) fn remove_common_config_from_settings(
                 DocumentMut::new()
             } else {
                 config_toml.parse::<DocumentMut>().map_err(|e| {
-                    AppError::Message(format!("Invalid Codex config.toml while removing common config: {e}"))
+                    AppError::Message(format!(
+                        "Invalid Codex config.toml while removing common config: {e}"
+                    ))
                 })?
             };
             let source_doc = trimmed.parse::<DocumentMut>().map_err(|e| {
@@ -421,7 +431,9 @@ fn apply_common_config_to_settings(
                 DocumentMut::new()
             } else {
                 config_toml.parse::<DocumentMut>().map_err(|e| {
-                    AppError::Message(format!("Invalid Codex config.toml while applying common config: {e}"))
+                    AppError::Message(format!(
+                        "Invalid Codex config.toml while applying common config: {e}"
+                    ))
                 })?
             };
             let source_doc = trimmed.parse::<DocumentMut>().map_err(|e| {
@@ -791,7 +803,8 @@ pub(crate) fn sync_current_provider_for_app_to_live(
     if app_type.is_additive_mode() {
         sync_all_providers_to_live(state, app_type)?;
     } else {
-        let current_id = match crate::settings::get_effective_current_provider(&state.db, app_type)? {
+        let current_id = match crate::settings::get_effective_current_provider(&state.db, app_type)?
+        {
             Some(id) => id,
             None => return Ok(()),
         };
@@ -1326,8 +1339,7 @@ mod tests {
         });
         let snippet = "[shared]\nreasoning = \"medium\"\n";
 
-        let applied =
-            apply_common_config_to_settings(&AppType::Codex, &settings, snippet).unwrap();
+        let applied = apply_common_config_to_settings(&AppType::Codex, &settings, snippet).unwrap();
         let applied_config = applied["config"].as_str().unwrap_or_default();
         assert!(applied_config.contains("[shared]"));
         assert!(applied_config.contains("reasoning = \"medium\""));

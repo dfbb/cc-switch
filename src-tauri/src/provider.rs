@@ -198,7 +198,10 @@ pub struct ProviderMeta {
     #[serde(default, skip_serializing_if = "HashMap::is_empty")]
     pub custom_endpoints: HashMap<String, crate::settings::CustomEndpoint>,
     /// 是否在写入 live 时应用通用配置片段
-    #[serde(rename = "commonConfigEnabled", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "commonConfigEnabled",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub common_config_enabled: Option<bool>,
     /// 用量查询脚本配置
     #[serde(skip_serializing_if = "Option::is_none")]

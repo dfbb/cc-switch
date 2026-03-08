@@ -565,12 +565,13 @@ impl ProviderService {
                     // Only backfill when switching to a different provider
                     if let Ok(live_config) = read_live_settings(app_type.clone()) {
                         if let Some(mut current_provider) = providers.get(&current_id).cloned() {
-                            current_provider.settings_config = strip_common_config_from_live_settings(
-                                state.db.as_ref(),
-                                &app_type,
-                                &current_provider,
-                                live_config,
-                            );
+                            current_provider.settings_config =
+                                strip_common_config_from_live_settings(
+                                    state.db.as_ref(),
+                                    &app_type,
+                                    &current_provider,
+                                    live_config,
+                                );
                             if let Err(e) =
                                 state.db.save_provider(app_type.as_str(), &current_provider)
                             {
