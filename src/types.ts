@@ -233,6 +233,10 @@ export interface Settings {
   usageConfirmed?: boolean;
   // User has confirmed the stream check first-run notice
   streamCheckConfirmed?: boolean;
+  // Whether to show the failover toggle independently on the main page
+  enableFailoverToggle?: boolean;
+  // User has confirmed the failover toggle first-run notice
+  failoverConfirmed?: boolean;
   // User has confirmed the auto-sync traffic warning
   autoSyncConfirmed?: boolean;
   // 首选语言（可选，默认中文）

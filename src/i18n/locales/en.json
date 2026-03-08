@@ -190,6 +190,11 @@
       "message": "Local proxy is an advanced feature. Please make sure you understand how it works before enabling.\n\nWe recommend consulting the relevant documentation or your provider for proper configuration.",
       "confirm": "I understand, enable"
     },
+    "failover": {
+      "title": "Enable Failover",
+      "message": "Failover is an advanced feature. Please make sure you understand how it works before enabling.\n\nWe recommend configuring provider priorities in the failover queue first.",
+      "confirm": "I understand, enable"
+    },
     "usage": {
       "title": "Configure Usage Query",
       "message": "Usage query requires a custom script or API parameters. Please make sure you have obtained the necessary information from your provider.\n\nIf unsure how to configure, please consult your provider's documentation first.",
@@ -222,6 +227,8 @@
         "description": "Control proxy service toggle, view status and port info",
         "enableFeature": "Show Proxy Toggle on Main Page",
         "enableFeatureDescription": "When enabled, the proxy and failover toggles will appear at the top of the main page",
+        "enableFailoverToggle": "Show Failover Toggle on Main Page",
+        "enableFailoverToggleDescription": "When enabled, the failover toggle will appear independently at the top of the main page",
         "running": "Running",
         "stopped": "Stopped"
       },

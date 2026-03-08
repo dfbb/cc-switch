@@ -199,6 +199,12 @@ pub struct AppSettings {
     /// User has confirmed the stream check first-run notice
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stream_check_confirmed: Option<bool>,
+    /// Whether to show the failover toggle independently on the main page
+    #[serde(default)]
+    pub enable_failover_toggle: bool,
+    /// User has confirmed the failover toggle first-run notice
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failover_confirmed: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
 
@@ -286,6 +292,8 @@ impl Default for AppSettings {
             proxy_confirmed: None,
             usage_confirmed: None,
             stream_check_confirmed: None,
+            enable_failover_toggle: false,
+            failover_confirmed: None,
             language: None,
             visible_apps: None,
             claude_config_dir: None,

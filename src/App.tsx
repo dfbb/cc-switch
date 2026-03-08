@@ -981,23 +981,17 @@ function App() {
           <div className="flex flex-1 min-w-0 items-center justify-end gap-1.5">
             {currentView === "providers" &&
               activeApp !== "opencode" &&
-              activeApp !== "openclaw" &&
-              settingsData?.enableLocalProxy && (
+              activeApp !== "openclaw" && (
                 <div
                   className="flex shrink-0 items-center gap-1.5"
                   style={{ WebkitAppRegion: "no-drag" } as any}
                 >
-                  <ProxyToggle activeApp={activeApp} />
-                  <div
-                    className={cn(
-                      "transition-all duration-300 ease-in-out overflow-hidden",
-                      isCurrentAppTakeoverActive
-                        ? "opacity-100 max-w-[100px] scale-100"
-                        : "opacity-0 max-w-0 scale-75 pointer-events-none",
-                    )}
-                  >
+                  {settingsData?.enableLocalProxy && (
+                    <ProxyToggle activeApp={activeApp} />
+                  )}
+                  {settingsData?.enableFailoverToggle && (
                     <FailoverToggle activeApp={activeApp} />
-                  </div>
+                  )}
                 </div>
               )}
             <div
