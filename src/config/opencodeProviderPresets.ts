@@ -1276,12 +1276,12 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     },
   },
   {
-    name: "X-Code",
+    name: "X-Code API",
     websiteUrl: "https://www.x-code.cn",
     apiKeyUrl: "https://www.x-code.cn",
     settingsConfig: {
       npm: "@ai-sdk/anthropic",
-      name: "X-Code",
+      name: "X-Code API",
       options: {
         baseURL: "https://www.x-code.cn/v1",
         apiKey: "",

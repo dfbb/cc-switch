@@ -590,7 +590,7 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#000000",
   },
   {
-    name: "X-Code",
+    name: "X-Code API",
     websiteUrl: "https://www.x-code.cn",
     apiKeyUrl: "https://www.x-code.cn",
     settingsConfig: {
