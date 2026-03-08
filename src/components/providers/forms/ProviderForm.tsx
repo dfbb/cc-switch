@@ -237,13 +237,20 @@ export function ProviderForm({
     mode: "onSubmit",
   });
 
+  const handleSettingsConfigChange = useCallback(
+    (config: string) => {
+      form.setValue("settingsConfig", config);
+    },
+    [form],
+  );
+
   const {
     apiKey,
     handleApiKeyChange,
     showApiKey: shouldShowApiKey,
   } = useApiKeyState({
     initialConfig: form.getValues("settingsConfig"),
-    onConfigChange: (config) => form.setValue("settingsConfig", config),
+    onConfigChange: handleSettingsConfigChange,
     selectedPresetId,
     category,
     appType: appId,
@@ -254,7 +261,7 @@ export function ProviderForm({
     category,
     settingsConfig: form.getValues("settingsConfig"),
     codexConfig: "",
-    onSettingsConfigChange: (config) => form.setValue("settingsConfig", config),
+    onSettingsConfigChange: handleSettingsConfigChange,
     onCodexConfigChange: () => {},
   });
 
@@ -267,7 +274,7 @@ export function ProviderForm({
     handleModelChange,
   } = useModelState({
     settingsConfig: form.getValues("settingsConfig"),
-    onConfigChange: (config) => form.setValue("settingsConfig", config),
+    onConfigChange: handleSettingsConfigChange,
   });
 
   const [localApiFormat, setLocalApiFormat] = useState<ClaudeApiFormat>(() => {
@@ -373,7 +380,7 @@ export function ProviderForm({
     selectedPresetId: appId === "claude" ? selectedPresetId : null,
     presetEntries: appId === "claude" ? presetEntries : [],
     settingsConfig: form.getValues("settingsConfig"),
-    onConfigChange: (config) => form.setValue("settingsConfig", config),
+    onConfigChange: handleSettingsConfigChange,
   });
 
   const {
@@ -386,8 +393,10 @@ export function ProviderForm({
     handleExtract: handleClaudeExtract,
   } = useCommonConfigSnippet({
     settingsConfig: form.getValues("settingsConfig"),
-    onConfigChange: (config) => form.setValue("settingsConfig", config),
+    onConfigChange: handleSettingsConfigChange,
     initialData: appId === "claude" ? initialData : undefined,
+    initialEnabled:
+      appId === "claude" ? initialData?.meta?.commonConfigEnabled : undefined,
     selectedPresetId: selectedPresetId ?? undefined,
     enabled: appId === "claude",
   });
@@ -404,6 +413,8 @@ export function ProviderForm({
     codexConfig,
     onConfigChange: handleCodexConfigChange,
     initialData: appId === "codex" ? initialData : undefined,
+    initialEnabled:
+      appId === "codex" ? initialData?.meta?.commonConfigEnabled : undefined,
     selectedPresetId: selectedPresetId ?? undefined,
   });
 
@@ -487,6 +498,8 @@ export function ProviderForm({
     envStringToObj,
     envObjToString,
     initialData: appId === "gemini" ? initialData : undefined,
+    initialEnabled:
+      appId === "gemini" ? initialData?.meta?.commonConfigEnabled : undefined,
     selectedPresetId: selectedPresetId ?? undefined,
   });
 
@@ -809,6 +822,14 @@ export function ProviderForm({
       payload.meta ?? (initialData?.meta ? { ...initialData.meta } : undefined);
     payload.meta = {
       ...(baseMeta ?? {}),
+      commonConfigEnabled:
+        appId === "claude"
+          ? useCommonConfig
+          : appId === "codex"
+            ? useCodexCommonConfigFlag
+            : appId === "gemini"
+              ? useGeminiCommonConfigFlag
+              : undefined,
       endpointAutoSelect,
       testConfig: testConfig.enabled ? testConfig : undefined,
       proxyConfig: proxyConfig.enabled ? proxyConfig : undefined,
