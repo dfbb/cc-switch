@@ -197,6 +197,11 @@
       "title": "Model Health Check",
       "message": "Health check tests provider connectivity by sending a direct API request. The following may cause check failures:\n\n• Official providers (uses OAuth login, no standalone API Key)\n• Some relay services (verify requests come from Claude Code CLI)\n• AWS Bedrock (uses IAM signature authentication)\n\nA failed check does not mean the provider is unusable — it only means it cannot be verified via a standalone request. Please refer to actual behavior within the application.",
       "confirm": "I understand, proceed"
+    },
+    "autoSync": {
+      "title": "Enable Auto Sync",
+      "message": "When auto sync is enabled, every database change will be automatically uploaded to the WebDAV server.\n\nThis may result in significant network traffic. Please ensure your network and WebDAV service can handle frequent data transfers.",
+      "confirm": "I understand, enable"
     }
   },
   "settings": {

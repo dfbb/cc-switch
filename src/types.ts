@@ -231,6 +231,8 @@ export interface Settings {
   usageConfirmed?: boolean;
   // User has confirmed the stream check first-run notice
   streamCheckConfirmed?: boolean;
+  // User has confirmed the auto-sync traffic warning
+  autoSyncConfirmed?: boolean;
   // 首选语言（可选，默认中文）
   language?: "en" | "zh" | "ja";
 
@@ -500,11 +502,7 @@ export interface OpenClawWriteOutcome {
   warnings: OpenClawHealthWarning[];
 }
 
-export type OpenClawToolsProfile =
-  | "minimal"
-  | "coding"
-  | "messaging"
-  | "full";
+export type OpenClawToolsProfile = "minimal" | "coding" | "messaging" | "full";
 
 // OpenClaw 供应商配置（settings_config 结构）
 // 对应 OpenClaw 的 models.providers.<provider-id> 配置

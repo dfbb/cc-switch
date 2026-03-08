@@ -33,6 +33,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { settingsApi } from "@/lib/api";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import type { SettingsFormState } from "@/hooks/useSettings";
 import type { RemoteSnapshotInfo, WebDavSyncSettings } from "@/types";
 
 // ─── WebDAV service presets ─────────────────────────────────
@@ -110,6 +112,8 @@ type DialogType = "upload" | "download" | null;
 
 interface WebdavSyncSectionProps {
   config?: WebDavSyncSettings;
+  settings?: SettingsFormState;
+  onAutoSave?: (updates: Partial<SettingsFormState>) => Promise<unknown>;
 }
 
 // ─── ActionButton ───────────────────────────────────────────
@@ -151,7 +155,11 @@ function ActionButton({
 
 // ─── Main component ─────────────────────────────────────────
 
-export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
+export function WebdavSyncSection({
+  config,
+  settings,
+  onAutoSave,
+}: WebdavSyncSectionProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [actionState, setActionState] = useState<ActionState>("idle");
@@ -180,6 +188,7 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
   // Confirmation dialog state
   const [dialogType, setDialogType] = useState<DialogType>(null);
   const [remoteInfo, setRemoteInfo] = useState<RemoteSnapshotInfo | null>(null);
+  const [showAutoSyncConfirm, setShowAutoSyncConfirm] = useState(false);
 
   const closeDialog = useCallback(() => {
     setDialogType(null);
@@ -244,15 +253,34 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
     }
   }, [form.baseUrl, presetId]);
 
-  const handleAutoSyncChange = useCallback((checked: boolean) => {
-    setForm((prev) => ({ ...prev, autoSync: checked }));
+  const handleAutoSyncChange = useCallback(
+    (checked: boolean) => {
+      if (checked && !settings?.autoSyncConfirmed) {
+        setShowAutoSyncConfirm(true);
+        return;
+      }
+      setForm((prev) => ({ ...prev, autoSync: checked }));
+      setDirty(true);
+      setJustSaved(false);
+      if (justSavedTimerRef.current) {
+        clearTimeout(justSavedTimerRef.current);
+        justSavedTimerRef.current = null;
+      }
+    },
+    [settings?.autoSyncConfirmed],
+  );
+
+  const handleAutoSyncConfirm = useCallback(async () => {
+    setShowAutoSyncConfirm(false);
+    await onAutoSave?.({ autoSyncConfirmed: true });
+    setForm((prev) => ({ ...prev, autoSync: true }));
     setDirty(true);
     setJustSaved(false);
     if (justSavedTimerRef.current) {
       clearTimeout(justSavedTimerRef.current);
       justSavedTimerRef.current = null;
     }
-  }, []);
+  }, [onAutoSave]);
 
   const buildSettings = useCallback((): WebDavSyncSettings | null => {
     const baseUrl = form.baseUrl.trim();
@@ -458,7 +486,9 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
   const showAutoSyncError =
     !!lastError && config?.status?.lastErrorSource === "auto";
   const currentRemotePath = `/${form.remoteRoot.trim() || "cc-switch-sync"}/v2/db-v6/${form.profile.trim() || "default"}`;
-  const remoteDbCompatDisplay = formatDbCompatVersion(remoteInfo?.dbCompatVersion);
+  const remoteDbCompatDisplay = formatDbCompatVersion(
+    remoteInfo?.dbCompatVersion,
+  );
   const remoteIsLegacy = remoteInfo?.layout === "legacy";
 
   // ─── Render ─────────────────────────────────────────────
@@ -866,6 +896,17 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Auto-sync confirmation dialog ────────────────── */}
+      <ConfirmDialog
+        isOpen={showAutoSyncConfirm}
+        variant="info"
+        title={t("confirm.autoSync.title")}
+        message={t("confirm.autoSync.message")}
+        confirmText={t("confirm.autoSync.confirm")}
+        onConfirm={() => void handleAutoSyncConfirm()}
+        onCancel={() => setShowAutoSyncConfirm(false)}
+      />
     </section>
   );
 }
