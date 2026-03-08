@@ -55,7 +55,8 @@ const EnvPanel: React.FC = () => {
       let description = detail || undefined;
       if (detail === "OPENCLAW_ENV_EMPTY") {
         description = t("openclaw.env.empty", {
-          defaultValue: "OpenClaw env cannot be empty. Use {} for an empty object.",
+          defaultValue:
+            "OpenClaw env cannot be empty. Use {} for an empty object.",
         });
       } else if (detail === "OPENCLAW_ENV_INVALID_JSON") {
         description = t("openclaw.env.invalidJson", {

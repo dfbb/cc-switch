@@ -238,9 +238,8 @@ function App() {
       currentView === "openclawEnv" ||
       currentView === "openclawTools" ||
       currentView === "openclawAgents");
-  const { data: openclawHealthWarnings = [] } = useOpenClawHealth(
-    isOpenClawView,
-  );
+  const { data: openclawHealthWarnings = [] } =
+    useOpenClawHealth(isOpenClawView);
   const hasSkillsSupport = true;
   const hasSessionSupport =
     activeApp === "claude" ||

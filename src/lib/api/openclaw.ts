@@ -32,7 +32,9 @@ export const openclawApi = {
   /**
    * Set default model configuration (agents.defaults.model)
    */
-  async setDefaultModel(model: OpenClawDefaultModel): Promise<OpenClawWriteOutcome> {
+  async setDefaultModel(
+    model: OpenClawDefaultModel,
+  ): Promise<OpenClawWriteOutcome> {
     return await invoke("set_openclaw_default_model", { model });
   },
 

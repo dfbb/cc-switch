@@ -179,9 +179,12 @@ const ToolsPanel: React.FC = () => {
               <SelectItem
                 value={OPENCLAW_UNSUPPORTED_PROFILE}
                 disabled={true}
-              >{`${unsupportedProfile} (${t("openclaw.tools.unsupportedProfileLabel", {
-                defaultValue: "unsupported",
-              })})`}</SelectItem>
+              >{`${unsupportedProfile} (${t(
+                "openclaw.tools.unsupportedProfileLabel",
+                {
+                  defaultValue: "unsupported",
+                },
+              )})`}</SelectItem>
             )}
             {OPENCLAW_TOOL_PROFILES.map((profile) => (
               <SelectItem key={profile} value={profile}>
