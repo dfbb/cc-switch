@@ -10,9 +10,9 @@ use chrono::Local;
 use indexmap::IndexMap;
 use json_five::parser::{FormatConfiguration, TrailingComma};
 use json_five::rt::parser::{
-    from_str as rt_from_str, JSONKeyValuePair as RtJSONKeyValuePair, JSONText as RtJSONText,
-    JSONValue as RtJSONValue, KeyValuePairContext as RtKeyValuePairContext,
-    JSONObjectContext as RtJSONObjectContext,
+    from_str as rt_from_str, JSONKeyValuePair as RtJSONKeyValuePair,
+    JSONObjectContext as RtJSONObjectContext, JSONText as RtJSONText, JSONValue as RtJSONValue,
+    KeyValuePairContext as RtKeyValuePairContext,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Map, Value};
@@ -21,7 +21,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
-const OPENCLAW_DEFAULT_SOURCE: &str = "{\n  models: {\n    mode: 'merge',\n    providers: {},\n  },\n}\n";
+const OPENCLAW_DEFAULT_SOURCE: &str =
+    "{\n  models: {\n    mode: 'merge',\n    providers: {},\n  },\n}\n";
 const OPENCLAW_TOOLS_PROFILES: &[&str] = &["minimal", "coding", "messaging", "full"];
 
 // ============================================================================
@@ -270,7 +271,12 @@ impl OpenClawConfigDocument {
             ));
         };
 
-        if key_value_pairs.is_empty() && context.as_ref().map(|ctx| ctx.wsc.0.is_empty()).unwrap_or(true) {
+        if key_value_pairs.is_empty()
+            && context
+                .as_ref()
+                .map(|ctx| ctx.wsc.0.is_empty())
+                .unwrap_or(true)
+        {
             *context = Some(RtJSONObjectContext {
                 wsc: ("\n  ".to_string(),),
             });
@@ -305,7 +311,11 @@ impl OpenClawConfigDocument {
 
             make_root_pair(key, new_value, closing_ws)
         } else {
-            make_root_pair(key, new_value, derive_closing_ws_from_separator(&leading_ws))
+            make_root_pair(
+                key,
+                new_value,
+                derive_closing_ws_from_separator(&leading_ws),
+            )
         };
 
         key_value_pairs.push(new_pair);
@@ -470,8 +480,12 @@ fn value_to_rt_value(value: &Value, parent_indent: &str) -> Result<RtJSONValue, 
     .map_err(|e| AppError::Config(format!("Failed to serialize JSON5 section: {e}")))?;
 
     let adjusted = reindent_json5_block(&source, parent_indent);
-    let text = rt_from_str(&adjusted)
-        .map_err(|e| AppError::Config(format!("Failed to parse generated JSON5 section: {}", e.message)))?;
+    let text = rt_from_str(&adjusted).map_err(|e| {
+        AppError::Config(format!(
+            "Failed to parse generated JSON5 section: {}",
+            e.message
+        ))
+    })?;
     Ok(text.value)
 }
 
@@ -642,15 +656,12 @@ pub fn set_provider(id: &str, provider_config: Value) -> Result<OpenClawWriteOut
         .or_insert_with(|| Value::Object(Map::new()));
     ensure_object(providers).insert(id.to_string(), provider_config);
 
-    let models_value = root
-        .get("models")
-        .cloned()
-        .unwrap_or_else(|| {
-            json!({
-                "mode": "merge",
-                "providers": {}
-            })
-        });
+    let models_value = root.get("models").cloned().unwrap_or_else(|| {
+        json!({
+            "mode": "merge",
+            "providers": {}
+        })
+    });
     write_root_section("models", &models_value)
 }
 
@@ -671,15 +682,12 @@ pub fn remove_provider(id: &str) -> Result<OpenClawWriteOutcome, AppError> {
         return Ok(OpenClawWriteOutcome::default());
     }
 
-    let models_value = config
-        .get("models")
-        .cloned()
-        .unwrap_or_else(|| {
-            json!({
-                "mode": "merge",
-                "providers": {}
-            })
-        });
+    let models_value = config.get("models").cloned().unwrap_or_else(|| {
+        json!({
+            "mode": "merge",
+            "providers": {}
+        })
+    });
     write_root_section("models", &models_value)
 }
 
@@ -933,7 +941,10 @@ mod tests {
         });
 
         let warnings = scan_openclaw_health_from_value(&config);
-        let codes = warnings.into_iter().map(|warning| warning.code).collect::<Vec<_>>();
+        let codes = warnings
+            .into_iter()
+            .map(|warning| warning.code)
+            .collect::<Vec<_>>();
         assert!(codes.contains(&"invalid_tools_profile".to_string()));
         assert!(codes.contains(&"legacy_agents_timeout".to_string()));
         assert!(codes.contains(&"stringified_env_vars".to_string()));
@@ -986,9 +997,7 @@ mod tests {
 
             fs::write(config_path, "{ changedExternally: true }\n").unwrap();
             let err = document.save().unwrap_err();
-            assert!(err
-                .to_string()
-                .contains("OpenClaw config changed on disk"));
+            assert!(err.to_string().contains("OpenClaw config changed on disk"));
         });
     }
 }

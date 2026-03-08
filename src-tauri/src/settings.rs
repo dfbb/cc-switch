@@ -88,7 +88,7 @@ fn default_profile() -> String {
     "default".to_string()
 }
 
-/// WebDAV v2 同步设置
+/// WebDAV 同步设置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WebDavSyncSettings {

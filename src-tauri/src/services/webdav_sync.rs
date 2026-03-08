@@ -1,4 +1,4 @@
-//! WebDAV v2 sync protocol layer.
+//! WebDAV v3 sync protocol layer.
 //!
 //! Implements manifest-based synchronization on top of the HTTP transport
 //! primitives in [`super::webdav`]. Artifact set: `db.sql` + `skills.zip`.
@@ -30,7 +30,7 @@ use archive::{
 // ─── Protocol constants ──────────────────────────────────────
 
 const PROTOCOL_FORMAT: &str = "cc-switch-webdav-sync";
-const PROTOCOL_VERSION: u32 = 2;
+const PROTOCOL_VERSION: u32 = 3;
 const REMOTE_DB_SQL: &str = "db.sql";
 const REMOTE_SKILLS_ZIP: &str = "skills.zip";
 const REMOTE_MANIFEST: &str = "manifest.json";
@@ -267,7 +267,7 @@ fn build_local_snapshot(
     _settings: &WebDavSyncSettings,
 ) -> Result<LocalSnapshot, AppError> {
     // Export database to SQL string
-    let sql_string = db.export_sql_string()?;
+    let sql_string = db.export_sql_string_for_sync()?;
     let db_sql = sql_string.into_bytes();
 
     // Pack skills into deterministic ZIP
@@ -492,7 +492,7 @@ fn apply_snapshot(
     // 先替换 skills，再导入数据库；若导入失败则回滚 skills，避免“半恢复”。
     restore_skills_zip(skills_zip)?;
 
-    if let Err(db_err) = db.import_sql_string(sql_str) {
+    if let Err(db_err) = db.import_sql_string_for_sync(sql_str) {
         if let Err(rollback_err) = restore_skills_from_backup(&skills_backup) {
             return Err(localized(
                 "webdav.sync.db_import_and_rollback_failed",
@@ -579,14 +579,14 @@ mod tests {
     }
 
     #[test]
-    fn remote_dir_segments_uses_v2() {
+    fn remote_dir_segments_uses_v3() {
         let settings = WebDavSyncSettings {
             remote_root: "cc-switch-sync".to_string(),
             profile: "default".to_string(),
             ..WebDavSyncSettings::default()
         };
         let segs = remote_dir_segments(&settings);
-        assert_eq!(segs, vec!["cc-switch-sync", "v2", "default"]);
+        assert_eq!(segs, vec!["cc-switch-sync", "v3", "default"]);
     }
 
     #[test]

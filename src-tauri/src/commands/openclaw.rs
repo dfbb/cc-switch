@@ -36,8 +36,8 @@ pub fn get_openclaw_live_provider(
 
 /// Scan openclaw.json for known configuration hazards.
 #[tauri::command]
-pub fn scan_openclaw_config_health(
-) -> Result<Vec<openclaw_config::OpenClawHealthWarning>, String> {
+pub fn scan_openclaw_config_health() -> Result<Vec<openclaw_config::OpenClawHealthWarning>, String>
+{
     openclaw_config::scan_openclaw_config_health().map_err(|e| e.to_string())
 }
 

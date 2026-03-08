@@ -617,7 +617,10 @@ mod tests {
         let mut tool_index_by_call: HashMap<String, u64> = HashMap::new();
         for event in &events {
             if event.get("type").and_then(|v| v.as_str()) == Some("content_block_start")
-                && event.pointer("/content_block/type").and_then(|v| v.as_str()) == Some("tool_use")
+                && event
+                    .pointer("/content_block/type")
+                    .and_then(|v| v.as_str())
+                    == Some("tool_use")
             {
                 if let (Some(call_id), Some(index)) = (
                     event.pointer("/content_block/id").and_then(|v| v.as_str()),
@@ -666,8 +669,7 @@ mod tests {
 
         assert!(events.iter().any(|event| {
             event.get("type").and_then(|v| v.as_str()) == Some("message_delta")
-                && event.pointer("/delta/stop_reason").and_then(|v| v.as_str())
-                    == Some("tool_use")
+                && event.pointer("/delta/stop_reason").and_then(|v| v.as_str()) == Some("tool_use")
         }));
     }
 
@@ -701,7 +703,10 @@ mod tests {
             .iter()
             .filter(|event| {
                 event.get("type").and_then(|v| v.as_str()) == Some("content_block_start")
-                    && event.pointer("/content_block/type").and_then(|v| v.as_str()) == Some("tool_use")
+                    && event
+                        .pointer("/content_block/type")
+                        .and_then(|v| v.as_str())
+                        == Some("tool_use")
             })
             .collect();
         assert_eq!(starts.len(), 1);
@@ -727,7 +732,11 @@ mod tests {
                     && event.pointer("/delta/type").and_then(|v| v.as_str())
                         == Some("input_json_delta")
             })
-            .filter_map(|event| event.pointer("/delta/partial_json").and_then(|v| v.as_str()))
+            .filter_map(|event| {
+                event
+                    .pointer("/delta/partial_json")
+                    .and_then(|v| v.as_str())
+            })
             .collect();
         assert!(deltas.contains(&"{\"a\":"));
         assert!(deltas.contains(&"1}"));

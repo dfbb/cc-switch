@@ -337,7 +337,10 @@ pub fn openai_to_anthropic(body: Value) -> Result<Value, ProxyError> {
     // 兼容旧格式（function_call）
     if !has_tool_use {
         if let Some(function_call) = message.get("function_call") {
-            let id = function_call.get("id").and_then(|i| i.as_str()).unwrap_or("");
+            let id = function_call
+                .get("id")
+                .and_then(|i| i.as_str())
+                .unwrap_or("");
             let name = function_call
                 .get("name")
                 .and_then(|n| n.as_str())
@@ -372,7 +375,9 @@ pub fn openai_to_anthropic(body: Value) -> Result<Value, ProxyError> {
             "tool_calls" | "function_call" => "tool_use",
             "content_filter" => "end_turn",
             other => {
-                log::warn!("[Claude/OpenAI] Unknown finish_reason in non-streaming response: {other}");
+                log::warn!(
+                    "[Claude/OpenAI] Unknown finish_reason in non-streaming response: {other}"
+                );
                 "end_turn"
             }
         })
