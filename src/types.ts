@@ -169,7 +169,7 @@ export interface VisibleApps {
   openclaw: boolean;
 }
 
-// WebDAV v2 同步状态
+// WebDAV 同步状态
 export interface WebDavSyncStatus {
   lastSyncAt?: number | null;
   lastError?: string | null;
@@ -179,7 +179,7 @@ export interface WebDavSyncStatus {
   lastRemoteManifestHash?: string | null;
 }
 
-// WebDAV v2 同步配置
+// WebDAV 同步配置
 export interface WebDavSyncSettings {
   enabled?: boolean;
   autoSync?: boolean;
@@ -191,14 +191,20 @@ export interface WebDavSyncSettings {
   status?: WebDavSyncStatus;
 }
 
+export type RemoteSnapshotLayout = "current" | "legacy";
+
 // 远端快照信息（下载前预览）
 export interface RemoteSnapshotInfo {
   deviceName: string;
   createdAt: string;
   snapshotId: string;
   version: number;
+  protocolVersion: number;
+  dbCompatVersion?: number | null;
   compatible: boolean;
   artifacts: string[];
+  layout: RemoteSnapshotLayout;
+  remotePath: string;
 }
 
 // 应用设置类型（用于设置对话框与 Tauri API）

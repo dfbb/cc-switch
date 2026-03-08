@@ -92,6 +92,10 @@ function formatDate(rfc3339: string): string {
   return Number.isNaN(d.getTime()) ? rfc3339 : d.toLocaleString();
 }
 
+function formatDbCompatVersion(version?: number | null): string | null {
+  return typeof version === "number" ? `db-v${version}` : null;
+}
+
 // ─── Types ──────────────────────────────────────────────────
 
 type ActionState =
@@ -395,7 +399,10 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
       if (!info.compatible) {
         toast.error(
           t("settings.webdavSync.incompatibleVersion", {
-            version: info.version,
+            protocolVersion: info.protocolVersion,
+            dbCompatVersion:
+              formatDbCompatVersion(info.dbCompatVersion) ??
+              t("common.unknown"),
           }),
         );
         return;
@@ -450,6 +457,9 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
   const lastError = config?.status?.lastError?.trim();
   const showAutoSyncError =
     !!lastError && config?.status?.lastErrorSource === "auto";
+  const currentRemotePath = `/${form.remoteRoot.trim() || "cc-switch-sync"}/v2/db-v6/${form.profile.trim() || "default"}`;
+  const remoteDbCompatDisplay = formatDbCompatVersion(remoteInfo?.dbCompatVersion);
+  const remoteIsLegacy = remoteInfo?.layout === "legacy";
 
   // ─── Render ─────────────────────────────────────────────
 
@@ -720,8 +730,7 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
                   {t("settings.webdavSync.confirmUpload.targetPath")}
                   {": "}
                   <code className="ml-1 text-xs bg-muted px-1.5 py-0.5 rounded">
-                    /{form.remoteRoot.trim() || "cc-switch-sync"}/v2/
-                    {form.profile.trim() || "default"}
+                    {currentRemotePath}
                   </code>
                 </p>
                 {remoteInfo && (
@@ -742,12 +751,33 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
                         {t("settings.webdavSync.confirmUpload.createdAt")}
                       </dt>
                       <dd>{formatDate(remoteInfo.createdAt)}</dd>
+                      <dt className="font-medium text-foreground">
+                        {t("settings.webdavSync.confirmUpload.path")}
+                      </dt>
+                      <dd>
+                        <code className="bg-muted px-1.5 py-0.5 rounded">
+                          {remoteInfo.remotePath}
+                        </code>
+                      </dd>
+                      {remoteDbCompatDisplay && (
+                        <>
+                          <dt className="font-medium text-foreground">
+                            {t("settings.webdavSync.confirmUpload.dbCompat")}
+                          </dt>
+                          <dd>{remoteDbCompatDisplay}</dd>
+                        </>
+                      )}
                     </dl>
                   </div>
                 )}
-                {remoteInfo && (
+                {remoteInfo && !remoteIsLegacy && (
                   <p className="text-destructive font-medium">
                     {t("settings.webdavSync.confirmUpload.warning")}
+                  </p>
+                )}
+                {remoteInfo && remoteIsLegacy && (
+                  <p className="font-medium text-amber-600 dark:text-amber-400">
+                    {t("settings.webdavSync.confirmUpload.legacyNotice")}
                   </p>
                 )}
               </div>
@@ -794,10 +824,31 @@ export function WebdavSyncSection({ config }: WebdavSyncSectionProps) {
                     </dt>
                     <dd>{formatDate(remoteInfo.createdAt)}</dd>
                     <dt className="font-medium text-foreground">
+                      {t("settings.webdavSync.confirmDownload.path")}
+                    </dt>
+                    <dd>
+                      <code className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {remoteInfo.remotePath}
+                      </code>
+                    </dd>
+                    {remoteDbCompatDisplay && (
+                      <>
+                        <dt className="font-medium text-foreground">
+                          {t("settings.webdavSync.confirmDownload.dbCompat")}
+                        </dt>
+                        <dd>{remoteDbCompatDisplay}</dd>
+                      </>
+                    )}
+                    <dt className="font-medium text-foreground">
                       {t("settings.webdavSync.confirmDownload.artifacts")}
                     </dt>
                     <dd>{remoteInfo.artifacts.join(", ")}</dd>
                   </dl>
+                )}
+                {remoteInfo?.layout === "legacy" && (
+                  <p className="font-medium text-amber-600 dark:text-amber-400">
+                    {t("settings.webdavSync.confirmDownload.legacyNotice")}
+                  </p>
                 )}
                 <p className="text-destructive font-medium">
                   {t("settings.webdavSync.confirmDownload.warning")}
