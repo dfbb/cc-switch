@@ -553,6 +553,26 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#000000",
   },
   {
+    name: "Ucloud",
+    websiteUrl: "https://www.compshare.cn",
+    apiKeyUrl: "https://api.modelverse.cn",
+    settingsConfig: {
+      env: {
+        ANTHROPIC_BASE_URL: "https://api.modelverse.cn",
+        ANTHROPIC_AUTH_TOKEN: "",
+        ANTHROPIC_MODEL: "zai-org/glm-5",
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: "zai-org/glm-5",
+        ANTHROPIC_DEFAULT_SONNET_MODEL: "zai-org/glm-5",
+        ANTHROPIC_DEFAULT_OPUS_MODEL: "zai-org/glm-5",
+      },
+    },
+    category: "aggregator",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "ucloud", // 促销信息 i18n key
+    icon: "ucloud",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

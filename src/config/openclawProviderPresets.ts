@@ -1225,6 +1225,33 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       },
     },
   },
+  {
+    name: "Ucloud",
+    websiteUrl: "https://www.compshare.cn",
+    apiKeyUrl: "https://api.modelverse.cn/v1",
+    settingsConfig: {
+      baseUrl: "https://api.modelverse.cn/v1",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "zai-org/glm-5",
+          name: "GLM-5",
+          contextWindow: 200000,
+        },
+        {
+          id: "MiniMax-M2.5",
+          name: "MiniMax-M2.5",
+          contextWindow: 200000,
+        },
+      ],
+    },
+    category: "aggregator",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "ucloud", // 促销信息 i18n key
+    icon: "ucloud",
+    iconColor: "#000000",
+  },
   // ========== Cloud Providers ==========
   {
     name: "AWS Bedrock",

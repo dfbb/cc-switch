@@ -281,6 +281,23 @@ requires_openai_auth = true`,
     iconColor: "#000000",
   },
   {
+    name: "Ucloud",
+    websiteUrl: "https://www.compshare.cn",
+    apiKeyUrl: "https://api.modelverse.cn/v1",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "ucloud",
+      "https://api.modelverse.cn/v1",
+      "zai-org/glm-5",
+    ),
+    endpointCandidates: ["https://api.modelverse.cn/v1"],
+    category: "aggregator",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "ucloud", // 促销信息 i18n key
+    icon: "ucloud",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

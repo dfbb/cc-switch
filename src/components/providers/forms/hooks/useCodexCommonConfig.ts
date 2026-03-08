@@ -119,11 +119,7 @@ export function useCodexCommonConfig({
       const hasCommon = initialEnabled ?? inferredHasCommon;
       setUseCommonConfig(hasCommon);
 
-      if (
-        hasCommon &&
-        !inferredHasCommon &&
-        !hasInitializedEditMode.current
-      ) {
+      if (hasCommon && !inferredHasCommon && !hasInitializedEditMode.current) {
         hasInitializedEditMode.current = true;
         const { updatedConfig, error } = updateTomlCommonConfigSnippet(
           codexConfig,

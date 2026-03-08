@@ -127,11 +127,7 @@ export function useCommonConfigSnippet({
       const hasCommon = initialEnabled ?? inferredHasCommon;
       setUseCommonConfig(hasCommon);
 
-      if (
-        hasCommon &&
-        !inferredHasCommon &&
-        !hasInitializedEditMode.current
-      ) {
+      if (hasCommon && !inferredHasCommon && !hasInitializedEditMode.current) {
         hasInitializedEditMode.current = true;
         const { updatedConfig, error } = updateCommonConfigSnippet(
           settingsConfig,
