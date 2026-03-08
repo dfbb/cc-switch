@@ -1252,6 +1252,29 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     icon: "ucloud",
     iconColor: "#000000",
   },
+  {
+    name: "Micu",
+    websiteUrl: "https://www.openclaudecode.cn",
+    apiKeyUrl: "https://www.openclaudecode.cn",
+    settingsConfig: {
+      baseUrl: "https://www.openclaudecode.cn",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
+          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
+        },
+      ],
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "micu",
+    icon: "micu",
+    iconColor: "#000000",
+  },
   // ========== Cloud Providers ==========
   {
     name: "AWS Bedrock",
