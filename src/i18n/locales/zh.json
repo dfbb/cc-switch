@@ -38,7 +38,9 @@
     "reset": "重置",
     "actions": "操作",
     "deleting": "删除中...",
-    "auto": "自动"
+    "auto": "自动",
+    "enabled": "已开启",
+    "notSet": "未设置"
   },
   "apiKeyInput": {
     "placeholder": "请输入API Key",
@@ -579,7 +581,8 @@
       "pricingLoadFailed": "加载计费配置失败：{{error}}",
       "defaultCostMultiplierRequired": "默认倍率不能为空",
       "defaultCostMultiplierInvalid": "默认倍率格式不正确"
-    }
+    },
+    "saveFailedGeneric": "保存失败，请重试"
   },
   "apps": {
     "claude": "Claude",
@@ -633,7 +636,14 @@
     "daysAgo": "{{count}} 天前",
     "roleUser": "用户",
     "roleSystem": "系统",
-    "roleTool": "工具"
+    "roleTool": "工具",
+    "resume": "恢复会话",
+    "resumeTooltip": "在终端中恢复此会话",
+    "noResumeCommand": "此会话无法恢复",
+    "copyCommand": "复制命令",
+    "copyMessage": "复制消息",
+    "messageCopied": "已复制消息内容",
+    "conversationHistory": "对话记录"
   },
   "console": {
     "providerSwitchReceived": "收到供应商切换事件:",
@@ -755,7 +765,8 @@
     "pleaseAddEndpoint": "请先添加端点",
     "testUnavailable": "测速功能不可用",
     "noResult": "未返回结果",
-    "testFailed": "测速失败: {{error}}"
+    "testFailed": "测速失败: {{error}}",
+    "empty": "暂无端点"
   },
   "providerAdvanced": {
     "testConfig": "模型测试配置",
@@ -799,7 +810,9 @@
     "extractNoCommonConfig": "当前编辑内容没有可提取的通用配置",
     "extractFailed": "提取失败: {{error}}",
     "saveFailed": "保存失败: {{error}}",
-    "modelNameHint": "指定使用的模型，将自动更新到 config.toml 中"
+    "modelNameHint": "指定使用的模型，将自动更新到 config.toml 中",
+    "modelName": "模型名称",
+    "modelNamePlaceholder": "例如: gpt-5-codex"
   },
   "geminiConfig": {
     "envFile": "环境变量 (.env)",
@@ -944,7 +957,28 @@
     "costBreakdown": "成本明细",
     "performance": "性能信息",
     "latency": "延迟",
-    "errorMessage": "错误信息"
+    "errorMessage": "错误信息",
+    "requests": "请求数",
+    "tokens": "Tokens",
+    "avgCost": "平均成本",
+    "avgLatency": "平均延迟",
+    "successRate": "成功率",
+    "requestId": "请求 ID",
+    "never": "从不",
+    "modelId": "模型 ID",
+    "modelIdRequired": "模型 ID 不能为空",
+    "inputCostPerMillion": "输入成本 (每百万 tokens, USD)",
+    "outputCostPerMillion": "输出成本 (每百万 tokens, USD)",
+    "invalidPrice": "价格必须为非负数",
+    "invalidTimeRange": "请选择完整的开始/结束时间",
+    "invalidTimeRangeOrder": "开始时间不能晚于结束时间",
+    "timeRangeTooLarge": "时间范围过大，请缩小范围",
+    "addPricing": "新增定价",
+    "editPricing": "编辑定价",
+    "pricingAdded": "定价已添加",
+    "pricingUpdated": "定价已更新",
+    "cacheReadCostPerMillion": "缓存读取成本 (每百万 tokens, USD)",
+    "cacheCreationCostPerMillion": "缓存写入成本 (每百万 tokens, USD)"
   },
   "usageScript": {
     "title": "配置用量查询",
@@ -1367,7 +1401,9 @@
       "stringifiedEnvVars": "env.vars 应为对象，但当前值看起来像被字符串化或已损坏。",
       "stringifiedShellEnv": "env.shellEnv 应为对象，但当前值看起来像被字符串化或已损坏。",
       "parseFailed": "openclaw.json 不是合法 JSON5。请先修复文件，再通过这里编辑。"
-    }
+    },
+    "primaryModel": "默认模型",
+    "fallbackModel": "回退模型"
   },
   "env": {
     "warning": {
@@ -1587,7 +1623,14 @@
       "skillsPath": "Skills 路径",
       "hint": "此操作将添加 Skill 仓库到列表。",
       "hintDetail": "添加后，您可以在 Skills 管理界面中选择安装具体的 Skill。"
-    }
+    },
+    "usageScript": "用量查询",
+    "usageScriptEnabled": "已启用",
+    "usageScriptDisabled": "未启用",
+    "usageApiKey": "用量 API Key",
+    "usageBaseUrl": "用量查询地址",
+    "usageAutoInterval": "自动查询",
+    "usageAutoIntervalValue": "每 {{minutes}} 分钟"
   },
   "iconPicker": {
     "search": "搜索图标",
@@ -1606,7 +1649,8 @@
     "selectIcon": "选择图标",
     "preview": "预览",
     "clickToChange": "点击更换图标",
-    "clickToSelect": "点击选择图标"
+    "clickToSelect": "点击选择图标",
+    "color": "图标颜色"
   },
   "migration": {
     "success": "配置迁移成功",
@@ -1743,7 +1787,12 @@
       "hint": "选择要接管的应用，启用后该应用的请求将通过本地代理转发",
       "enabled": "{{app}} 接管已启用",
       "disabled": "{{app}} 接管已关闭",
-      "failed": "切换接管状态失败"
+      "failed": "切换接管状态失败",
+      "tooltip": {
+        "active": "{{appLabel}} 已接管 - {{address}}:{{port}}\n切换该应用供应商为热切换",
+        "broken": "{{appLabel}} 已接管，但代理服务未运行",
+        "inactive": "接管 {{appLabel}} 的 Live 配置，让该应用请求走本地代理"
+      }
     },
     "failover": {
       "proxyRequired": "需要先启动代理服务才能配置故障转移",
@@ -1793,8 +1842,28 @@
       "successThresholdLabel": "恢复成功阈值",
       "successThresholdExplain": "半开状态下，成功达到此次数时关闭熔断器，供应商恢复可用",
       "errorRateLabel": "错误率阈值",
-      "errorRateExplain": "错误率超过此值时，即使未达到失败阈值也会打开熔断器"
-    }
+      "errorRateExplain": "错误率超过此值时，即使未达到失败阈值也会打开熔断器",
+      "maxRetries": "最大重试次数",
+      "timeoutSettings": "超时配置",
+      "streamingFirstByte": "流式首字节超时",
+      "streamingIdle": "流式静默超时",
+      "nonStreaming": "非流式超时",
+      "maxRetriesHint": "请求失败时的重试次数（0-10）",
+      "streamingFirstByteHint": "等待首个数据块的最大时间，范围 1-120 秒，默认 60 秒",
+      "streamingIdleHint": "数据块之间的最大间隔，范围 60-600 秒，填 0 禁用（防止中途卡住）",
+      "nonStreamingHint": "非流式请求的总超时时间，范围 60-1200 秒，默认 600 秒（10 分钟）"
+    },
+    "logging": {
+      "enabled": "日志记录已启用",
+      "disabled": "日志记录已关闭",
+      "failed": "切换日志状态失败"
+    },
+    "server": {
+      "started": "代理服务已启动 - {{address}}:{{port}}",
+      "startFailed": "启动代理服务失败: {{detail}}"
+    },
+    "stoppedWithRestore": "代理服务已关闭，已恢复所有接管配置",
+    "stopWithRestoreFailed": "停止失败: {{detail}}"
   },
   "streamCheck": {
     "configSaved": "健康检查配置已保存",
@@ -1807,7 +1876,11 @@
     "timeout": "超时时间（秒）",
     "maxRetries": "最大重试次数",
     "degradedThreshold": "降级阈值（毫秒）",
-    "testPrompt": "检查提示词"
+    "testPrompt": "检查提示词",
+    "operational": "{{providerName}} 运行正常 ({{responseTimeMs}}ms)",
+    "degraded": "{{providerName}} 响应较慢 ({{responseTimeMs}}ms)",
+    "failed": "{{providerName}} 检查失败: {{message}}",
+    "error": "{{providerName}} 检查出错: {{error}}"
   },
   "proxyConfig": {
     "proxyEnabled": "代理总开关",
@@ -1828,12 +1901,29 @@
   "circuitBreaker": {
     "failureThreshold": "失败阈值",
     "successThreshold": "成功阈值",
-    "timeoutSeconds": "超时时间",
-    "errorRateThreshold": "错误率阈值",
+    "timeoutSeconds": "超时时间（秒）",
+    "errorRateThreshold": "错误率阈值 (%)",
     "minRequests": "最小请求数",
     "validationFailed": "以下字段超出有效范围: {{fields}}",
     "configSaved": "熔断器配置已保存",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "loading": "加载中...",
+    "title": "熔断器配置",
+    "description": "调整熔断器参数以控制故障检测和恢复行为",
+    "failureThresholdHint": "连续失败多少次后打开熔断器",
+    "timeoutSecondsHint": "熔断器打开后多久尝试恢复（半开状态）",
+    "successThresholdHint": "半开状态下成功多少次后关闭熔断器",
+    "errorRateThresholdHint": "错误率超过此值时打开熔断器",
+    "minRequestsHint": "计算错误率前的最小请求数",
+    "saveConfig": "保存配置",
+    "instructionsTitle": "配置说明",
+    "instructions": {
+      "failureThreshold": "连续失败达到此次数时，熔断器打开",
+      "timeout": "熔断器打开后，等待此时间后尝试半开",
+      "successThreshold": "半开状态下，成功达到此次数时关闭熔断器",
+      "errorRate": "错误率超过此值时，熔断器打开",
+      "minRequests": "只有请求数达到此值后才计算错误率"
+    }
   },
   "universalProvider": {
     "title": "统一供应商",

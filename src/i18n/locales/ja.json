@@ -38,7 +38,9 @@
     "reset": "リセット",
     "actions": "操作",
     "deleting": "削除中...",
-    "auto": "自動"
+    "auto": "自動",
+    "enabled": "有効",
+    "notSet": "未設定"
   },
   "apiKeyInput": {
     "placeholder": "API Key を入力",
@@ -579,7 +581,8 @@
       "pricingLoadFailed": "課金設定の読み込みに失敗しました: {{error}}",
       "defaultCostMultiplierRequired": "デフォルト倍率は必須です",
       "defaultCostMultiplierInvalid": "デフォルト倍率の形式が正しくありません"
-    }
+    },
+    "saveFailedGeneric": "保存に失敗しました。もう一度お試しください"
   },
   "apps": {
     "claude": "Claude",
@@ -633,7 +636,14 @@
     "daysAgo": "{{count}}日前",
     "roleUser": "ユーザー",
     "roleSystem": "システム",
-    "roleTool": "ツール"
+    "roleTool": "ツール",
+    "resume": "セッションを再開",
+    "resumeTooltip": "ターミナルでこのセッションを再開",
+    "noResumeCommand": "このセッションは再開できません",
+    "copyCommand": "コマンドをコピー",
+    "copyMessage": "メッセージをコピー",
+    "messageCopied": "メッセージがコピーされました",
+    "conversationHistory": "会話履歴"
   },
   "console": {
     "providerSwitchReceived": "プロバイダー切り替えイベントを受信:",
@@ -755,7 +765,8 @@
     "pleaseAddEndpoint": "まずエンドポイントを追加してください",
     "testUnavailable": "速度テストを実行できません",
     "noResult": "結果がありません",
-    "testFailed": "速度テストに失敗しました: {{error}}"
+    "testFailed": "速度テストに失敗しました: {{error}}",
+    "empty": "エンドポイントがありません"
   },
   "providerAdvanced": {
     "testConfig": "モデルテスト設定",
@@ -799,7 +810,9 @@
     "extractNoCommonConfig": "編集内容から抽出できる共通設定がありません",
     "extractFailed": "抽出に失敗しました: {{error}}",
     "saveFailed": "保存に失敗しました: {{error}}",
-    "modelNameHint": "使用するモデルを指定します。config.toml に自動更新されます"
+    "modelNameHint": "使用するモデルを指定します。config.toml に自動更新されます",
+    "modelName": "モデル名",
+    "modelNamePlaceholder": "例: gpt-5-codex"
   },
   "geminiConfig": {
     "envFile": "環境変数 (.env)",
@@ -944,7 +957,28 @@
     "costBreakdown": "コスト明細",
     "performance": "パフォーマンス",
     "latency": "レイテンシー",
-    "errorMessage": "エラーメッセージ"
+    "errorMessage": "エラーメッセージ",
+    "requests": "リクエスト数",
+    "tokens": "トークン",
+    "avgCost": "平均コスト",
+    "avgLatency": "平均レイテンシ",
+    "successRate": "成功率",
+    "requestId": "リクエスト ID",
+    "never": "なし",
+    "modelId": "モデル ID",
+    "modelIdRequired": "モデル ID は必須です",
+    "inputCostPerMillion": "入力コスト（100万トークンあたり、USD）",
+    "outputCostPerMillion": "出力コスト（100万トークンあたり、USD）",
+    "invalidPrice": "価格は負でない数値である必要があります",
+    "invalidTimeRange": "開始/終了時刻を完全に選択してください",
+    "invalidTimeRangeOrder": "開始時刻は終了時刻より前である必要があります",
+    "timeRangeTooLarge": "時間範囲が大きすぎます。範囲を縮小してください",
+    "addPricing": "価格設定を追加",
+    "editPricing": "価格設定を編集",
+    "pricingAdded": "価格設定が追加されました",
+    "pricingUpdated": "価格設定が更新されました",
+    "cacheReadCostPerMillion": "キャッシュ読み取りコスト（100万トークンあたり、USD）",
+    "cacheCreationCostPerMillion": "キャッシュ書き込みコスト（100万トークンあたり、USD）"
   },
   "usageScript": {
     "title": "利用状況を設定",
@@ -1367,7 +1401,9 @@
       "stringifiedEnvVars": "env.vars はオブジェクトである必要がありますが、現在の値は文字列化または破損しているようです。",
       "stringifiedShellEnv": "env.shellEnv はオブジェクトである必要がありますが、現在の値は文字列化または破損しているようです。",
       "parseFailed": "openclaw.json を有効な JSON5 として解析できませんでした。ここで編集する前にファイルを修正してください。"
-    }
+    },
+    "primaryModel": "プライマリモデル",
+    "fallbackModel": "フォールバックモデル"
   },
   "env": {
     "warning": {
@@ -1587,7 +1623,14 @@
       "skillsPath": "スキルパス",
       "hint": "この操作でスキルリポジトリが一覧に追加されます。",
       "hintDetail": "追加後、スキル管理ページから個別のスキルをインストールできます。"
-    }
+    },
+    "usageScript": "使用量クエリ",
+    "usageScriptEnabled": "有効",
+    "usageScriptDisabled": "無効",
+    "usageApiKey": "使用量 API キー",
+    "usageBaseUrl": "使用量クエリ URL",
+    "usageAutoInterval": "自動クエリ",
+    "usageAutoIntervalValue": "{{minutes}} 分ごと"
   },
   "iconPicker": {
     "search": "アイコンを検索",
@@ -1606,7 +1649,8 @@
     "selectIcon": "アイコンを選択",
     "preview": "プレビュー",
     "clickToChange": "クリックでアイコンを変更",
-    "clickToSelect": "クリックでアイコンを選択"
+    "clickToSelect": "クリックでアイコンを選択",
+    "color": "アイコンカラー"
   },
   "migration": {
     "success": "設定の移行が完了しました",
@@ -1743,7 +1787,12 @@
       "hint": "テイクオーバーするアプリを選択します。有効にすると、そのアプリのリクエストはローカルプロキシ経由で転送されます",
       "enabled": "{{app}} テイクオーバー有効",
       "disabled": "{{app}} テイクオーバー無効",
-      "failed": "テイクオーバーの切り替えに失敗しました"
+      "failed": "テイクオーバーの切り替えに失敗しました",
+      "tooltip": {
+        "active": "{{appLabel}} がインターセプト中 - {{address}}:{{port}}\nホットスイッチングのためプロバイダを切り替え",
+        "broken": "{{appLabel}} がインターセプト中ですが、プロキシサービスが実行されていません",
+        "inactive": "{{appLabel}} のライブ設定をインターセプトしてリクエストをローカルプロキシ経由でルーティング"
+      }
     },
     "failover": {
       "proxyRequired": "フェイルオーバーを設定するには、プロキシサービスを先に起動する必要があります",
@@ -1793,8 +1842,28 @@
       "successThresholdLabel": "回復成功しきい値",
       "successThresholdExplain": "半開状態でこの回数成功するとサーキットブレーカーが閉じ、プロバイダーが再び利用可能になります",
       "errorRateLabel": "エラー率しきい値",
-      "errorRateExplain": "失敗しきい値に達していなくても、エラー率がこの値を超えるとサーキットブレーカーが開きます"
-    }
+      "errorRateExplain": "失敗しきい値に達していなくても、エラー率がこの値を超えるとサーキットブレーカーが開きます",
+      "maxRetries": "最大リトライ回数",
+      "timeoutSettings": "タイムアウト設定",
+      "streamingFirstByte": "ストリーミング最初のバイトタイムアウト",
+      "streamingIdle": "ストリーミングアイドルタイムアウト",
+      "nonStreaming": "非ストリーミングタイムアウト",
+      "maxRetriesHint": "リクエスト失敗時のリトライ回数（0-10）",
+      "streamingFirstByteHint": "最初のデータチャンクを待つ最大時間、範囲 1-120 秒、デフォルト 60 秒",
+      "streamingIdleHint": "データチャンク間の最大間隔、範囲 60-600 秒、0 で無効化（途中停止を防止）",
+      "nonStreamingHint": "非ストリーミングリクエストの合計タイムアウト、範囲 60-1200 秒、デフォルト 600 秒（10 分）"
+    },
+    "logging": {
+      "enabled": "ログ記録が有効になりました",
+      "disabled": "ログ記録が無効になりました",
+      "failed": "ログ状態の切り替えに失敗しました"
+    },
+    "server": {
+      "started": "プロキシサービスが開始されました - {{address}}:{{port}}",
+      "startFailed": "プロキシサービスの開始に失敗しました: {{detail}}"
+    },
+    "stoppedWithRestore": "プロキシサービスが停止し、すべてのテイクオーバー設定が復元されました",
+    "stopWithRestoreFailed": "停止に失敗しました: {{detail}}"
   },
   "streamCheck": {
     "configSaved": "ヘルスチェック設定を保存しました",
@@ -1807,7 +1876,11 @@
     "timeout": "タイムアウト（秒）",
     "maxRetries": "最大リトライ回数",
     "degradedThreshold": "劣化しきい値（ミリ秒）",
-    "testPrompt": "テストプロンプト"
+    "testPrompt": "テストプロンプト",
+    "operational": "{{providerName}} は正常に動作しています ({{responseTimeMs}}ms)",
+    "degraded": "{{providerName}} の応答が遅いです ({{responseTimeMs}}ms)",
+    "failed": "{{providerName}} のチェックに失敗しました: {{message}}",
+    "error": "{{providerName}} のチェックでエラーが発生しました: {{error}}"
   },
   "proxyConfig": {
     "proxyEnabled": "プロキシ有効",
@@ -1826,14 +1899,31 @@
     "nonStreaming": "非ストリーミングタイムアウト"
   },
   "circuitBreaker": {
-    "failureThreshold": "失敗しきい値",
-    "successThreshold": "成功しきい値",
+    "failureThreshold": "失敗閾値",
+    "successThreshold": "成功閾値",
     "timeoutSeconds": "タイムアウト（秒）",
-    "errorRateThreshold": "エラー率しきい値",
+    "errorRateThreshold": "エラー率閾値 (%)",
     "minRequests": "最小リクエスト数",
     "validationFailed": "以下のフィールドが有効範囲外です: {{fields}}",
-    "configSaved": "サーキットブレーカー設定を保存しました",
-    "saveFailed": "保存に失敗しました"
+    "configSaved": "サーキットブレーカー設定が保存されました",
+    "saveFailed": "保存に失敗しました",
+    "loading": "読み込み中...",
+    "title": "サーキットブレーカー設定",
+    "description": "サーキットブレーカーパラメータを調整して、障害検出と復旧動作を制御します",
+    "failureThresholdHint": "連続失敗後にサーキットブレーカーを開く回数",
+    "timeoutSecondsHint": "サーキットブレーカーを開いた後、復旧を試みるまでの時間（半開状態）",
+    "successThresholdHint": "半開状態で成功してサーキットブレーカーを閉じる回数",
+    "errorRateThresholdHint": "エラー率がこの値を超えるとサーキットブレーカーを開く",
+    "minRequestsHint": "エラー率を計算する前の最小リクエスト数",
+    "saveConfig": "設定を保存",
+    "instructionsTitle": "設定説明",
+    "instructions": {
+      "failureThreshold": "連続失敗がこの回数に達するとサーキットブレーカーが開く",
+      "timeout": "サーキットブレーカーを開いた後、この時間待機してから半開を試みる",
+      "successThreshold": "半開状態で成功がこの回数に達するとサーキットブレーカーを閉じる",
+      "errorRate": "エラー率がこの値を超えるとサーキットブレーカーが開く",
+      "minRequests": "リクエスト数がこの値に達した後にのみエラー率が計算される"
+    }
   },
   "universalProvider": {
     "title": "統合プロバイダー",
