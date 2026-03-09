@@ -124,174 +124,11 @@ export const OPENCODE_PRESET_MODEL_VARIANTS: Record<
   ],
   "@ai-sdk/openai": [
     {
-      id: "gpt-5",
-      name: "GPT-5",
+      id: "gpt-5.4",
+      name: "GPT-5.4",
       contextLimit: 400000,
       outputLimit: 128000,
       modalities: { input: ["text", "image"], output: ["text"] },
-      variants: {
-        low: {
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          textVerbosity: "low",
-        },
-        medium: {
-          reasoningEffort: "medium",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        high: {
-          reasoningEffort: "high",
-          reasoningSummary: "auto",
-          textVerbosity: "high",
-        },
-      },
-    },
-    {
-      id: "gpt-5.1",
-      name: "GPT-5.1",
-      contextLimit: 400000,
-      outputLimit: 272000,
-      modalities: { input: ["text", "image"], output: ["text"] },
-      variants: {
-        low: {
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          textVerbosity: "low",
-        },
-        medium: {
-          reasoningEffort: "medium",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        high: {
-          reasoningEffort: "high",
-          reasoningSummary: "auto",
-          textVerbosity: "high",
-        },
-      },
-    },
-    {
-      id: "gpt-5.1-codex",
-      name: "GPT-5.1 Codex",
-      contextLimit: 400000,
-      outputLimit: 128000,
-      modalities: { input: ["text", "image"], output: ["text"] },
-      options: { include: ["reasoning.encrypted_content"], store: false },
-      variants: {
-        low: {
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        medium: {
-          reasoningEffort: "medium",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        high: {
-          reasoningEffort: "high",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-      },
-    },
-    {
-      id: "gpt-5.1-codex-max",
-      name: "GPT-5.1 Codex Max",
-      contextLimit: 400000,
-      outputLimit: 128000,
-      modalities: { input: ["text", "image"], output: ["text"] },
-      options: { include: ["reasoning.encrypted_content"], store: false },
-      variants: {
-        low: {
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        medium: {
-          reasoningEffort: "medium",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        high: {
-          reasoningEffort: "high",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        xhigh: {
-          reasoningEffort: "xhigh",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-      },
-    },
-    {
-      id: "gpt-5.2",
-      name: "GPT-5.2",
-      contextLimit: 400000,
-      outputLimit: 128000,
-      modalities: { input: ["text", "image"], output: ["text"] },
-      variants: {
-        low: {
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        medium: {
-          reasoningEffort: "medium",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        high: {
-          reasoningEffort: "high",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        xhigh: {
-          reasoningEffort: "xhigh",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-      },
-    },
-    {
-      id: "gpt-5.2-codex",
-      name: "GPT-5.2 Codex",
-      contextLimit: 400000,
-      outputLimit: 128000,
-      modalities: { input: ["text", "image"], output: ["text"] },
-      options: { include: ["reasoning.encrypted_content"], store: false },
-      variants: {
-        low: {
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        medium: {
-          reasoningEffort: "medium",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        high: {
-          reasoningEffort: "high",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-        xhigh: {
-          reasoningEffort: "xhigh",
-          reasoningSummary: "auto",
-          textVerbosity: "medium",
-        },
-      },
-    },
-    {
-      id: "gpt-5.3-codex",
-      name: "GPT-5.3 Codex",
-      contextLimit: 400000,
-      outputLimit: 128000,
-      modalities: { input: ["text", "image"], output: ["text"] },
-      options: { include: ["reasoning.encrypted_content"], store: false },
       variants: {
         low: {
           reasoningEffort: "low",
@@ -1110,11 +947,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         apiKey: "",
       },
       models: {
-        "gpt-5.2": { name: "GPT-5.2" },
-        "gpt-5.2-codex": {
-          name: "GPT-5.2 Codex",
-          options: { include: ["reasoning.encrypted_content"], store: false },
-        },
+        "gpt-5.4": { name: "GPT-5.4" },
       },
     },
     category: "third_party",
