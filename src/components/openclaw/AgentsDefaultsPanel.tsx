@@ -169,15 +169,8 @@ const AgentsDefaultsPanel: React.FC = () => {
       if (concNum !== undefined) updated.maxConcurrent = concNum;
       else delete updated.maxConcurrent;
 
-      const outcome = await saveAgentsMutation.mutateAsync(updated);
-      toast.success(t("openclaw.agents.saveSuccess"), {
-        description: outcome.backupPath
-          ? t("openclaw.backupCreated", {
-              path: outcome.backupPath,
-              defaultValue: "Backup created: {{path}}",
-            })
-          : undefined,
-      });
+      await saveAgentsMutation.mutateAsync(updated);
+      toast.success(t("openclaw.agents.saveSuccess"));
     } catch (error) {
       const detail = extractErrorMessage(error);
       toast.error(t("openclaw.agents.saveFailed"), {

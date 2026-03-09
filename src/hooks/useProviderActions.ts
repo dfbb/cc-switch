@@ -261,7 +261,7 @@ export function useProviderActions(activeApp: AppId) {
       };
 
       try {
-        const outcome = await openclawApi.setDefaultModel(model);
+        await openclawApi.setDefaultModel(model);
         await queryClient.invalidateQueries({
           queryKey: openclawKeys.defaultModel,
         });
@@ -272,15 +272,7 @@ export function useProviderActions(activeApp: AppId) {
           t("notifications.openclawDefaultModelSet", {
             defaultValue: "已设为默认模型",
           }),
-          {
-            closeButton: true,
-            description: outcome.backupPath
-              ? t("openclaw.backupCreated", {
-                  path: outcome.backupPath,
-                  defaultValue: "Backup created: {{path}}",
-                })
-              : undefined,
-          },
+          { closeButton: true },
         );
       } catch (error) {
         const detail =

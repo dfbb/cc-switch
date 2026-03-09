@@ -41,15 +41,8 @@ const EnvPanel: React.FC = () => {
   const handleSave = async () => {
     try {
       const env = parseOpenClawEnvEditorValue(editorValue);
-      const outcome = await saveEnvMutation.mutateAsync(env);
-      toast.success(t("openclaw.env.saveSuccess"), {
-        description: outcome.backupPath
-          ? t("openclaw.backupCreated", {
-              path: outcome.backupPath,
-              defaultValue: "Backup created: {{path}}",
-            })
-          : undefined,
-      });
+      await saveEnvMutation.mutateAsync(env);
+      toast.success(t("openclaw.env.saveSuccess"));
     } catch (error) {
       const detail = extractErrorMessage(error);
       let description = detail || undefined;

@@ -85,15 +85,8 @@ const ToolsPanel: React.FC = () => {
         deny: denyList.map((item) => item.value).filter((s) => s.trim()),
       };
 
-      const outcome = await saveToolsMutation.mutateAsync(newConfig);
-      toast.success(t("openclaw.tools.saveSuccess"), {
-        description: outcome.backupPath
-          ? t("openclaw.backupCreated", {
-              path: outcome.backupPath,
-              defaultValue: "Backup created: {{path}}",
-            })
-          : undefined,
-      });
+      await saveToolsMutation.mutateAsync(newConfig);
+      toast.success(t("openclaw.tools.saveSuccess"));
     } catch (error) {
       const detail = extractErrorMessage(error);
       toast.error(t("openclaw.tools.saveFailed"), {
