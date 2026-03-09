@@ -1228,21 +1228,18 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
   {
     name: "Ucloud",
     websiteUrl: "https://www.compshare.cn",
-    apiKeyUrl: "https://api.modelverse.cn/v1",
+    apiKeyUrl:
+      "https://www.compshare.cn/docs/modelverse/best_practice/openclaw",
     settingsConfig: {
       baseUrl: "https://api.modelverse.cn/v1",
       apiKey: "",
       api: "anthropic-messages",
       models: [
         {
-          id: "zai-org/glm-5",
-          name: "GLM-5",
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
           contextWindow: 200000,
-        },
-        {
-          id: "MiniMax-M2.5",
-          name: "MiniMax-M2.5",
-          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
         },
       ],
     },
@@ -1251,6 +1248,21 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     partnerPromotionKey: "ucloud", // 促销信息 i18n key
     icon: "ucloud",
     iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "ucloud/claude-opus-4-6",
+      },
+      modelCatalog: {
+        "ucloud/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
   },
   {
     name: "Micu",
@@ -1274,6 +1286,21 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     partnerPromotionKey: "micu",
     icon: "micu",
     iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "micu/claude-opus-4-6",
+      },
+      modelCatalog: {
+        "micu/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
   },
   // ========== Cloud Providers ==========
   {

@@ -283,12 +283,13 @@ requires_openai_auth = true`,
   {
     name: "Ucloud",
     websiteUrl: "https://www.compshare.cn",
-    apiKeyUrl: "https://api.modelverse.cn/v1",
+    apiKeyUrl:
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
     auth: generateThirdPartyAuth(""),
     config: generateThirdPartyConfig(
       "ucloud",
       "https://api.modelverse.cn/v1",
-      "zai-org/glm-5",
+      "gpt-5.4",
     ),
     endpointCandidates: ["https://api.modelverse.cn/v1"],
     category: "aggregator",

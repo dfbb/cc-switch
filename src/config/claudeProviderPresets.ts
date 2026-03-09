@@ -555,15 +555,12 @@ export const providerPresets: ProviderPreset[] = [
   {
     name: "Ucloud",
     websiteUrl: "https://www.compshare.cn",
-    apiKeyUrl: "https://api.modelverse.cn",
+    apiKeyUrl:
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
     settingsConfig: {
       env: {
         ANTHROPIC_BASE_URL: "https://api.modelverse.cn",
         ANTHROPIC_AUTH_TOKEN: "",
-        ANTHROPIC_MODEL: "zai-org/glm-5",
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: "zai-org/glm-5",
-        ANTHROPIC_DEFAULT_SONNET_MODEL: "zai-org/glm-5",
-        ANTHROPIC_DEFAULT_OPUS_MODEL: "zai-org/glm-5",
       },
     },
     category: "aggregator",
