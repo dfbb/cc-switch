@@ -522,6 +522,7 @@ export interface OpenClawProviderConfig {
   apiKey?: string; // API 密钥
   api?: string; // API 协议类型（如 "openai-completions"、"anthropic"）
   models?: OpenClawModel[]; // 可用模型列表
+  headers?: Record<string, string>; // 自定义请求头（如 User-Agent）
 }
 
 // OpenClaw agents.defaults 完整配置

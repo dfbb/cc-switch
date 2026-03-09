@@ -100,6 +100,8 @@ pub struct OpenClawProviderConfig {
     pub api: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub models: Vec<OpenClawModelEntry>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub headers: HashMap<String, String>,
     #[serde(flatten)]
     pub extra: HashMap<String, Value>,
 }

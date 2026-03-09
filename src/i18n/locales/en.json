@@ -1343,6 +1343,8 @@
     "cacheWriteCost": "Cache Write Cost ($/M tokens)",
     "cacheCostHint": "Cache costs are used to calculate Prompt Caching costs. Leave empty if not using caching.",
     "modelsHint": "Configure the models supported by this provider. Model ID is used for API calls, Display Name for the interface.",
+    "userAgent": "Send User-Agent",
+    "userAgentHint": "Some providers require a browser User-Agent header to work properly.",
     "env": {
       "title": "Environment Variables",
       "description": "Manage environment variables in openclaw.json (API keys, custom variables, etc.)",

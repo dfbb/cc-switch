@@ -1343,6 +1343,8 @@
     "cacheWriteCost": "キャッシュ書込コスト ($/M トークン)",
     "cacheCostHint": "キャッシュコストは Prompt Caching のコスト計算に使用されます。キャッシュを使用しない場合は空欄のままにしてください。",
     "modelsHint": "このプロバイダーがサポートするモデルを設定します。モデル ID は API 呼び出しに、表示名はインターフェースに使用されます。",
+    "userAgent": "User-Agent を送信",
+    "userAgentHint": "一部のプロバイダーはブラウザの User-Agent ヘッダーが必要です。",
     "env": {
       "title": "環境変数",
       "description": "openclaw.json の環境変数設定を管理（APIキー、カスタム変数など）",

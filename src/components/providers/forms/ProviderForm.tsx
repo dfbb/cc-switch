@@ -1450,6 +1450,8 @@ export function ProviderForm({
             onApiChange={openclawForm.handleOpenclawApiChange}
             models={openclawForm.openclawModels}
             onModelsChange={openclawForm.handleOpenclawModelsChange}
+            userAgent={openclawForm.openclawUserAgent}
+            onUserAgentChange={openclawForm.handleOpenclawUserAgentChange}
           />
         )}
 

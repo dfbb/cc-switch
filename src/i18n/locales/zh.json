@@ -1343,6 +1343,8 @@
     "cacheWriteCost": "缓存写入价格 ($/M tokens)",
     "cacheCostHint": "缓存价格用于计算 Prompt Caching 的成本。如不使用缓存可留空。",
     "modelsHint": "配置该供应商支持的模型。模型 ID 用于 API 调用，显示名称用于界面展示。",
+    "userAgent": "发送 User-Agent",
+    "userAgentHint": "部分供应商需要浏览器 User-Agent 才能正常访问。",
     "env": {
       "title": "环境变量",
       "description": "管理 openclaw.json 中的环境变量配置（API Key、自定义变量等）",
