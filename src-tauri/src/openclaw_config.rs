@@ -339,13 +339,28 @@ impl OpenClawConfigDocument {
             ));
         }
 
+        let next_source = self.text.to_string();
+        if current_source.as_deref() == Some(next_source.as_str()) {
+            let warnings = scan_openclaw_health_from_value(
+                &json5::from_str::<Value>(&next_source).map_err(|e| {
+                    AppError::Config(format!(
+                        "Failed to parse unchanged OpenClaw config as JSON5: {e}"
+                    ))
+                })?,
+            );
+
+            return Ok(OpenClawWriteOutcome {
+                backup_path: None,
+                warnings,
+            });
+        }
+
         let backup_path = current_source
             .as_ref()
             .map(|source| create_openclaw_backup(source))
             .transpose()?
             .map(|path| path.display().to_string());
 
-        let next_source = self.text.to_string();
         atomic_write(&self.path, next_source.as_bytes())?;
 
         let warnings = scan_openclaw_health_from_value(
@@ -978,6 +993,40 @@ mod tests {
             assert!(written.contains("// top-level comment"));
             assert!(written.contains("agents: {"));
             assert!(written.contains("provider/model"));
+        });
+    }
+
+    #[test]
+    fn default_model_noop_write_skips_backup() {
+        let source = r#"{
+  models: {
+    mode: 'merge',
+    providers: {},
+  },
+}
+"#;
+
+        with_test_paths(source, |_| {
+            let model = OpenClawDefaultModel {
+                primary: "provider/model".to_string(),
+                fallbacks: vec!["provider/fallback".to_string()],
+                extra: HashMap::new(),
+            };
+
+            let first_outcome = set_default_model(&model).unwrap();
+            assert!(first_outcome.backup_path.is_some());
+
+            let first_written = fs::read_to_string(get_openclaw_config_path()).unwrap();
+            let backup_dir = get_app_config_dir().join("backups").join("openclaw");
+            let backup_count = fs::read_dir(&backup_dir).unwrap().count();
+            assert_eq!(backup_count, 1);
+
+            let second_outcome = set_default_model(&model).unwrap();
+            assert!(second_outcome.backup_path.is_none());
+
+            let second_written = fs::read_to_string(get_openclaw_config_path()).unwrap();
+            assert_eq!(second_written, first_written);
+            assert_eq!(fs::read_dir(&backup_dir).unwrap().count(), backup_count);
         });
     }
 
