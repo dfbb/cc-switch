@@ -14,6 +14,7 @@ import type {
   ProviderTestConfig,
   ProviderProxyConfig,
   ClaudeApiFormat,
+  ClaudeApiKeyField,
 } from "@/types";
 import {
   providerPresets,
@@ -244,6 +245,18 @@ export function ProviderForm({
     [form],
   );
 
+  const [localApiKeyField, setLocalApiKeyField] = useState<ClaudeApiKeyField>(
+    () => {
+      if (appId !== "claude") return "ANTHROPIC_AUTH_TOKEN";
+      if (initialData?.meta?.apiKeyField) return initialData.meta.apiKeyField;
+      // Infer from existing config env
+      const env = (initialData?.settingsConfig as Record<string, unknown>)
+        ?.env as Record<string, unknown> | undefined;
+      if (env?.ANTHROPIC_API_KEY !== undefined) return "ANTHROPIC_API_KEY";
+      return "ANTHROPIC_AUTH_TOKEN";
+    },
+  );
+
   const {
     apiKey,
     handleApiKeyChange,
@@ -254,6 +267,7 @@ export function ProviderForm({
     selectedPresetId,
     category,
     appType: appId,
+    apiKeyField: appId === "claude" ? localApiKeyField : undefined,
   });
 
   const { baseUrl, handleClaudeBaseUrlChange } = useBaseUrlState({
@@ -285,6 +299,30 @@ export function ProviderForm({
   const handleApiFormatChange = useCallback((format: ClaudeApiFormat) => {
     setLocalApiFormat(format);
   }, []);
+
+  const handleApiKeyFieldChange = useCallback(
+    (field: ClaudeApiKeyField) => {
+      const prev = localApiKeyField;
+      setLocalApiKeyField(field);
+
+      // Swap the env key name in settingsConfig
+      try {
+        const raw = form.getValues("settingsConfig");
+        const config = JSON.parse(raw || "{}");
+        if (config?.env && prev in config.env) {
+          const value = config.env[prev];
+          delete config.env[prev];
+          config.env[field] = value;
+          const updated = JSON.stringify(config, null, 2);
+          form.setValue("settingsConfig", updated);
+          handleSettingsConfigChange(updated);
+        }
+      } catch {
+        // ignore parse errors during editing
+      }
+    },
+    [localApiKeyField, form, handleSettingsConfigChange],
+  );
 
   const {
     codexAuth,
@@ -844,6 +882,12 @@ export function ProviderForm({
         appId === "claude" && category !== "official"
           ? localApiFormat
           : undefined,
+      apiKeyField:
+        appId === "claude" &&
+        category !== "official" &&
+        localApiKeyField !== "ANTHROPIC_AUTH_TOKEN"
+          ? localApiKeyField
+          : undefined,
     };
 
     onSubmit(payload);
@@ -1082,6 +1126,8 @@ export function ProviderForm({
       setLocalApiFormat("anthropic");
     }
 
+    setLocalApiKeyField(preset.apiKeyField ?? "ANTHROPIC_AUTH_TOKEN");
+
     form.reset({
       name: preset.name,
       websiteUrl: preset.websiteUrl ?? "",
@@ -1287,6 +1333,8 @@ export function ProviderForm({
             speedTestEndpoints={speedTestEndpoints}
             apiFormat={localApiFormat}
             onApiFormatChange={handleApiFormatChange}
+            apiKeyField={localApiKeyField}
+            onApiKeyFieldChange={handleApiKeyFieldChange}
           />
         )}
 
