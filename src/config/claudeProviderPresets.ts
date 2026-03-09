@@ -563,6 +563,7 @@ export const providerPresets: ProviderPreset[] = [
         ANTHROPIC_AUTH_TOKEN: "",
       },
     },
+    endpointCandidates: ["https://api.modelverse.cn"],
     category: "aggregator",
     isPartner: true, // 合作伙伴
     partnerPromotionKey: "ucloud", // 促销信息 i18n key
@@ -596,6 +597,7 @@ export const providerPresets: ProviderPreset[] = [
         ANTHROPIC_AUTH_TOKEN: "",
       },
     },
+    endpointCandidates: ["https://www.x-code.cn"],
     category: "third_party",
     isPartner: true, // 合作伙伴
     partnerPromotionKey: "x-code", // 促销信息 i18n key

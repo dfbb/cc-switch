@@ -1229,7 +1229,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
     name: "Ucloud",
     websiteUrl: "https://www.compshare.cn",
     apiKeyUrl:
-      "https://www.compshare.cn/docs/modelverse/best_practice/openclaw",
+      "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
     settingsConfig: {
       baseUrl: "https://api.modelverse.cn/v1",
       apiKey: "",
