@@ -1033,7 +1033,7 @@ export function ProviderForm({
       resetCodexConfig(auth, config);
 
       form.reset({
-        name: preset.name,
+        name: preset.nameKey ? t(preset.nameKey) : preset.name,
         websiteUrl: preset.websiteUrl ?? "",
         settingsConfig: JSON.stringify({ auth, config }, null, 2),
         icon: preset.icon ?? "",
@@ -1050,7 +1050,7 @@ export function ProviderForm({
       resetGeminiConfig(env, config);
 
       form.reset({
-        name: preset.name,
+        name: preset.nameKey ? t(preset.nameKey) : preset.name,
         websiteUrl: preset.websiteUrl ?? "",
         settingsConfig: JSON.stringify(preset.settingsConfig, null, 2),
         icon: preset.icon ?? "",
@@ -1078,7 +1078,7 @@ export function ProviderForm({
       opencodeForm.resetOpencodeState(config);
 
       form.reset({
-        name: preset.name,
+        name: preset.nameKey ? t(preset.nameKey) : preset.name,
         websiteUrl: preset.websiteUrl ?? "",
         settingsConfig: JSON.stringify(config, null, 2),
         icon: preset.icon ?? "",
@@ -1105,7 +1105,7 @@ export function ProviderForm({
 
       // Update form fields
       form.reset({
-        name: preset.name,
+        name: preset.nameKey ? t(preset.nameKey) : preset.name,
         websiteUrl: preset.websiteUrl ?? "",
         settingsConfig: JSON.stringify(config, null, 2),
         icon: preset.icon ?? "",
@@ -1129,7 +1129,7 @@ export function ProviderForm({
     setLocalApiKeyField(preset.apiKeyField ?? "ANTHROPIC_AUTH_TOKEN");
 
     form.reset({
-      name: preset.name,
+      name: preset.nameKey ? t(preset.nameKey) : preset.name,
       websiteUrl: preset.websiteUrl ?? "",
       settingsConfig: JSON.stringify(config, null, 2),
       icon: preset.icon ?? "",

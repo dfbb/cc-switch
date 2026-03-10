@@ -6,6 +6,7 @@ import type { PresetTheme } from "./claudeProviderPresets";
 
 export interface CodexProviderPreset {
   name: string;
+  nameKey?: string; // i18n key for localized display name
   websiteUrl: string;
   // 第三方供应商可提供单独的获取 API Key 链接
   apiKeyUrl?: string;
@@ -281,13 +282,14 @@ requires_openai_auth = true`,
     iconColor: "#000000",
   },
   {
-    name: "Ucloud",
+    name: "Compshare",
+    nameKey: "providerForm.presets.ucloud",
     websiteUrl: "https://www.compshare.cn",
     apiKeyUrl:
       "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
     auth: generateThirdPartyAuth(""),
     config: generateThirdPartyConfig(
-      "ucloud",
+      "compshare",
       "https://api.modelverse.cn/v1",
       "gpt-5.4",
     ),

@@ -3,6 +3,7 @@ import type { PresetTheme, TemplateValueConfig } from "./claudeProviderPresets";
 
 export interface OpenCodeProviderPreset {
   name: string;
+  nameKey?: string; // i18n key for localized display name
   websiteUrl: string;
   apiKeyUrl?: string;
   settingsConfig: OpenCodeProviderConfig;

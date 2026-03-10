@@ -24,6 +24,7 @@ export interface PresetTheme {
 
 export interface ProviderPreset {
   name: string;
+  nameKey?: string; // i18n key for localized display name
   websiteUrl: string;
   // 新增：第三方/聚合等可单独配置获取 API Key 的链接
   apiKeyUrl?: string;
@@ -573,7 +574,8 @@ export const providerPresets: ProviderPreset[] = [
     iconColor: "#000000",
   },
   {
-    name: "Ucloud",
+    name: "Compshare",
+    nameKey: "providerForm.presets.ucloud",
     websiteUrl: "https://www.compshare.cn",
     apiKeyUrl:
       "https://www.compshare.cn/coding-plan?ytag=GPU_YY_YX_git_cc-switch",
