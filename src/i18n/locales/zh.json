@@ -1373,12 +1373,6 @@
       "unsupportedProfileTitle": "检测到不受支持的工具配置",
       "unsupportedProfileDescription": "当前 tools.profile 的值“{{value}}”不在 OpenClaw 支持列表内。在你手动选择新值之前，它会被保留。",
       "unsupportedProfileLabel": "不受支持",
-      "profiles": {
-        "default": "默认",
-        "strict": "严格",
-        "permissive": "宽松",
-        "custom": "自定义"
-      },
       "allowList": "允许列表",
       "denyList": "拒绝列表",
       "patternPlaceholder": "工具名称或模式",
