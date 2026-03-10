@@ -303,7 +303,7 @@ requires_openai_auth = true`,
   {
     name: "Micu",
     websiteUrl: "https://www.openclaudecode.cn",
-    apiKeyUrl: "https://www.openclaudecode.cn/v1",
+    apiKeyUrl: "https://www.openclaudecode.cn/register?aff=aOYQ",
     auth: generateThirdPartyAuth(""),
     config: generateThirdPartyConfig(
       "micu",

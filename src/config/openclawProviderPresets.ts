@@ -1307,7 +1307,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
   {
     name: "Micu",
     websiteUrl: "https://www.openclaudecode.cn",
-    apiKeyUrl: "https://www.openclaudecode.cn",
+    apiKeyUrl: "https://www.openclaudecode.cn/register?aff=aOYQ",
     settingsConfig: {
       baseUrl: "https://www.openclaudecode.cn",
       apiKey: "",

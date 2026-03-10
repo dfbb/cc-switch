@@ -1120,7 +1120,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
   {
     name: "Micu",
     websiteUrl: "https://www.openclaudecode.cn",
-    apiKeyUrl: "https://www.openclaudecode.cn/v1",
+    apiKeyUrl: "https://www.openclaudecode.cn/register?aff=aOYQ",
     settingsConfig: {
       npm: "@ai-sdk/anthropic",
       name: "Micu",

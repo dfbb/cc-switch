@@ -595,7 +595,7 @@ export const providerPresets: ProviderPreset[] = [
   {
     name: "Micu",
     websiteUrl: "https://www.openclaudecode.cn",
-    apiKeyUrl: "https://www.openclaudecode.cn",
+    apiKeyUrl: "https://www.openclaudecode.cn/register?aff=aOYQ",
     settingsConfig: {
       env: {
         ANTHROPIC_BASE_URL: "https://www.openclaudecode.cn",
