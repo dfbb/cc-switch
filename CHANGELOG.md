@@ -9,41 +9,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [3.12.1] - 2026-03-11
+## [3.12.1] - 2026-03-12
 
 ### Patch Release
 
-Stability-focused patch release fixing the Common Config modal infinite reopen loop, a WebDAV sync foreign key constraint failure, several i18n interpolation issues, and a Windows toolbar compact mode bug. Also adds **StepFun** provider presets, **OpenClaw input type selection**, and welcomes three new sponsor partners.
+Stability-focused patch release fixing the Common Config modal infinite reopen loop, a WebDAV sync foreign key constraint failure, several i18n interpolation issues, and a Windows toolbar compact mode bug. Also adds **StepFun** provider presets, **OpenClaw input type selection** and **authHeader** support, upgrades Gemini to **3.1-pro**, and welcomes four new sponsor partners.
 
-**Stats**: 16 commits | 51 files changed | +1,182 insertions | -359 deletions
+**Stats**: 19 commits | 56 files changed | +1,429 insertions | -396 deletions
 
 ### Added
 
 #### Provider Presets
 
-- **StepFun**: Added StepFun (阶跃星辰) provider presets including the step-3.5-flash model across supported applications (#1369)
+- **StepFun**: Added StepFun (阶跃星辰) provider presets including the step-3.5-flash model across supported applications (#1369, thanks @hengm3467)
 
 #### OpenClaw Enhancements
 
-- **Input Type Selection**: Added input type selection dropdown for model Advanced Options in OpenClaw configuration form (#1368)
+- **Input Type Selection**: Added input type selection dropdown for model Advanced Options in OpenClaw configuration form (#1368, thanks @liuxxxu)
+- **authHeader Field**: Added optional `authHeader` boolean to OpenClawProviderConfig for vendor-specific auth header support (e.g. Longcat), and refactored form state to reuse the shared type
 
 #### Sponsor Partners
 
 - **Micu API**: Added Micu API as sponsor partner with affiliate links
 - **XCodeAPI**: Added XCodeAPI as sponsor partner
 - **SiliconFlow**: Added SiliconFlow (硅基流动) as sponsor partner with affiliate links
+- **CTok**: Added CTok as sponsor partner
 
 ### Changed
 
 - **UCloud → Compshare**: Renamed UCloud provider to Compshare (优云智算) with full i18n support across all three locales (EN/ZH/JA)
 - **Compshare Links**: Updated Compshare sponsor registration links to coding-plan page
+- **Gemini Model Upgrade**: Upgraded default Gemini model from 2.5-pro to 3.1-pro in provider presets
 
 ### Fixed
 
 #### Common Config & UI
 
 - **Common Config Modal Loop**: Fixed an infinite reopen loop in the Common Config modal and added draft editing support to prevent data loss during edits
-- **Toolbar Compact Mode (Windows)**: Fixed toolbar compact mode not triggering on Windows due to left-side overflow (#1375)
+- **Toolbar Compact Mode (Windows)**: Fixed toolbar compact mode not triggering on Windows due to left-side overflow (#1375, thanks @zuoliangyu)
 - **Session Search Index**: Fixed session search index not syncing with query data, causing stale list display after session deletion
 
 #### Sync & Data
@@ -52,14 +55,15 @@ Stability-focused patch release fixing the Common Config modal infinite reopen l
 
 #### Provider & Preset
 
-- **Longcat authHeader**: Added missing `authHeader: true` to Longcat provider preset (#1377)
-- **OpenClaw Tool Permissions**: Aligned OpenClaw tool permission profiles with upstream schema (#1355)
+- **Longcat authHeader**: Added missing `authHeader: true` to Longcat provider preset (#1377, thanks @wavever)
+- **OpenClaw Tool Permissions**: Aligned OpenClaw tool permission profiles with upstream schema (#1355, thanks @bigsongeth)
 - **X-Code API URL**: Corrected X-Code API URL from `www.x-code.cn` to `x-code.cc`
 
 #### i18n & Localization
 
 - **Stream Check Toast**: Fixed stream check toast i18n interpolation keys not matching translation placeholders
-- **Proxy Startup Toast**: Fixed proxy startup toast not interpolating address and port values (#1399)
+- **Proxy Startup Toast**: Fixed proxy startup toast not interpolating address and port values (#1399, thanks @Mason-mengze)
+- **OpenCode API Format Label**: Renamed OpenCode API format label from "OpenAI" to "OpenAI Responses" for accuracy
 
 ---
 
