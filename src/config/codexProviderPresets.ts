@@ -335,6 +335,23 @@ requires_openai_auth = true`,
     iconColor: "#000000",
   },
   {
+    name: "CTok.ai",
+    websiteUrl: "https://ctok.ai",
+    apiKeyUrl: "https://ctok.ai",
+    auth: generateThirdPartyAuth(""),
+    config: generateThirdPartyConfig(
+      "ctok",
+      "https://api.ctok.ai/v1",
+      "gpt-5.4",
+    ),
+    endpointCandidates: ["https://api.ctok.ai/v1"],
+    category: "third_party",
+    isPartner: true, // 合作伙伴
+    partnerPromotionKey: "ctok", // 促销信息 i18n key
+    icon: "ctok",
+    iconColor: "#000000",
+  },
+  {
     name: "OpenRouter",
     websiteUrl: "https://openrouter.ai",
     apiKeyUrl: "https://openrouter.ai/keys",

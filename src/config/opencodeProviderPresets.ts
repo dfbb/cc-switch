@@ -1176,6 +1176,35 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
     },
   },
   {
+    name: "CTok.ai",
+    websiteUrl: "https://ctok.ai",
+    apiKeyUrl: "https://ctok.ai",
+    settingsConfig: {
+      npm: "@ai-sdk/anthropic",
+      name: "CTok",
+      options: {
+        baseURL: "https://api.ctok.ai/v1",
+        apiKey: "",
+      },
+      models: {
+        "claude-opus-4-6": { name: "Claude Opus 4.6" },
+        "claude-sonnet-4-6": { name: "Claude Sonnet 4.6" },
+      },
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "ctok",
+    icon: "ctok",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+  },
+  {
     name: "AWS Bedrock",
     websiteUrl: "https://aws.amazon.com/bedrock/",
     settingsConfig: {

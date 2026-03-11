@@ -1342,6 +1342,44 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       },
     },
   },
+  {
+    name: "CTok.ai",
+    websiteUrl: "https://ctok.ai",
+    apiKeyUrl: "https://ctok.ai",
+    settingsConfig: {
+      baseUrl: "https://api.ctok.ai",
+      apiKey: "",
+      api: "anthropic-messages",
+      models: [
+        {
+          id: "claude-opus-4-6",
+          name: "Claude Opus 4.6",
+          contextWindow: 200000,
+          cost: { input: 5, output: 25 },
+        },
+      ],
+    },
+    category: "third_party",
+    isPartner: true,
+    partnerPromotionKey: "ctok",
+    icon: "ctok",
+    iconColor: "#000000",
+    templateValues: {
+      apiKey: {
+        label: "API Key",
+        placeholder: "",
+        editorValue: "",
+      },
+    },
+    suggestedDefaults: {
+      model: {
+        primary: "ctok/claude-opus-4-6",
+      },
+      modelCatalog: {
+        "ctok/claude-opus-4-6": { alias: "Opus" },
+      },
+    },
+  },
   // ========== Cloud Providers ==========
   {
     name: "AWS Bedrock",

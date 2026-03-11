@@ -93,6 +93,13 @@ export const iconMetadata: Record<string, IconMetadata> = {
     keywords: [],
     defaultColor: "currentColor",
   },
+  ctok: {
+    name: "ctok",
+    displayName: "CTok",
+    category: "ai-provider",
+    keywords: ["ctok", "ai", "programming"],
+    defaultColor: "#3B82F6",
+  },
   cubence: {
     name: "cubence",
     displayName: "Cubence",

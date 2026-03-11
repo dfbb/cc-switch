@@ -9,6 +9,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.12.1] - 2026-03-11
+
+### Patch Release
+
+Stability-focused patch release fixing the Common Config modal infinite reopen loop, a WebDAV sync foreign key constraint failure, several i18n interpolation issues, and a Windows toolbar compact mode bug. Also adds **StepFun** provider presets, **OpenClaw input type selection**, and welcomes three new sponsor partners.
+
+**Stats**: 16 commits | 51 files changed | +1,182 insertions | -359 deletions
+
+### Added
+
+#### Provider Presets
+
+- **StepFun**: Added StepFun (阶跃星辰) provider presets including the step-3.5-flash model across supported applications (#1369)
+
+#### OpenClaw Enhancements
+
+- **Input Type Selection**: Added input type selection dropdown for model Advanced Options in OpenClaw configuration form (#1368)
+
+#### Sponsor Partners
+
+- **Micu API**: Added Micu API as sponsor partner with affiliate links
+- **XCodeAPI**: Added XCodeAPI as sponsor partner
+- **SiliconFlow**: Added SiliconFlow (硅基流动) as sponsor partner with affiliate links
+
+### Changed
+
+- **UCloud → Compshare**: Renamed UCloud provider to Compshare (优云智算) with full i18n support across all three locales (EN/ZH/JA)
+- **Compshare Links**: Updated Compshare sponsor registration links to coding-plan page
+
+### Fixed
+
+#### Common Config & UI
+
+- **Common Config Modal Loop**: Fixed an infinite reopen loop in the Common Config modal and added draft editing support to prevent data loss during edits
+- **Toolbar Compact Mode (Windows)**: Fixed toolbar compact mode not triggering on Windows due to left-side overflow (#1375)
+- **Session Search Index**: Fixed session search index not syncing with query data, causing stale list display after session deletion
+
+#### Sync & Data
+
+- **WebDAV Provider Health FK**: Fixed foreign key constraint failure when restoring `provider_health` table during WebDAV sync
+
+#### Provider & Preset
+
+- **Longcat authHeader**: Added missing `authHeader: true` to Longcat provider preset (#1377)
+- **OpenClaw Tool Permissions**: Aligned OpenClaw tool permission profiles with upstream schema (#1355)
+- **X-Code API URL**: Corrected X-Code API URL from `www.x-code.cn` to `x-code.cc`
+
+#### i18n & Localization
+
+- **Stream Check Toast**: Fixed stream check toast i18n interpolation keys not matching translation placeholders
+- **Proxy Startup Toast**: Fixed proxy startup toast not interpolating address and port values (#1399)
+
+---
+
 ## [3.12.0] - 2026-03-09
 
 ### Feature Release
