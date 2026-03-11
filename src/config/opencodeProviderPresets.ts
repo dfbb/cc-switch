@@ -19,7 +19,7 @@ export interface OpenCodeProviderPreset {
 }
 
 export const opencodeNpmPackages = [
-  { value: "@ai-sdk/openai", label: "OpenAI" },
+  { value: "@ai-sdk/openai", label: "OpenAI Responses" },
   { value: "@ai-sdk/openai-compatible", label: "OpenAI Compatible" },
   { value: "@ai-sdk/anthropic", label: "Anthropic" },
   { value: "@ai-sdk/amazon-bedrock", label: "Amazon Bedrock" },
