@@ -1573,8 +1573,28 @@ impl ProxyService {
             .parse::<toml_edit::DocumentMut>()
             .map_err(|e| format!("解析现有 Codex 备份失败: {e}"))?;
 
-        if let Some(mcp_servers) = existing_doc.get("mcp_servers") {
-            target_doc["mcp_servers"] = mcp_servers.clone();
+        if let Some(existing_mcp_servers) = existing_doc.get("mcp_servers") {
+            match target_doc.get_mut("mcp_servers") {
+                Some(target_mcp_servers) => {
+                    if let (Some(target_table), Some(existing_table)) = (
+                        target_mcp_servers.as_table_like_mut(),
+                        existing_mcp_servers.as_table_like(),
+                    ) {
+                        for (server_id, server_item) in existing_table.iter() {
+                            if target_table.get(server_id).is_none() {
+                                target_table.insert(server_id, server_item.clone());
+                            }
+                        }
+                    } else {
+                        log::warn!(
+                            "Codex config contains a non-table mcp_servers section; skipping backup MCP merge"
+                        );
+                    }
+                }
+                None => {
+                    target_doc["mcp_servers"] = existing_mcp_servers.clone();
+                }
+            }
         }
 
         target_obj.insert("config".to_string(), json!(target_doc.to_string()));
@@ -2360,6 +2380,97 @@ base_url = "https://new.example/v1"
         assert!(
             config.contains("https://new.example/v1"),
             "provider-specific base_url should still update to the new provider"
+        );
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn update_live_backup_from_provider_keeps_new_codex_mcp_entries_on_conflict() {
+        let _home = TempHome::new();
+        crate::settings::reload_settings().expect("reload settings");
+
+        let db = Arc::new(Database::memory().expect("init db"));
+        let service = ProxyService::new(db.clone());
+
+        db.save_live_backup(
+            "codex",
+            &serde_json::to_string(&json!({
+                "auth": {
+                    "OPENAI_API_KEY": "old-token"
+                },
+                "config": r#"[mcp_servers.shared]
+command = "old-command"
+
+[mcp_servers.legacy]
+command = "legacy-command"
+"#
+            }))
+            .expect("serialize seed backup"),
+        )
+        .await
+        .expect("seed live backup");
+
+        let provider = Provider::with_id(
+            "p2".to_string(),
+            "P2".to_string(),
+            json!({
+                "auth": {
+                    "OPENAI_API_KEY": "new-token"
+                },
+                "config": r#"[mcp_servers.shared]
+command = "new-command"
+
+[mcp_servers.latest]
+command = "latest-command"
+"#
+            }),
+            None,
+        );
+
+        service
+            .update_live_backup_from_provider("codex", &provider)
+            .await
+            .expect("update live backup");
+
+        let backup = db
+            .get_live_backup("codex")
+            .await
+            .expect("get live backup")
+            .expect("backup exists");
+        let stored: Value =
+            serde_json::from_str(&backup.original_config).expect("parse backup json");
+        let config = stored
+            .get("config")
+            .and_then(|v| v.as_str())
+            .expect("config string");
+        let parsed: toml::Value = toml::from_str(config).expect("parse merged codex config");
+
+        let mcp_servers = parsed
+            .get("mcp_servers")
+            .expect("mcp_servers should be present");
+        assert_eq!(
+            mcp_servers
+                .get("shared")
+                .and_then(|v| v.get("command"))
+                .and_then(|v| v.as_str()),
+            Some("new-command"),
+            "new provider/common-config MCP definition should win on conflict"
+        );
+        assert_eq!(
+            mcp_servers
+                .get("legacy")
+                .and_then(|v| v.get("command"))
+                .and_then(|v| v.as_str()),
+            Some("legacy-command"),
+            "backup-only MCP entries should still be preserved"
+        );
+        assert_eq!(
+            mcp_servers
+                .get("latest")
+                .and_then(|v| v.get("command"))
+                .and_then(|v| v.as_str()),
+            Some("latest-command"),
+            "new MCP entries should remain in the restore backup"
         );
     }
 }
