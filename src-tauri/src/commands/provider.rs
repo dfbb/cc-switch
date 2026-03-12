@@ -117,6 +117,8 @@ fn import_default_config_internal(state: &AppState, app_type: AppType) -> Result
                 _ => {}
             }
         }
+
+        ProviderService::migrate_legacy_common_config_usage_if_needed(state, app_type.clone())?;
     }
 
     Ok(imported)

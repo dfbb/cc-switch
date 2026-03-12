@@ -22,6 +22,80 @@ fn sanitize_provider_name(name: &str) -> String {
 }
 
 #[test]
+fn migrate_legacy_common_config_usage_marks_historical_provider_enabled() {
+    let _guard = test_mutex().lock().expect("acquire test mutex");
+    reset_test_fs();
+    let _home = ensure_test_home();
+
+    let mut config = MultiAppConfig::default();
+    {
+        let manager = config
+            .get_manager_mut(&AppType::Claude)
+            .expect("claude manager");
+        manager.current = "legacy-provider".to_string();
+        manager.providers.insert(
+            "legacy-provider".to_string(),
+            Provider::with_id(
+                "legacy-provider".to_string(),
+                "Legacy".to_string(),
+                json!({
+                    "includeCoAuthoredBy": false,
+                    "env": {
+                        "ANTHROPIC_API_KEY": "legacy-key"
+                    }
+                }),
+                None,
+            ),
+        );
+    }
+
+    let state = create_test_state_with_config(&config).expect("create test state");
+    state
+        .db
+        .set_config_snippet(
+            AppType::Claude.as_str(),
+            Some(r#"{ "includeCoAuthoredBy": false }"#.to_string()),
+        )
+        .expect("set common config snippet");
+
+    ProviderService::migrate_legacy_common_config_usage_if_needed(&state, AppType::Claude)
+        .expect("migrate legacy common config");
+
+    let providers = state
+        .db
+        .get_all_providers(AppType::Claude.as_str())
+        .expect("get providers after migration");
+    let provider = providers
+        .get("legacy-provider")
+        .expect("legacy provider exists");
+
+    assert_eq!(
+        provider
+            .meta
+            .as_ref()
+            .and_then(|meta| meta.common_config_enabled),
+        Some(true),
+        "historical provider should be explicitly marked as using common config"
+    );
+    assert!(
+        provider
+            .settings_config
+            .get("includeCoAuthoredBy")
+            .is_none(),
+        "common config fields should be stripped from provider storage after migration"
+    );
+    assert_eq!(
+        provider
+            .settings_config
+            .get("env")
+            .and_then(|v| v.get("ANTHROPIC_API_KEY"))
+            .and_then(|v| v.as_str()),
+        Some("legacy-key"),
+        "provider-specific auth should remain untouched"
+    );
+}
+
+#[test]
 fn provider_service_switch_codex_updates_live_and_config() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();

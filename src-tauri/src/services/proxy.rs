@@ -8,7 +8,9 @@ use crate::database::Database;
 use crate::provider::Provider;
 use crate::proxy::server::ProxyServer;
 use crate::proxy::types::*;
-use crate::services::provider::write_live_with_common_config;
+use crate::services::provider::{
+    build_effective_settings_with_common_config, write_live_with_common_config,
+};
 use serde_json::{json, Value};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -1528,21 +1530,37 @@ impl ProxyService {
         app_type: &str,
         provider: &Provider,
     ) -> Result<(), String> {
-        let backup_json = match app_type {
-            "claude" => {
-                // Claude: settings_config 直接作为备份
-                serde_json::to_string(&provider.settings_config)
-                    .map_err(|e| format!("序列化 Claude 配置失败: {e}"))?
+        let app_type_enum =
+            AppType::from_str(app_type).map_err(|_| format!("未知的应用类型: {app_type}"))?;
+        let mut effective_settings =
+            build_effective_settings_with_common_config(self.db.as_ref(), &app_type_enum, provider)
+                .map_err(|e| format!("构建 {app_type} 有效配置失败: {e}"))?;
+
+        if matches!(app_type_enum, AppType::Codex) {
+            let existing_backup = self
+                .db
+                .get_live_backup(app_type)
+                .await
+                .map_err(|e| format!("读取 {app_type} 现有备份失败: {e}"))?;
+
+            if let Some(existing_backup) = existing_backup {
+                let existing_value: Value = serde_json::from_str(&existing_backup.original_config)
+                    .map_err(|e| format!("解析 {app_type} 现有备份失败: {e}"))?;
+                Self::preserve_codex_mcp_servers_in_backup(
+                    &mut effective_settings,
+                    &existing_value,
+                )?;
             }
-            "codex" => {
-                // Codex: settings_config 包含 {"auth": ..., "config": ...}，直接使用
-                serde_json::to_string(&provider.settings_config)
-                    .map_err(|e| format!("序列化 Codex 配置失败: {e}"))?
-            }
-            "gemini" => {
-                // Gemini: 只提取 env 字段（与原始备份格式一致）
-                // proxy.rs 的 read_gemini_live() 返回 {"env": {...}}
-                let env_backup = if let Some(env) = provider.settings_config.get("env") {
+        }
+
+        let backup_json = match app_type_enum {
+            AppType::Claude => serde_json::to_string(&effective_settings)
+                .map_err(|e| format!("序列化 Claude 配置失败: {e}"))?,
+            AppType::Codex => serde_json::to_string(&effective_settings)
+                .map_err(|e| format!("序列化 Codex 配置失败: {e}"))?,
+            AppType::Gemini => {
+                // Gemini takeover 仅修改 .env；settings.json（含 mcpServers）保持原样。
+                let env_backup = if let Some(env) = effective_settings.get("env") {
                     json!({ "env": env })
                 } else {
                     json!({ "env": {} })
@@ -1550,7 +1568,9 @@ impl ProxyService {
                 serde_json::to_string(&env_backup)
                     .map_err(|e| format!("序列化 Gemini 配置失败: {e}"))?
             }
-            _ => return Err(format!("未知的应用类型: {app_type}")),
+            AppType::OpenCode | AppType::OpenClaw => {
+                return Err(format!("未知的应用类型: {app_type}"));
+            }
         };
 
         self.db
@@ -1559,6 +1579,47 @@ impl ProxyService {
             .map_err(|e| format!("更新 {app_type} 备份失败: {e}"))?;
 
         log::info!("已更新 {app_type} Live 备份（热切换）");
+        Ok(())
+    }
+
+    fn preserve_codex_mcp_servers_in_backup(
+        target_settings: &mut Value,
+        existing_backup: &Value,
+    ) -> Result<(), String> {
+        let target_obj = target_settings
+            .as_object_mut()
+            .ok_or_else(|| "Codex 备份必须是 JSON 对象".to_string())?;
+
+        let target_config = target_obj
+            .get("config")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let mut target_doc = if target_config.trim().is_empty() {
+            toml_edit::DocumentMut::new()
+        } else {
+            target_config
+                .parse::<toml_edit::DocumentMut>()
+                .map_err(|e| format!("解析新的 Codex config.toml 失败: {e}"))?
+        };
+
+        let existing_config = existing_backup
+            .get("config")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        if existing_config.trim().is_empty() {
+            target_obj.insert("config".to_string(), json!(target_doc.to_string()));
+            return Ok(());
+        }
+
+        let existing_doc = existing_config
+            .parse::<toml_edit::DocumentMut>()
+            .map_err(|e| format!("解析现有 Codex 备份失败: {e}"))?;
+
+        if let Some(mcp_servers) = existing_doc.get("mcp_servers") {
+            target_doc["mcp_servers"] = mcp_servers.clone();
+        }
+
+        target_obj.insert("config".to_string(), json!(target_doc.to_string()));
         Ok(())
     }
 
@@ -1914,6 +1975,7 @@ impl ProxyService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::provider::ProviderMeta;
     use serial_test::serial;
     use std::env;
     use tempfile::TempDir;
@@ -2190,5 +2252,195 @@ model = "gpt-5.1-codex"
             .expect("backup exists");
         let expected = serde_json::to_string(&provider_b.settings_config).expect("serialize");
         assert_eq!(backup.original_config, expected);
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn update_live_backup_from_provider_applies_claude_common_config() {
+        let _home = TempHome::new();
+        crate::settings::reload_settings().expect("reload settings");
+
+        let db = Arc::new(Database::memory().expect("init db"));
+        db.set_config_snippet(
+            "claude",
+            Some(
+                serde_json::json!({
+                    "includeCoAuthoredBy": false
+                })
+                .to_string(),
+            ),
+        )
+        .expect("set common config snippet");
+
+        let service = ProxyService::new(db.clone());
+
+        let mut provider = Provider::with_id(
+            "p1".to_string(),
+            "P1".to_string(),
+            json!({
+                "env": {
+                    "ANTHROPIC_AUTH_TOKEN": "token",
+                    "ANTHROPIC_BASE_URL": "https://claude.example"
+                }
+            }),
+            None,
+        );
+        provider.meta = Some(ProviderMeta {
+            common_config_enabled: Some(true),
+            ..Default::default()
+        });
+
+        service
+            .update_live_backup_from_provider("claude", &provider)
+            .await
+            .expect("update live backup");
+
+        let backup = db
+            .get_live_backup("claude")
+            .await
+            .expect("get live backup")
+            .expect("backup exists");
+        let stored: Value =
+            serde_json::from_str(&backup.original_config).expect("parse backup json");
+
+        assert_eq!(
+            stored.get("includeCoAuthoredBy").and_then(|v| v.as_bool()),
+            Some(false),
+            "common config should be applied into Claude restore backup"
+        );
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn update_live_backup_from_provider_applies_codex_common_config() {
+        let _home = TempHome::new();
+        crate::settings::reload_settings().expect("reload settings");
+
+        let db = Arc::new(Database::memory().expect("init db"));
+        db.set_config_snippet(
+            "codex",
+            Some("disable_response_storage = true\n".to_string()),
+        )
+        .expect("set common config snippet");
+
+        let service = ProxyService::new(db.clone());
+
+        let mut provider = Provider::with_id(
+            "p1".to_string(),
+            "P1".to_string(),
+            json!({
+                "auth": {
+                    "OPENAI_API_KEY": "token"
+                },
+                "config": r#"model_provider = "any"
+model = "gpt-5"
+
+[model_providers.any]
+base_url = "https://codex.example/v1"
+"#
+            }),
+            None,
+        );
+        provider.meta = Some(ProviderMeta {
+            common_config_enabled: Some(true),
+            ..Default::default()
+        });
+
+        service
+            .update_live_backup_from_provider("codex", &provider)
+            .await
+            .expect("update live backup");
+
+        let backup = db
+            .get_live_backup("codex")
+            .await
+            .expect("get live backup")
+            .expect("backup exists");
+        let stored: Value =
+            serde_json::from_str(&backup.original_config).expect("parse backup json");
+        let config = stored
+            .get("config")
+            .and_then(|v| v.as_str())
+            .expect("config string");
+
+        assert!(
+            config.contains("disable_response_storage = true"),
+            "common config should be applied into Codex restore backup"
+        );
+    }
+
+    #[tokio::test]
+    #[serial]
+    async fn update_live_backup_from_provider_preserves_codex_mcp_servers() {
+        let _home = TempHome::new();
+        crate::settings::reload_settings().expect("reload settings");
+
+        let db = Arc::new(Database::memory().expect("init db"));
+        let service = ProxyService::new(db.clone());
+
+        db.save_live_backup(
+            "codex",
+            &serde_json::to_string(&json!({
+                "auth": {
+                    "OPENAI_API_KEY": "old-token"
+                },
+                "config": r#"model_provider = "any"
+model = "gpt-4"
+
+[model_providers.any]
+base_url = "https://old.example/v1"
+
+[mcp_servers.echo]
+command = "npx"
+args = ["echo-server"]
+"#
+            }))
+            .expect("serialize seed backup"),
+        )
+        .await
+        .expect("seed live backup");
+
+        let provider = Provider::with_id(
+            "p2".to_string(),
+            "P2".to_string(),
+            json!({
+                "auth": {
+                    "OPENAI_API_KEY": "new-token"
+                },
+                "config": r#"model_provider = "any"
+model = "gpt-5"
+
+[model_providers.any]
+base_url = "https://new.example/v1"
+"#
+            }),
+            None,
+        );
+
+        service
+            .update_live_backup_from_provider("codex", &provider)
+            .await
+            .expect("update live backup");
+
+        let backup = db
+            .get_live_backup("codex")
+            .await
+            .expect("get live backup")
+            .expect("backup exists");
+        let stored: Value =
+            serde_json::from_str(&backup.original_config).expect("parse backup json");
+        let config = stored
+            .get("config")
+            .and_then(|v| v.as_str())
+            .expect("config string");
+
+        assert!(
+            config.contains("[mcp_servers.echo]"),
+            "existing Codex MCP section should survive proxy hot-switch backup update"
+        );
+        assert!(
+            config.contains("https://new.example/v1"),
+            "provider-specific base_url should still update to the new provider"
+        );
     }
 }

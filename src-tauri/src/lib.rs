@@ -613,6 +613,25 @@ pub fn run() {
                 }
             }
 
+            // 5.1 Migrate legacy providers that relied on inferred common-config usage
+            for app_type in [
+                crate::app_config::AppType::Claude,
+                crate::app_config::AppType::Codex,
+                crate::app_config::AppType::Gemini,
+            ] {
+                if let Err(e) =
+                    crate::services::provider::ProviderService::migrate_legacy_common_config_usage_if_needed(
+                        &app_state,
+                        app_type.clone(),
+                    )
+                {
+                    log::warn!(
+                        "✗ Failed to migrate legacy common-config usage for {}: {e}",
+                        app_type.as_str()
+                    );
+                }
+            }
+
             // 迁移旧的 app_config_dir 配置到 Store
             if let Err(e) = app_store::migrate_app_config_dir_from_settings(app.handle()) {
                 log::warn!("迁移 app_config_dir 失败: {e}");

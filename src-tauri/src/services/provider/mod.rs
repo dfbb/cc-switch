@@ -28,8 +28,9 @@ pub use live::{
 // Internal re-exports (pub(crate))
 pub(crate) use live::sanitize_claude_settings_for_live;
 pub(crate) use live::{
-    normalize_provider_common_config_for_storage, strip_common_config_from_live_settings,
-    sync_current_provider_for_app_to_live, write_live_with_common_config,
+    build_effective_settings_with_common_config, normalize_provider_common_config_for_storage,
+    strip_common_config_from_live_settings, sync_current_provider_for_app_to_live,
+    write_live_with_common_config,
 };
 
 // Internal re-exports
@@ -668,6 +669,25 @@ impl ProviderService {
         }
 
         Ok(())
+    }
+
+    pub fn migrate_legacy_common_config_usage_if_needed(
+        state: &AppState,
+        app_type: AppType,
+    ) -> Result<(), AppError> {
+        if app_type.is_additive_mode() {
+            return Ok(());
+        }
+
+        let Some(snippet) = state.db.get_config_snippet(app_type.as_str())? else {
+            return Ok(());
+        };
+
+        if snippet.trim().is_empty() {
+            return Ok(());
+        }
+
+        Self::migrate_legacy_common_config_usage(state, app_type, &snippet)
     }
 
     /// Extract common config snippet from current provider
