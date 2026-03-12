@@ -19,7 +19,7 @@ use tokio::sync::RwLock;
 /// 用于接管 Live 配置时的占位符（避免客户端提示缺少 key，同时不泄露真实 Token）
 const PROXY_TOKEN_PLACEHOLDER: &str = "PROXY_MANAGED";
 
-/// 代理接管模式下需要从 Claude Live 配置中移除的“模型覆盖”字段。
+/// 代理接管模式下需要从 Claude Live 配置中移除的"模型覆盖"字段。
 ///
 /// 原因：接管模式切换供应商时不会写回 Live 配置，如果保留这些字段，
 /// Claude Code 会继续以旧模型名发起请求，导致新供应商不支持时失败。
@@ -52,7 +52,7 @@ impl ProxyService {
 
     /// 清理接管模式下 Claude Live 配置中的模型覆盖字段。
     ///
-    /// 这可以避免“接管开启后切换供应商仍使用旧模型”的问题。
+    /// 这可以避免"接管开启后切换供应商仍使用旧模型"的问题。
     /// 注意：此方法不会修改 Token/Base URL 的接管占位符，仅移除模型字段。
     pub fn cleanup_claude_model_overrides_in_live(&self) -> Result<(), String> {
         let mut config = self.read_claude_live()?;
@@ -1162,7 +1162,7 @@ impl ProxyService {
     ) -> Result<(), String> {
         let app_type_str = app_type.as_str();
 
-        // 1) 优先从 Live 备份恢复（这是“原始 Live”的唯一可靠来源）
+        // 1) 优先从 Live 备份恢复（这是"原始 Live"的唯一可靠来源）
         let backup = self
             .db
             .get_live_backup(app_type_str)
@@ -1181,7 +1181,7 @@ impl ProxyService {
             return Ok(());
         }
 
-        // 2.1) 优先从 SSOT（当前供应商）重建 Live（比“清理字段”更可用）
+        // 2.1) 优先从 SSOT（当前供应商）重建 Live（比"清理字段"更可用）
         match self.restore_live_from_ssot_for_app(app_type) {
             Ok(true) => {
                 log::info!("{app_type_str} Live 配置已从 SSOT 恢复（无备份兜底）");
@@ -1358,51 +1358,9 @@ impl ProxyService {
         Ok(())
     }
 
+    /// Remove local proxy base_url from TOML（委托给 codex_config 共享实现）
     fn remove_local_toml_base_url(toml_str: &str) -> String {
-        use toml_edit::DocumentMut;
-
-        let mut doc = match toml_str.parse::<DocumentMut>() {
-            Ok(doc) => doc,
-            Err(_) => return toml_str.to_string(),
-        };
-
-        let model_provider = doc
-            .get("model_provider")
-            .and_then(|item| item.as_str())
-            .map(str::to_string);
-
-        if let Some(provider_key) = model_provider {
-            if let Some(model_providers) = doc
-                .get_mut("model_providers")
-                .and_then(|v| v.as_table_mut())
-            {
-                if let Some(provider_table) = model_providers
-                    .get_mut(provider_key.as_str())
-                    .and_then(|v| v.as_table_mut())
-                {
-                    let should_remove = provider_table
-                        .get("base_url")
-                        .and_then(|item| item.as_str())
-                        .map(Self::is_local_proxy_url)
-                        .unwrap_or(false);
-                    if should_remove {
-                        provider_table.remove("base_url");
-                    }
-                }
-            }
-        }
-
-        // 兜底：清理顶层 base_url（仅当它看起来像本地代理地址）
-        let should_remove_root = doc
-            .get("base_url")
-            .and_then(|item| item.as_str())
-            .map(Self::is_local_proxy_url)
-            .unwrap_or(false);
-        if should_remove_root {
-            doc.as_table_mut().remove("base_url");
-        }
-
-        doc.to_string()
+        crate::codex_config::remove_codex_toml_base_url_if(toml_str, Self::is_local_proxy_url)
     }
 
     fn cleanup_gemini_takeover_placeholders_in_live(&self) -> Result<(), String> {
@@ -1459,7 +1417,7 @@ impl ProxyService {
         Ok(())
     }
 
-    /// 检测 Live 配置是否处于“被接管”的残留状态
+    /// 检测 Live 配置是否处于"被接管"的残留状态
     ///
     /// 用于兜底处理：当数据库备份缺失但 Live 文件已经写成代理占位符时，
     /// 启动流程可以据此触发恢复逻辑。
@@ -1675,49 +1633,10 @@ impl ProxyService {
 
     // ==================== Live 配置读写辅助方法 ====================
 
-    /// 更新 TOML 字符串中的 base_url
+    /// 更新 TOML 字符串中的 base_url（委托给 codex_config 共享实现）
     fn update_toml_base_url(toml_str: &str, new_url: &str) -> String {
-        use toml_edit::DocumentMut;
-
-        let mut doc = match toml_str.parse::<DocumentMut>() {
-            Ok(doc) => doc,
-            Err(_) => return toml_str.to_string(),
-        };
-
-        // Codex 的 config.toml 通常是：
-        // model_provider = "any"
-        //
-        // [model_providers.any]
-        // base_url = "https://.../v1"
-        //
-        // 所以接管时要“精准”修改当前 model_provider 对应的 model_providers.<name>.base_url，
-        // 避免写错位置导致 Codex 仍然走旧地址。
-        let model_provider = doc
-            .get("model_provider")
-            .and_then(|item| item.as_str())
-            .map(str::to_string);
-
-        if let Some(provider_key) = model_provider {
-            if doc.get("model_providers").is_none() {
-                doc["model_providers"] = toml_edit::table();
-            }
-
-            if let Some(model_providers) = doc["model_providers"].as_table_mut() {
-                if !model_providers.contains_key(&provider_key) {
-                    model_providers[&provider_key] = toml_edit::table();
-                }
-
-                if let Some(provider_table) = model_providers[&provider_key].as_table_mut() {
-                    provider_table["base_url"] = toml_edit::value(new_url);
-                    return doc.to_string();
-                }
-            }
-        }
-
-        // 兜底：如果没有 model_provider 或结构不符合预期，则退回修改顶层 base_url。
-        doc["base_url"] = toml_edit::value(new_url);
-
-        doc.to_string()
+        crate::codex_config::update_codex_toml_field(toml_str, "base_url", new_url)
+            .unwrap_or_else(|_| toml_str.to_string())
     }
 
     fn read_claude_live(&self) -> Result<Value, String> {
@@ -2228,7 +2147,7 @@ model = "gpt-5.1-codex"
         db.set_current_provider("claude", "a")
             .expect("set current provider");
 
-        // 模拟“已接管”状态：存在 Live 备份（内容不重要，会被热切换更新）
+        // 模拟"已接管"状态：存在 Live 备份（内容不重要，会被热切换更新）
         db.save_live_backup("claude", "{\"env\":{}}")
             .await
             .expect("seed live backup");
