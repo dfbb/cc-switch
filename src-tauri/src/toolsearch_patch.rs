@@ -167,7 +167,10 @@ fn get_patch_status_for_path(path: &Path) -> Option<&'static str> {
 fn package_dir_from_ancestors(path: &Path) -> Option<PathBuf> {
     for ancestor in path.ancestors() {
         if ancestor.file_name().and_then(|v| v.to_str()) == Some("claude-code")
-            && ancestor.parent().and_then(|v| v.file_name()).and_then(|v| v.to_str())
+            && ancestor
+                .parent()
+                .and_then(|v| v.file_name())
+                .and_then(|v| v.to_str())
                 == Some("@anthropic-ai")
         {
             return Some(ancestor.to_path_buf());
@@ -259,9 +262,8 @@ fn find_active_installation() -> Option<(PathBuf, String)> {
 }
 
 fn require_active_installation() -> Result<(PathBuf, String), AppError> {
-    find_active_installation().ok_or_else(|| {
-        AppError::Config("No active Claude Code installation found in PATH".into())
-    })
+    find_active_installation()
+        .ok_or_else(|| AppError::Config("No active Claude Code installation found in PATH".into()))
 }
 
 // ── macOS codesign ──────────────────────────────────────────────────
@@ -437,9 +439,7 @@ pub fn check_toolsearch_status() -> Result<ToolSearchStatus, AppError> {
             let data = std::fs::read(&path).unwrap_or_default();
             let status = get_patch_status(&data);
             // Check centralized backup first, then legacy
-            let has_backup = get_backup_path(&path)
-                .map(|p| p.is_file())
-                .unwrap_or(false)
+            let has_backup = get_backup_path(&path).map(|p| p.is_file()).unwrap_or(false)
                 || PathBuf::from(format!("{}{}", path.display(), BACKUP_SUFFIX)).is_file();
             ClaudeInstallation {
                 path: path.to_string_lossy().to_string(),
