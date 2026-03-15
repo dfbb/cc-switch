@@ -1570,6 +1570,24 @@
     "backup": {
       "location": "备份位置: {{path}}"
     },
+    "restoreFromBackup": {
+      "button": "从备份中恢复",
+      "title": "从备份中恢复",
+      "description": "选择一个 Skills 备份，将文件恢复到本地并重新加入当前列表。",
+      "empty": "暂无可恢复的 Skills 备份",
+      "createdAt": "备份时间",
+      "path": "备份路径",
+      "restore": "恢复",
+      "restoring": "恢复中...",
+      "delete": "删除",
+      "deleting": "删除中...",
+      "deleteSuccess": "技能备份 {{name}} 已删除",
+      "deleteFailed": "删除技能备份失败",
+      "deleteConfirmTitle": "确认删除备份",
+      "deleteConfirmMessage": "确定要删除技能备份 \"{{name}}\" 吗？此操作无法撤销。",
+      "success": "技能 {{name}} 已从备份恢复",
+      "failed": "从备份恢复失败"
+    },
     "apps": {
       "claude": "Claude",
       "codex": "Codex",

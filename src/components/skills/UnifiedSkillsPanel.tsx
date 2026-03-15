@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import {
   type ImportSkillSelection,
+  type SkillBackupEntry,
+  useDeleteSkillBackup,
   useInstalledSkills,
+  useSkillBackups,
+  useRestoreSkillBackup,
   useToggleSkillApp,
   useUninstallSkill,
   useScanUnmanagedSkills,
@@ -21,6 +25,14 @@ import { MCP_SKILLS_APP_IDS } from "@/config/appConfig";
 import { AppCountBar } from "@/components/common/AppCountBar";
 import { AppToggleGroup } from "@/components/common/AppToggleGroup";
 import { ListItemRow } from "@/components/common/ListItemRow";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface UnifiedSkillsPanelProps {
   onOpenDiscovery: () => void;
@@ -31,6 +43,14 @@ export interface UnifiedSkillsPanelHandle {
   openDiscovery: () => void;
   openImport: () => void;
   openInstallFromZip: () => void;
+  openRestoreFromBackup: () => void;
+}
+
+function formatSkillBackupDate(unixSeconds: number): string {
+  const date = new Date(unixSeconds * 1000);
+  return Number.isNaN(date.getTime())
+    ? String(unixSeconds)
+    : date.toLocaleString();
 }
 
 const UnifiedSkillsPanel = React.forwardRef<
@@ -42,13 +62,23 @@ const UnifiedSkillsPanel = React.forwardRef<
     isOpen: boolean;
     title: string;
     message: string;
+    confirmText?: string;
+    variant?: "destructive" | "info";
     onConfirm: () => void;
   } | null>(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [restoreDialogOpen, setRestoreDialogOpen] = useState(false);
 
   const { data: skills, isLoading } = useInstalledSkills();
+  const {
+    data: skillBackups = [],
+    refetch: refetchSkillBackups,
+    isFetching: isFetchingSkillBackups,
+  } = useSkillBackups();
+  const deleteBackupMutation = useDeleteSkillBackup();
   const toggleAppMutation = useToggleSkillApp();
   const uninstallMutation = useUninstallSkill();
+  const restoreBackupMutation = useRestoreSkillBackup();
   const { data: unmanagedSkills, refetch: scanUnmanaged } =
     useScanUnmanagedSkills();
   const importMutation = useImportSkillsFromApps();
@@ -152,10 +182,71 @@ const UnifiedSkillsPanel = React.forwardRef<
     }
   };
 
+  const handleOpenRestoreFromBackup = async () => {
+    setRestoreDialogOpen(true);
+    try {
+      await refetchSkillBackups();
+    } catch (error) {
+      toast.error(t("common.error"), { description: String(error) });
+    }
+  };
+
+  const handleRestoreFromBackup = async (backupId: string) => {
+    try {
+      const restored = await restoreBackupMutation.mutateAsync({
+        backupId,
+        currentApp,
+      });
+      setRestoreDialogOpen(false);
+      toast.success(
+        t("skills.restoreFromBackup.success", { name: restored.name }),
+        {
+          closeButton: true,
+        },
+      );
+    } catch (error) {
+      toast.error(t("skills.restoreFromBackup.failed"), {
+        description: String(error),
+      });
+    }
+  };
+
+  const handleDeleteBackup = (backup: SkillBackupEntry) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: t("skills.restoreFromBackup.deleteConfirmTitle"),
+      message: t("skills.restoreFromBackup.deleteConfirmMessage", {
+        name: backup.skill.name,
+      }),
+      confirmText: t("skills.restoreFromBackup.delete"),
+      variant: "destructive",
+      onConfirm: async () => {
+        try {
+          await deleteBackupMutation.mutateAsync(backup.backupId);
+          await refetchSkillBackups();
+          setConfirmDialog(null);
+          toast.success(
+            t("skills.restoreFromBackup.deleteSuccess", {
+              name: backup.skill.name,
+            }),
+            {
+              closeButton: true,
+            },
+          );
+        } catch (error) {
+          toast.error(t("skills.restoreFromBackup.deleteFailed"), {
+            description: String(error),
+          });
+        }
+      },
+    });
+  };
+
   React.useImperativeHandle(ref, () => ({
     openDiscovery: onOpenDiscovery,
     openImport: handleOpenImport,
     openInstallFromZip: handleInstallFromZip,
+    openRestoreFromBackup: handleOpenRestoreFromBackup,
   }));
 
   return (
@@ -205,6 +296,9 @@ const UnifiedSkillsPanel = React.forwardRef<
           isOpen={confirmDialog.isOpen}
           title={confirmDialog.title}
           message={confirmDialog.message}
+          confirmText={confirmDialog.confirmText}
+          variant={confirmDialog.variant}
+          zIndex="top"
           onConfirm={confirmDialog.onConfirm}
           onCancel={() => setConfirmDialog(null)}
         />
@@ -217,6 +311,17 @@ const UnifiedSkillsPanel = React.forwardRef<
           onClose={() => setImportDialogOpen(false)}
         />
       )}
+
+      <RestoreSkillsDialog
+        backups={skillBackups}
+        isDeleting={deleteBackupMutation.isPending}
+        isLoading={isFetchingSkillBackups}
+        onDelete={handleDeleteBackup}
+        isRestoring={restoreBackupMutation.isPending}
+        onRestore={handleRestoreFromBackup}
+        onClose={() => setRestoreDialogOpen(false)}
+        open={restoreDialogOpen}
+      />
     </div>
   );
 });
@@ -317,6 +422,124 @@ interface ImportSkillsDialogProps {
   onImport: (imports: ImportSkillSelection[]) => void;
   onClose: () => void;
 }
+
+interface RestoreSkillsDialogProps {
+  backups: SkillBackupEntry[];
+  isDeleting: boolean;
+  isLoading: boolean;
+  isRestoring: boolean;
+  onDelete: (backup: SkillBackupEntry) => void;
+  onRestore: (backupId: string) => void;
+  onClose: () => void;
+  open: boolean;
+}
+
+const RestoreSkillsDialog: React.FC<RestoreSkillsDialogProps> = ({
+  backups,
+  isDeleting,
+  isLoading,
+  isRestoring,
+  onDelete,
+  onRestore,
+  onClose,
+  open,
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Dialog open={open} onOpenChange={(nextOpen) => !nextOpen && onClose()}>
+      <DialogContent
+        className="max-w-2xl max-h-[85vh] flex flex-col"
+        zIndex="alert"
+      >
+        <DialogHeader>
+          <DialogTitle>{t("skills.restoreFromBackup.title")}</DialogTitle>
+          <DialogDescription>
+            {t("skills.restoreFromBackup.description")}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {isLoading ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              {t("common.loading")}
+            </div>
+          ) : backups.length === 0 ? (
+            <div className="py-10 text-center text-sm text-muted-foreground">
+              {t("skills.restoreFromBackup.empty")}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {backups.map((backup) => (
+                <div
+                  key={backup.backupId}
+                  className="rounded-xl border border-border-default bg-background/70 p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium text-sm text-foreground">
+                          {backup.skill.name}
+                        </div>
+                        <div className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                          {backup.skill.directory}
+                        </div>
+                      </div>
+                      {backup.skill.description && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          {backup.skill.description}
+                        </div>
+                      )}
+                      <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
+                        <div>
+                          {t("skills.restoreFromBackup.createdAt")}:{" "}
+                          {formatSkillBackupDate(backup.createdAt)}
+                        </div>
+                        <div className="break-all" title={backup.backupPath}>
+                          {t("skills.restoreFromBackup.path")}:{" "}
+                          {backup.backupPath}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:min-w-28">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onRestore(backup.backupId)}
+                        disabled={isRestoring || isDeleting}
+                      >
+                        {isRestoring
+                          ? t("skills.restoreFromBackup.restoring")
+                          : t("skills.restoreFromBackup.restore")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => onDelete(backup)}
+                        disabled={isRestoring || isDeleting}
+                      >
+                        {isDeleting
+                          ? t("skills.restoreFromBackup.deleting")
+                          : t("skills.restoreFromBackup.delete")}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            {t("common.close")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const ImportSkillsDialog: React.FC<ImportSkillsDialogProps> = ({
   skills,

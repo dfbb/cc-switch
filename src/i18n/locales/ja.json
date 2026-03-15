@@ -1570,6 +1570,24 @@
     "backup": {
       "location": "バックアップ場所: {{path}}"
     },
+    "restoreFromBackup": {
+      "button": "バックアップから復元",
+      "title": "バックアップから復元",
+      "description": "Skills バックアップを選択して、ローカルにファイルを復元し、現在の一覧へ戻します。",
+      "empty": "復元できる Skills バックアップはありません",
+      "createdAt": "バックアップ日時",
+      "path": "バックアップパス",
+      "restore": "復元",
+      "restoring": "復元中...",
+      "delete": "削除",
+      "deleting": "削除中...",
+      "deleteSuccess": "スキルバックアップ {{name}} を削除しました",
+      "deleteFailed": "スキルバックアップの削除に失敗しました",
+      "deleteConfirmTitle": "バックアップを削除",
+      "deleteConfirmMessage": "スキルバックアップ「{{name}}」を削除しますか？この操作は元に戻せません。",
+      "success": "スキル {{name}} をバックアップから復元しました",
+      "failed": "バックアップからの復元に失敗しました"
+    },
     "apps": {
       "claude": "Claude",
       "codex": "Codex",

@@ -1570,6 +1570,24 @@
     "backup": {
       "location": "Backup location: {{path}}"
     },
+    "restoreFromBackup": {
+      "button": "Restore Backup",
+      "title": "Restore From Backup",
+      "description": "Choose a Skills backup to restore its files locally and add it back to the current list.",
+      "empty": "No Skills backups available to restore",
+      "createdAt": "Backed up at",
+      "path": "Backup path",
+      "restore": "Restore",
+      "restoring": "Restoring...",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "deleteSuccess": "Deleted backup for {{name}}",
+      "deleteFailed": "Failed to delete skill backup",
+      "deleteConfirmTitle": "Delete Backup",
+      "deleteConfirmMessage": "Are you sure you want to delete the backup for \"{{name}}\"? This action cannot be undone.",
+      "success": "Skill {{name}} restored from backup",
+      "failed": "Failed to restore from backup"
+    },
     "apps": {
       "claude": "Claude",
       "codex": "Codex",

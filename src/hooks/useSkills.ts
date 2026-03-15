@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   skillsApi,
+  type SkillBackupEntry,
   type DiscoverableSkill,
   type ImportSkillSelection,
   type InstalledSkill,
@@ -14,6 +15,24 @@ export function useInstalledSkills() {
   return useQuery({
     queryKey: ["skills", "installed"],
     queryFn: () => skillsApi.getInstalled(),
+  });
+}
+
+export function useSkillBackups() {
+  return useQuery({
+    queryKey: ["skills", "backups"],
+    queryFn: () => skillsApi.getBackups(),
+    enabled: false,
+  });
+}
+
+export function useDeleteSkillBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (backupId: string) => skillsApi.deleteBackup(backupId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skills", "backups"] });
+    },
   });
 }
 
@@ -58,6 +77,23 @@ export function useUninstallSkill() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["skills", "installed"] });
       queryClient.invalidateQueries({ queryKey: ["skills", "discoverable"] });
+    },
+  });
+}
+
+export function useRestoreSkillBackup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      backupId,
+      currentApp,
+    }: {
+      backupId: string;
+      currentApp: AppId;
+    }) => skillsApi.restoreBackup(backupId, currentApp),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skills", "installed"] });
+      queryClient.invalidateQueries({ queryKey: ["skills", "backups"] });
     },
   });
 }
@@ -170,4 +206,10 @@ export function useInstallSkillsFromZip() {
 
 // ========== 辅助类型 ==========
 
-export type { InstalledSkill, DiscoverableSkill, ImportSkillSelection, AppId };
+export type {
+  InstalledSkill,
+  DiscoverableSkill,
+  ImportSkillSelection,
+  SkillBackupEntry,
+  AppId,
+};

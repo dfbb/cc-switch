@@ -31,6 +31,13 @@ export interface SkillUninstallResult {
   backupPath?: string;
 }
 
+export interface SkillBackupEntry {
+  backupId: string;
+  backupPath: string;
+  createdAt: number;
+  skill: InstalledSkill;
+}
+
 /** 可发现的 Skill（来自仓库） */
 export interface DiscoverableSkill {
   key: string;
@@ -89,6 +96,16 @@ export const skillsApi = {
     return await invoke("get_installed_skills");
   },
 
+  /** 获取可恢复的 Skill 备份列表 */
+  async getBackups(): Promise<SkillBackupEntry[]> {
+    return await invoke("get_skill_backups");
+  },
+
+  /** 删除 Skill 备份 */
+  async deleteBackup(backupId: string): Promise<boolean> {
+    return await invoke("delete_skill_backup", { backupId });
+  },
+
   /** 安装 Skill（统一安装） */
   async installUnified(
     skill: DiscoverableSkill,
@@ -100,6 +117,14 @@ export const skillsApi = {
   /** 卸载 Skill（统一卸载） */
   async uninstallUnified(id: string): Promise<SkillUninstallResult> {
     return await invoke("uninstall_skill_unified", { id });
+  },
+
+  /** 从备份恢复 Skill */
+  async restoreBackup(
+    backupId: string,
+    currentApp: AppId,
+  ): Promise<InstalledSkill> {
+    return await invoke("restore_skill_backup", { backupId, currentApp });
   },
 
   /** 切换 Skill 的应用启用状态 */

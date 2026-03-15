@@ -7,7 +7,8 @@
 use crate::app_config::{AppType, InstalledSkill, UnmanagedSkill};
 use crate::error::format_skill_error;
 use crate::services::skill::{
-    DiscoverableSkill, ImportSkillSelection, Skill, SkillRepo, SkillService, SkillUninstallResult,
+    DiscoverableSkill, ImportSkillSelection, Skill, SkillBackupEntry, SkillRepo, SkillService,
+    SkillUninstallResult,
 };
 use crate::store::AppState;
 use std::sync::Arc;
@@ -33,6 +34,17 @@ fn parse_app_type(app: &str) -> Result<AppType, String> {
 #[tauri::command]
 pub fn get_installed_skills(app_state: State<'_, AppState>) -> Result<Vec<InstalledSkill>, String> {
     SkillService::get_all_installed(&app_state.db).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_skill_backups() -> Result<Vec<SkillBackupEntry>, String> {
+    SkillService::list_backups().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_skill_backup(backup_id: String) -> Result<bool, String> {
+    SkillService::delete_backup(&backup_id).map_err(|e| e.to_string())?;
+    Ok(true)
 }
 
 /// 安装 Skill（新版统一安装）
@@ -63,6 +75,17 @@ pub fn uninstall_skill_unified(
     app_state: State<'_, AppState>,
 ) -> Result<SkillUninstallResult, String> {
     SkillService::uninstall(&app_state.db, &id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn restore_skill_backup(
+    backup_id: String,
+    current_app: String,
+    app_state: State<'_, AppState>,
+) -> Result<InstalledSkill, String> {
+    let app_type = parse_app_type(&current_app)?;
+    SkillService::restore_from_backup(&app_state.db, &backup_id, &app_type)
+        .map_err(|e| e.to_string())
 }
 
 /// 切换 Skill 的应用启用状态

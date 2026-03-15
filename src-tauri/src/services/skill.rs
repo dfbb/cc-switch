@@ -162,6 +162,15 @@ pub struct SkillUninstallResult {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct SkillBackupEntry {
+    pub backup_id: String,
+    pub backup_path: String,
+    pub created_at: i64,
+    pub skill: InstalledSkill,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct SkillBackupMetadata {
     skill: InstalledSkill,
     backup_created_at: i64,
@@ -695,6 +704,125 @@ impl SkillService {
         );
 
         Ok(SkillUninstallResult { backup_path })
+    }
+
+    pub fn list_backups() -> Result<Vec<SkillBackupEntry>> {
+        let backup_dir = Self::get_backup_dir()?;
+        let mut entries = Vec::new();
+
+        for entry in fs::read_dir(&backup_dir)? {
+            let entry = match entry {
+                Ok(entry) => entry,
+                Err(err) => {
+                    log::warn!("读取 Skill 备份目录项失败: {err}");
+                    continue;
+                }
+            };
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+
+            match Self::read_backup_metadata(&path) {
+                Ok(metadata) => entries.push(SkillBackupEntry {
+                    backup_id: entry.file_name().to_string_lossy().to_string(),
+                    backup_path: path.to_string_lossy().to_string(),
+                    created_at: metadata.backup_created_at,
+                    skill: metadata.skill,
+                }),
+                Err(err) => {
+                    log::warn!("解析 Skill 备份失败 {}: {err:#}", path.display());
+                }
+            }
+        }
+
+        entries.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        Ok(entries)
+    }
+
+    pub fn delete_backup(backup_id: &str) -> Result<()> {
+        let backup_path = Self::backup_path_for_id(backup_id)?;
+        let metadata = fs::symlink_metadata(&backup_path)
+            .with_context(|| format!("failed to access {}", backup_path.display()))?;
+
+        if !metadata.is_dir() {
+            return Err(anyhow!(
+                "Skill backup is not a directory: {}",
+                backup_path.display()
+            ));
+        }
+
+        fs::remove_dir_all(&backup_path)
+            .with_context(|| format!("failed to delete {}", backup_path.display()))?;
+
+        log::info!("Skill 备份已删除: {}", backup_path.display());
+        Ok(())
+    }
+
+    pub fn restore_from_backup(
+        db: &Arc<Database>,
+        backup_id: &str,
+        current_app: &AppType,
+    ) -> Result<InstalledSkill> {
+        let backup_path = Self::backup_path_for_id(backup_id)?;
+        let metadata = Self::read_backup_metadata(&backup_path)?;
+        let backup_skill_dir = backup_path.join("skill");
+        if !backup_skill_dir.join("SKILL.md").exists() {
+            return Err(anyhow!(
+                "Skill backup is invalid or missing SKILL.md: {}",
+                backup_path.display()
+            ));
+        }
+
+        let existing_skills = db.get_all_installed_skills()?;
+        if existing_skills.contains_key(&metadata.skill.id)
+            || existing_skills.values().any(|skill| {
+                skill
+                    .directory
+                    .eq_ignore_ascii_case(&metadata.skill.directory)
+            })
+        {
+            return Err(anyhow!(
+                "Skill already exists, please uninstall the current one first: {}",
+                metadata.skill.directory
+            ));
+        }
+
+        let ssot_dir = Self::get_ssot_dir()?;
+        let restore_path = ssot_dir.join(&metadata.skill.directory);
+        if restore_path.exists() || Self::is_symlink(&restore_path) {
+            return Err(anyhow!(
+                "Restore target already exists: {}",
+                restore_path.display()
+            ));
+        }
+
+        let mut restored_skill = metadata.skill;
+        restored_skill.installed_at = Utc::now().timestamp();
+        restored_skill.apps = SkillApps::only(current_app);
+
+        Self::copy_dir_recursive(&backup_skill_dir, &restore_path)?;
+
+        if let Err(err) = db.save_skill(&restored_skill) {
+            let _ = fs::remove_dir_all(&restore_path);
+            return Err(err.into());
+        }
+
+        if !restored_skill.apps.is_empty() {
+            if let Err(err) = Self::sync_to_app_dir(&restored_skill.directory, current_app) {
+                let _ = db.delete_skill(&restored_skill.id);
+                let _ = fs::remove_dir_all(&restore_path);
+                return Err(err);
+            }
+        }
+
+        log::info!(
+            "Skill {} 已从备份恢复到 {}",
+            restored_skill.name,
+            restore_path.display()
+        );
+
+        Ok(restored_skill)
     }
 
     /// 切换应用启用状态
@@ -1597,6 +1725,26 @@ impl SkillService {
         }
 
         Ok(())
+    }
+
+    fn backup_path_for_id(backup_id: &str) -> Result<PathBuf> {
+        if backup_id.contains("..")
+            || backup_id.contains('/')
+            || backup_id.contains('\\')
+            || backup_id.trim().is_empty()
+        {
+            return Err(anyhow!("Invalid backup id: {backup_id}"));
+        }
+
+        Ok(Self::get_backup_dir()?.join(backup_id))
+    }
+
+    fn read_backup_metadata(backup_path: &Path) -> Result<SkillBackupMetadata> {
+        let metadata_path = backup_path.join("meta.json");
+        let content = fs::read_to_string(&metadata_path)
+            .with_context(|| format!("failed to read {}", metadata_path.display()))?;
+        serde_json::from_str(&content)
+            .with_context(|| format!("failed to parse {}", metadata_path.display()))
     }
 
     fn create_uninstall_backup(skill: &InstalledSkill) -> Result<Option<PathBuf>> {
