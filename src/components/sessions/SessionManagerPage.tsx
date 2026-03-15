@@ -208,7 +208,7 @@ export function SessionManagerPage({ appId }: { appId: string }) {
 
   return (
     <TooltipProvider>
-      <div className="mx-auto px-4 sm:px-6 flex flex-col h-[calc(100vh-8rem)]">
+      <div className="mx-auto px-4 sm:px-6 flex flex-col flex-1 min-h-0">
         <div className="flex-1 overflow-hidden flex flex-col gap-4">
           {/* 主内容区域 - 左右分栏 */}
           <div className="flex-1 overflow-hidden grid gap-4 md:grid-cols-[320px_1fr]">
