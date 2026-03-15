@@ -48,6 +48,7 @@ export function AddProviderDialog({
   const [universalFormOpen, setUniversalFormOpen] = useState(false);
   const [selectedUniversalPreset, setSelectedUniversalPreset] =
     useState<UniversalProviderPreset | null>(null);
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
 
   const handleUniversalProviderSave = useCallback(
     async (provider: UniversalProvider) => {
@@ -247,6 +248,7 @@ export function AddProviderDialog({
         <Button
           type="submit"
           form="provider-form"
+          disabled={isFormSubmitting}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -299,6 +301,7 @@ export function AddProviderDialog({
               submitLabel={t("common.add")}
               onSubmit={handleSubmit}
               onCancel={() => onOpenChange(false)}
+              onSubmittingChange={setIsFormSubmitting}
               showButtons={false}
             />
           </TabsContent>
@@ -314,6 +317,7 @@ export function AddProviderDialog({
           submitLabel={t("common.add")}
           onSubmit={handleSubmit}
           onCancel={() => onOpenChange(false)}
+          onSubmittingChange={setIsFormSubmitting}
           showButtons={false}
         />
       )}
