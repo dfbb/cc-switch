@@ -126,6 +126,74 @@ fn sync_to_app_removes_disabled_and_orphaned_ssot_symlinks() {
 }
 
 #[test]
+fn uninstall_skill_creates_backup_before_removing_ssot() {
+    let _guard = test_mutex().lock().expect("acquire test mutex");
+    reset_test_fs();
+    let home = ensure_test_home();
+
+    let ssot_skill_dir = home.join(".cc-switch").join("skills").join("backup-skill");
+    write_skill(&ssot_skill_dir, "Backup Skill");
+    fs::write(ssot_skill_dir.join("prompt.md"), "backup me").expect("write prompt.md");
+
+    let state = create_test_state().expect("create test state");
+    state
+        .db
+        .save_skill(&InstalledSkill {
+            id: "local:backup-skill".to_string(),
+            name: "Backup Skill".to_string(),
+            description: Some("Back me up before uninstall".to_string()),
+            directory: "backup-skill".to_string(),
+            repo_owner: None,
+            repo_name: None,
+            repo_branch: None,
+            readme_url: None,
+            apps: SkillApps {
+                claude: true,
+                codex: false,
+                gemini: false,
+                opencode: false,
+            },
+            installed_at: 123,
+        })
+        .expect("save skill");
+
+    let result = SkillService::uninstall(&state.db, "local:backup-skill").expect("uninstall skill");
+    let backup_path = result.backup_path.expect("backup path should be returned");
+    let backup_dir = std::path::PathBuf::from(&backup_path);
+
+    assert!(backup_dir.exists(), "backup directory should exist");
+    assert!(
+        backup_dir.join("skill").join("SKILL.md").exists(),
+        "backup should include SKILL.md"
+    );
+    assert_eq!(
+        fs::read_to_string(backup_dir.join("skill").join("prompt.md"))
+            .expect("read backed up prompt"),
+        "backup me"
+    );
+
+    let metadata: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(backup_dir.join("meta.json")).expect("read backup metadata"),
+    )
+    .expect("parse backup metadata");
+    assert_eq!(metadata["skill"]["directory"], "backup-skill");
+    assert_eq!(metadata["skill"]["name"], "Backup Skill");
+
+    assert!(
+        !ssot_skill_dir.exists(),
+        "SSOT skill directory should be removed after uninstall"
+    );
+    assert!(
+        state
+            .db
+            .get_installed_skill("local:backup-skill")
+            .expect("query skill")
+            .is_none(),
+        "database row should be deleted after uninstall"
+    );
+}
+
+#[test]
 fn migration_snapshot_overrides_multi_source_directory_inference() {
     let _guard = test_mutex().lock().expect("acquire test mutex");
     reset_test_fs();

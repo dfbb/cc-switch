@@ -152,6 +152,24 @@ impl Default for SkillStore {
     }
 }
 
+/// Skill 卸载结果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillUninstallResult {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub backup_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SkillBackupMetadata {
+    skill: InstalledSkill,
+    backup_created_at: i64,
+    source_path: String,
+}
+
+const SKILL_BACKUP_RETAIN_COUNT: usize = 20;
+
 /// 技能元数据 (从 SKILL.md 解析)
 #[derive(Debug, Clone, Deserialize)]
 pub struct SkillMetadata {
@@ -365,6 +383,13 @@ impl SkillService {
     /// 获取 SSOT 目录（~/.cc-switch/skills/）
     pub fn get_ssot_dir() -> Result<PathBuf> {
         let dir = get_app_config_dir().join("skills");
+        fs::create_dir_all(&dir)?;
+        Ok(dir)
+    }
+
+    /// 获取 Skill 卸载备份目录（~/.cc-switch/skill-backups/）
+    fn get_backup_dir() -> Result<PathBuf> {
+        let dir = get_app_config_dir().join("skill-backups");
         fs::create_dir_all(&dir)?;
         Ok(dir)
     }
@@ -636,11 +661,14 @@ impl SkillService {
     /// 1. 从所有应用目录删除
     /// 2. 从 SSOT 删除
     /// 3. 从数据库删除
-    pub fn uninstall(db: &Arc<Database>, id: &str) -> Result<()> {
+    pub fn uninstall(db: &Arc<Database>, id: &str) -> Result<SkillUninstallResult> {
         // 获取 skill 信息
         let skill = db
             .get_installed_skill(id)?
             .ok_or_else(|| anyhow!("Skill not found: {id}"))?;
+
+        let backup_path =
+            Self::create_uninstall_backup(&skill)?.map(|path| path.to_string_lossy().to_string());
 
         // 从所有应用目录删除
         for app in AppType::all() {
@@ -657,9 +685,16 @@ impl SkillService {
         // 从数据库删除
         db.delete_skill(id)?;
 
-        log::info!("Skill {} 卸载成功", skill.name);
+        log::info!(
+            "Skill {} 卸载成功{}",
+            skill.name,
+            backup_path
+                .as_deref()
+                .map(|path| format!(", backup: {path}"))
+                .unwrap_or_default()
+        );
 
-        Ok(())
+        Ok(SkillUninstallResult { backup_path })
     }
 
     /// 切换应用启用状态
@@ -1498,6 +1533,124 @@ impl SkillService {
         }
 
         Ok(())
+    }
+
+    fn resolve_uninstall_backup_source(skill: &InstalledSkill) -> Result<Option<PathBuf>> {
+        let ssot_path = Self::get_ssot_dir()?.join(&skill.directory);
+        if ssot_path.is_dir() {
+            return Ok(Some(ssot_path));
+        }
+
+        for app in AppType::all() {
+            let app_dir = match Self::get_app_skills_dir(&app) {
+                Ok(dir) => dir,
+                Err(_) => continue,
+            };
+            let candidate = app_dir.join(&skill.directory);
+            if candidate.is_dir() {
+                return Ok(Some(candidate));
+            }
+        }
+
+        Ok(None)
+    }
+
+    fn sanitize_backup_segment(segment: &str) -> String {
+        let sanitized = segment
+            .chars()
+            .map(|c| match c {
+                'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' | '.' => c,
+                _ => '-',
+            })
+            .collect::<String>()
+            .trim_matches('-')
+            .to_string();
+
+        if sanitized.is_empty() {
+            "skill".to_string()
+        } else {
+            sanitized
+        }
+    }
+
+    fn cleanup_old_skill_backups(dir: &Path) -> Result<()> {
+        let mut entries = fs::read_dir(dir)?
+            .filter_map(|entry| entry.ok())
+            .filter_map(|entry| {
+                let metadata = entry.metadata().ok()?;
+                if !metadata.is_dir() {
+                    return None;
+                }
+                Some((entry.path(), metadata.modified().ok()))
+            })
+            .collect::<Vec<_>>();
+
+        if entries.len() <= SKILL_BACKUP_RETAIN_COUNT {
+            return Ok(());
+        }
+
+        entries.sort_by_key(|(_, modified)| *modified);
+        let remove_count = entries.len().saturating_sub(SKILL_BACKUP_RETAIN_COUNT);
+
+        for (path, _) in entries.into_iter().take(remove_count) {
+            fs::remove_dir_all(&path)?;
+        }
+
+        Ok(())
+    }
+
+    fn create_uninstall_backup(skill: &InstalledSkill) -> Result<Option<PathBuf>> {
+        let Some(source_path) = Self::resolve_uninstall_backup_source(skill)? else {
+            log::warn!(
+                "Skill {} 卸载前未找到可备份的目录，将跳过备份",
+                skill.directory
+            );
+            return Ok(None);
+        };
+
+        let backup_root = Self::get_backup_dir()?;
+        let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
+        let slug = Self::sanitize_backup_segment(&skill.directory);
+        let mut backup_path = backup_root.join(format!("{timestamp}_{slug}"));
+        let mut counter = 1;
+        while backup_path.exists() {
+            backup_path = backup_root.join(format!("{timestamp}_{slug}_{counter}"));
+            counter += 1;
+        }
+
+        let write_backup = || -> Result<()> {
+            let skill_backup_dir = backup_path.join("skill");
+            Self::copy_dir_recursive(&source_path, &skill_backup_dir)?;
+
+            let metadata = SkillBackupMetadata {
+                skill: skill.clone(),
+                backup_created_at: Utc::now().timestamp(),
+                source_path: source_path.to_string_lossy().to_string(),
+            };
+            let metadata_path = backup_path.join("meta.json");
+            let metadata_json = serde_json::to_string_pretty(&metadata)
+                .context("failed to serialize skill backup metadata")?;
+            fs::write(&metadata_path, metadata_json)
+                .with_context(|| format!("failed to write {}", metadata_path.display()))?;
+            Ok(())
+        };
+
+        if let Err(err) = write_backup() {
+            let _ = fs::remove_dir_all(&backup_path);
+            return Err(err);
+        }
+
+        if let Err(err) = Self::cleanup_old_skill_backups(&backup_root) {
+            log::warn!("清理旧 Skill 备份失败: {err:#}");
+        }
+
+        log::info!(
+            "Skill {} 已在卸载前备份到 {}",
+            skill.name,
+            backup_path.display()
+        );
+
+        Ok(Some(backup_path))
     }
 
     /// 解析 ZIP 中的符号链接：将目标内容复制到 symlink 位置

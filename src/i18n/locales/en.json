@@ -1564,9 +1564,12 @@
     "noUnmanagedFound": "No skills to import found. All skills are already managed by CC Switch.",
     "foundIn": "Found in",
     "local": "Local",
-    "uninstallConfirm": "Are you sure you want to uninstall \"{{name}}\"? This will remove the skill from all apps.",
+    "uninstallConfirm": "Are you sure you want to uninstall \"{{name}}\"? This will remove the skill from all apps and create a local backup first.",
     "uninstallInMainPanel": "Please uninstall skills from the main panel",
     "notFound": "Skill not found",
+    "backup": {
+      "location": "Backup location: {{path}}"
+    },
     "apps": {
       "claude": "Claude",
       "codex": "Codex",

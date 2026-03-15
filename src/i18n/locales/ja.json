@@ -1564,9 +1564,12 @@
     "noUnmanagedFound": "インポートするスキルが見つかりませんでした。すべてのスキルは CC Switch で管理されています。",
     "foundIn": "発見場所",
     "local": "ローカル",
-    "uninstallConfirm": "「{{name}}」をアンインストールしますか？すべてのアプリからこのスキルが削除されます。",
+    "uninstallConfirm": "「{{name}}」をアンインストールしますか？すべてのアプリからこのスキルが削除され、削除前にローカルバックアップが自動作成されます。",
     "uninstallInMainPanel": "メインパネルからスキルをアンインストールしてください",
     "notFound": "スキルが見つかりません",
+    "backup": {
+      "location": "バックアップ場所: {{path}}"
+    },
     "apps": {
       "claude": "Claude",
       "codex": "Codex",

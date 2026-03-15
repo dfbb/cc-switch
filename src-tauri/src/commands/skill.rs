@@ -7,7 +7,7 @@
 use crate::app_config::{AppType, InstalledSkill, UnmanagedSkill};
 use crate::error::format_skill_error;
 use crate::services::skill::{
-    DiscoverableSkill, ImportSkillSelection, Skill, SkillRepo, SkillService,
+    DiscoverableSkill, ImportSkillSelection, Skill, SkillRepo, SkillService, SkillUninstallResult,
 };
 use crate::store::AppState;
 use std::sync::Arc;
@@ -58,9 +58,11 @@ pub async fn install_skill_unified(
 
 /// 卸载 Skill（新版统一卸载）
 #[tauri::command]
-pub fn uninstall_skill_unified(id: String, app_state: State<'_, AppState>) -> Result<bool, String> {
-    SkillService::uninstall(&app_state.db, &id).map_err(|e| e.to_string())?;
-    Ok(true)
+pub fn uninstall_skill_unified(
+    id: String,
+    app_state: State<'_, AppState>,
+) -> Result<SkillUninstallResult, String> {
+    SkillService::uninstall(&app_state.db, &id).map_err(|e| e.to_string())
 }
 
 /// 切换 Skill 的应用启用状态
@@ -194,7 +196,10 @@ pub async fn install_skill_for_app(
 
 /// 卸载技能（兼容旧 API）
 #[tauri::command]
-pub fn uninstall_skill(directory: String, app_state: State<'_, AppState>) -> Result<bool, String> {
+pub fn uninstall_skill(
+    directory: String,
+    app_state: State<'_, AppState>,
+) -> Result<SkillUninstallResult, String> {
     uninstall_skill_for_app("claude".to_string(), directory, app_state)
 }
 
@@ -204,7 +209,7 @@ pub fn uninstall_skill_for_app(
     app: String,
     directory: String,
     app_state: State<'_, AppState>,
-) -> Result<bool, String> {
+) -> Result<SkillUninstallResult, String> {
     let _ = parse_app_type(&app)?; // 验证参数
 
     // 通过 directory 找到对应的 skill id
@@ -215,9 +220,7 @@ pub fn uninstall_skill_for_app(
         .find(|s| s.directory.eq_ignore_ascii_case(&directory))
         .ok_or_else(|| format!("未找到已安装的 Skill: {directory}"))?;
 
-    SkillService::uninstall(&app_state.db, &skill.id).map_err(|e| e.to_string())?;
-
-    Ok(true)
+    SkillService::uninstall(&app_state.db, &skill.id).map_err(|e| e.to_string())
 }
 
 // ========== 仓库管理命令 ==========

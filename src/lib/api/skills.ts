@@ -27,6 +27,10 @@ export interface InstalledSkill {
   installedAt: number;
 }
 
+export interface SkillUninstallResult {
+  backupPath?: string;
+}
+
 /** 可发现的 Skill（来自仓库） */
 export interface DiscoverableSkill {
   key: string;
@@ -94,7 +98,7 @@ export const skillsApi = {
   },
 
   /** 卸载 Skill（统一卸载） */
-  async uninstallUnified(id: string): Promise<boolean> {
+  async uninstallUnified(id: string): Promise<SkillUninstallResult> {
     return await invoke("uninstall_skill_unified", { id });
   },
 
@@ -139,7 +143,10 @@ export const skillsApi = {
   },
 
   /** 卸载技能（兼容旧 API） */
-  async uninstall(directory: string, app: AppId = "claude"): Promise<boolean> {
+  async uninstall(
+    directory: string,
+    app: AppId = "claude",
+  ): Promise<SkillUninstallResult> {
     if (app === "claude") {
       return await invoke("uninstall_skill", { directory });
     }

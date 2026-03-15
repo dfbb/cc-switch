@@ -80,9 +80,12 @@ const UnifiedSkillsPanel = React.forwardRef<
       message: t("skills.uninstallConfirm", { name: skill.name }),
       onConfirm: async () => {
         try {
-          await uninstallMutation.mutateAsync(skill.id);
+          const result = await uninstallMutation.mutateAsync(skill.id);
           setConfirmDialog(null);
           toast.success(t("skills.uninstallSuccess", { name: skill.name }), {
+            description: result.backupPath
+              ? t("skills.backup.location", { path: result.backupPath })
+              : undefined,
             closeButton: true,
           });
         } catch (error) {

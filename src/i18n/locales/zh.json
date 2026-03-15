@@ -1564,9 +1564,12 @@
     "noUnmanagedFound": "未发现需要导入的技能。所有技能已在 CC Switch 统一管理中。",
     "foundIn": "发现于",
     "local": "本地",
-    "uninstallConfirm": "确定要卸载技能 \"{{name}}\" 吗？这将从所有应用中移除该技能。",
+    "uninstallConfirm": "确定要卸载技能 \"{{name}}\" 吗？这将从所有应用中移除该技能，并在删除前自动创建本地备份。",
     "uninstallInMainPanel": "请在主面板中卸载技能",
     "notFound": "未找到技能",
+    "backup": {
+      "location": "备份位置: {{path}}"
+    },
     "apps": {
       "claude": "Claude",
       "codex": "Codex",
