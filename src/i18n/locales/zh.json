@@ -886,6 +886,10 @@
     "extraOptionValuePlaceholder": "600000",
     "noExtraOptions": "暂无额外选项",
     "noModelOptions": "模型选项，点击 + 添加",
+    "modelExtraFields": "模型属性",
+    "noModelExtraFields": "模型属性 (variants, cost 等)，点击 + 添加",
+    "modelExtraFieldKeyPlaceholder": "variants",
+    "sdkOptions": "SDK 选项",
     "modelOptionKeyPlaceholder": "provider",
     "modelOptionValuePlaceholder": "{\"order\": [\"baseten\"]}"
   },

@@ -886,6 +886,10 @@
     "extraOptionValuePlaceholder": "600000",
     "noExtraOptions": "No extra options configured",
     "noModelOptions": "Model options, click + to add",
+    "modelExtraFields": "Model Properties",
+    "noModelExtraFields": "Model properties (variants, cost, etc.), click + to add",
+    "modelExtraFieldKeyPlaceholder": "variants",
+    "sdkOptions": "SDK Options",
     "modelOptionKeyPlaceholder": "provider",
     "modelOptionValuePlaceholder": "{\"order\": [\"baseten\"]}"
   },

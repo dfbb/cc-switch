@@ -886,6 +886,10 @@
     "extraOptionValuePlaceholder": "600000",
     "noExtraOptions": "追加オプションはありません",
     "noModelOptions": "モデルオプション、+ をクリックして追加",
+    "modelExtraFields": "モデルプロパティ",
+    "noModelExtraFields": "モデルプロパティ（variants、cost など）、+ をクリックして追加",
+    "modelExtraFieldKeyPlaceholder": "variants",
+    "sdkOptions": "SDK オプション",
     "modelOptionKeyPlaceholder": "provider",
     "modelOptionValuePlaceholder": "{\"order\": [\"baseten\"]}"
   },
