@@ -244,7 +244,7 @@ For detailed guides on every feature, check out the **[User Manual](docs/user-ma
 ### System Requirements
 
 - **Windows**: Windows 10 and above
-- **macOS**: macOS 10.15 (Catalina) and above
+- **macOS**: macOS 12 (Monterey) and above
 - **Linux**: Ubuntu 22.04+ / Debian 11+ / Fedora 34+ and other mainstream distributions
 
 ### Windows Users

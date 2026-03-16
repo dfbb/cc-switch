@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.12.3] - 2026-03-15
 
-Post-v3.12.2 work on `main` adds a Tool Search domain restriction bypass, improves proxy compatibility for OpenAI o-series models and gzip compression, and delivers robustness fixes for Skills import, provider forms, and terminal session restore.
+Post-v3.12.2 work adds a Tool Search domain restriction bypass, skill backup/restore lifecycle, proxy compatibility for OpenAI o-series models and gzip compression, and robustness fixes for Skills import, provider forms, and terminal session restore.
 
-**Stats**: 13 commits | 47 files changed | +1,764 insertions | -122 deletions
+**Stats**: 17 commits | 61 files changed | +3,335 insertions | -194 deletions
 
 ### Added
 
 - **Tool Search Domain Bypass**: Added setting to bypass Claude CLI Tool Search domain whitelist via equal-length binary patching; backups stored in `~/.cc-switch/toolsearch-backups/` with auto-reapply on startup when enabled
+- **Skill Auto-Backup**: Skill files are automatically backed up to `~/.cc-switch/skill-backups/` before uninstall, with metadata preserved in `meta.json`; old backups pruned to keep at most 20
+- **Skill Backup Restore & Delete**: Added list/restore/delete commands for skill backups; restore copies files back to SSOT, saves the DB record, and syncs to the current app with rollback on failure
 
 ### Changed
 
@@ -31,6 +33,8 @@ Post-v3.12.2 work on `main` adds a Tool Search domain restriction bypass, improv
 - **Skill ZIP Install Target App**: ZIP skill installs now use the currently active app instead of always defaulting to Claude
 - **OpenClaw Active Card Highlight**: Fixed active OpenClaw provider card not being highlighted (#1419)
 - **Responsive Layout with TOC**: Improved responsive design when TOC title exists (#1491)
+- **Import Skills Dialog White Screen**: Added missing TooltipProvider in ImportSkillsDialog to prevent runtime crash when opening the dialog
+- **Panel Bottom Blank Area**: Replaced hardcoded `h-[calc(100vh-8rem)]` with `flex-1 min-h-0` across all content panels to eliminate bottom gap caused by mismatched offset values
 
 ---
 
