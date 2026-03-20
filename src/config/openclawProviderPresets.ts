@@ -599,13 +599,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -643,13 +643,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -687,13 +687,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "anthropic/claude-opus-4.6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "anthropic/claude-sonnet-4.6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -909,13 +909,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -954,13 +954,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -1000,13 +1000,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -1046,13 +1046,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -1092,13 +1092,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -1138,13 +1138,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -1184,13 +1184,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -1230,13 +1230,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
         {
           id: "claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15 },
         },
       ],
@@ -1278,7 +1278,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
       ],
@@ -1316,7 +1316,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
       ],
@@ -1354,7 +1354,7 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "claude-opus-4-6",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 5, output: 25 },
         },
       ],
@@ -1393,13 +1393,13 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
         {
           id: "anthropic.claude-opus-4-6-20250514-v1:0",
           name: "Claude Opus 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 15, output: 75, cacheRead: 1.5, cacheWrite: 18.75 },
         },
         {
           id: "anthropic.claude-sonnet-4-6",
           name: "Claude Sonnet 4.6",
-          contextWindow: 200000,
+          contextWindow: 1000000,
           cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
         },
         {

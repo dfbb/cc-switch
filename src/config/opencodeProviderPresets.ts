@@ -170,7 +170,7 @@ export const OPENCODE_PRESET_MODEL_VARIANTS: Record<
     {
       id: "global.anthropic.claude-sonnet-4-6",
       name: "Claude Sonnet 4.6",
-      contextLimit: 200000,
+      contextLimit: 1000000,
       outputLimit: 64000,
       modalities: { input: ["text", "image", "pdf"], output: ["text"] },
     },
