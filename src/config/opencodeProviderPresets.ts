@@ -753,7 +753,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         setCacheKey: true,
       },
       models: {
-        "mimo-v2-flash": { name: "MiMo V2 Flash" },
+        "mimo-v2-pro": { name: "MiMo V2 Pro" },
       },
     },
     category: "cn_official",

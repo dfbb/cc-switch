@@ -563,8 +563,8 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       api: "openai-completions",
       models: [
         {
-          id: "mimo-v2-flash",
-          name: "MiMo V2 Flash",
+          id: "mimo-v2-pro",
+          name: "MiMo V2 Pro",
           contextWindow: 128000,
           cost: { input: 0.001, output: 0.004 },
         },
@@ -581,8 +581,8 @@ export const openclawProviderPresets: OpenClawProviderPreset[] = [
       },
     },
     suggestedDefaults: {
-      model: { primary: "xiaomimimo/mimo-v2-flash" },
-      modelCatalog: { "xiaomimimo/mimo-v2-flash": { alias: "MiMo" } },
+      model: { primary: "xiaomimimo/mimo-v2-pro" },
+      modelCatalog: { "xiaomimimo/mimo-v2-pro": { alias: "MiMo" } },
     },
   },
 
