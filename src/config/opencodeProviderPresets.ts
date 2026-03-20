@@ -42,8 +42,8 @@ export const OPENCODE_PRESET_MODEL_VARIANTS: Record<
 > = {
   "@ai-sdk/openai-compatible": [
     {
-      id: "MiniMax-M2.5",
-      name: "MiniMax M2.5",
+      id: "MiniMax-M2.7",
+      name: "MiniMax M2.7",
       contextLimit: 204800,
       outputLimit: 131072,
       modalities: { input: ["text"], output: ["text"] },
@@ -634,7 +634,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         setCacheKey: true,
       },
       models: {
-        "MiniMax-M2.5": { name: "MiniMax M2.5" },
+        "MiniMax-M2.7": { name: "MiniMax M2.7" },
       },
     },
     category: "cn_official",
@@ -667,7 +667,7 @@ export const opencodeProviderPresets: OpenCodeProviderPreset[] = [
         setCacheKey: true,
       },
       models: {
-        "MiniMax-M2.5": { name: "MiniMax M2.5" },
+        "MiniMax-M2.7": { name: "MiniMax M2.7" },
       },
     },
     category: "cn_official",
