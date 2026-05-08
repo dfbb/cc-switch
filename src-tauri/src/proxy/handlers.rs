@@ -13,6 +13,7 @@ use super::{
         CLAUDE_PARSER_CONFIG, CODEX_PARSER_CONFIG, GEMINI_PARSER_CONFIG, OPENAI_PARSER_CONFIG,
     },
     handler_context::RequestContext,
+    hyper_client::ProxyResponse,
     providers::{
         get_adapter, get_claude_api_format, streaming::create_anthropic_sse_stream,
         streaming_gemini::create_anthropic_sse_stream_from_gemini,
@@ -35,6 +36,7 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use bytes::Bytes;
 use http_body_util::BodyExt;
 use serde_json::{json, Value};
+use std::time::Duration;
 
 // ============================================================================
 // 健康检查和状态查询（简单端点）
@@ -540,7 +542,318 @@ pub async fn handle_responses(
     ctx.provider = result.provider;
     let response = result.response;
 
+    // If the upstream returned Chat Completions format, transform back to Responses
+    if result.needs_response_transform {
+        return handle_codex_response_transform(response, &ctx, &state).await;
+    }
+
     process_response(response, &ctx, &state, &CODEX_PARSER_CONFIG).await
+}
+
+/// Transform Chat Completions response body back to Responses format for Codex.
+///
+/// Codex CLI always sends `stream: true` and expects the full Responses API SSE event
+/// lifecycle.  Even non-streaming upstream responses must be wrapped in the proper
+/// event sequence: response.created → output_item.added → content_part.added →
+/// output_text.delta → output_text.done → content_part.done → output_item.done →
+/// response.completed → [DONE].
+async fn handle_codex_response_transform(
+    response: ProxyResponse,
+    ctx: &RequestContext,
+    _state: &ProxyState,
+) -> Result<axum::response::Response, ProxyError> {
+    let (_response_headers, _status, body_bytes) =
+        read_decoded_body(response, ctx.tag, Duration::ZERO).await?;
+
+    let upstream_json: Value = serde_json::from_slice(&body_bytes)
+        .map_err(|e| ProxyError::Internal(format!("Failed to parse upstream response: {e}")))?;
+
+    let transformed = transform_responses::chat_completions_to_responses(upstream_json)?;
+
+    let response_id = transformed
+        .get("id")
+        .and_then(|i| i.as_str())
+        .unwrap_or("");
+    let model = transformed
+        .get("model")
+        .and_then(|m| m.as_str())
+        .unwrap_or("");
+    let output = transformed.get("output").and_then(|o| o.as_array());
+    let usage = transformed.get("usage");
+
+    let input_tokens = usage
+        .and_then(|u| u.get("input_tokens").and_then(|v| v.as_u64()))
+        .unwrap_or(0);
+    let output_tokens = usage
+        .and_then(|u| u.get("output_tokens").and_then(|v| v.as_u64()))
+        .unwrap_or(0);
+
+    let sse = |event: &str, data: &Value| -> String {
+        let json_str = serde_json::to_string(data).unwrap_or_default();
+        format!("event: {event}\ndata: {json_str}\n")
+    };
+
+    let mut events = Vec::new();
+
+    // 1. response.created — the initial response skeleton
+    events.push(sse(
+        "response.created",
+        &json!({
+            "type": "response.created",
+            "response": {
+                "id": response_id,
+                "status": "in_progress",
+                "model": model,
+                "output": [],
+                "usage": { "input_tokens": input_tokens, "output_tokens": 0, "total_tokens": input_tokens }
+            }
+        }),
+    ));
+
+    // 2. response.in_progress
+    events.push(sse("response.in_progress", &json!({"type": "response.in_progress"})));
+
+    // 3. Per-output-item event sequence
+    if let Some(items) = output {
+        for (output_index, item) in items.iter().enumerate() {
+            let item_type = item.get("type").and_then(|t| t.as_str()).unwrap_or("");
+
+            match item_type {
+                "message" => {
+                    let message_content = item.get("content").and_then(|c| c.as_array());
+
+                    // output_item.added
+                    events.push(sse(
+                        "response.output_item.added",
+                        &json!({
+                            "type": "response.output_item.added",
+                            "output_index": output_index,
+                            "item": { "type": "message", "role": "assistant", "content": [] }
+                        }),
+                    ));
+
+                    if let Some(blocks) = message_content {
+                        for (content_index, block) in blocks.iter().enumerate() {
+                            let bt = block.get("type").and_then(|t| t.as_str()).unwrap_or("");
+
+                            match bt {
+                                "output_text" => {
+                                    // content_part.added
+                                    events.push(sse(
+                                        "response.content_part.added",
+                                        &json!({
+                                            "type": "response.content_part.added",
+                                            "output_index": output_index,
+                                            "content_index": content_index,
+                                            "part": { "type": "output_text", "text": "" }
+                                        }),
+                                    ));
+
+                                    // output_text.delta — emit full text in one delta
+                                    if let Some(text) = block.get("text").and_then(|t| t.as_str()) {
+                                        events.push(sse(
+                                            "response.output_text.delta",
+                                            &json!({
+                                                "type": "response.output_text.delta",
+                                                "output_index": output_index,
+                                                "content_index": content_index,
+                                                "delta": text
+                                            }),
+                                        ));
+                                    }
+
+                                    // output_text.done
+                                    events.push(sse(
+                                        "response.output_text.done",
+                                        &json!({
+                                            "type": "response.output_text.done",
+                                            "output_index": output_index,
+                                            "content_index": content_index
+                                        }),
+                                    ));
+
+                                    // content_part.done
+                                    events.push(sse(
+                                        "response.content_part.done",
+                                        &json!({
+                                            "type": "response.content_part.done",
+                                            "output_index": output_index,
+                                            "content_index": content_index
+                                        }),
+                                    ));
+                                }
+                                "refusal" => {
+                                    events.push(sse(
+                                        "response.content_part.added",
+                                        &json!({
+                                            "type": "response.content_part.added",
+                                            "output_index": output_index,
+                                            "content_index": content_index,
+                                            "part": { "type": "refusal", "refusal": "" }
+                                        }),
+                                    ));
+                                    if let Some(refusal) = block.get("refusal").and_then(|r| r.as_str()) {
+                                        events.push(sse(
+                                            "response.refusal.delta",
+                                            &json!({
+                                                "type": "response.refusal.delta",
+                                                "output_index": output_index,
+                                                "content_index": content_index,
+                                                "delta": refusal
+                                            }),
+                                        ));
+                                    }
+                                    events.push(sse("response.refusal.done", &json!({"type": "response.refusal.done"})));
+                                    events.push(sse(
+                                        "response.content_part.done",
+                                        &json!({
+                                            "type": "response.content_part.done",
+                                            "output_index": output_index,
+                                            "content_index": content_index
+                                        }),
+                                    ));
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    // output_item.done
+                    events.push(sse(
+                        "response.output_item.done",
+                        &json!({
+                            "type": "response.output_item.done",
+                            "output_index": output_index,
+                            "item": item
+                        }),
+                    ));
+                }
+
+                "function_call" => {
+                    // output_item.added
+                    events.push(sse(
+                        "response.output_item.added",
+                        &json!({
+                            "type": "response.output_item.added",
+                            "output_index": output_index,
+                            "item": item
+                        }),
+                    ));
+
+                    // function_call_arguments.done — no deltas, send complete at once
+                    let call_id = item.get("call_id").and_then(|i| i.as_str()).unwrap_or("");
+                    let item_id = item.get("id").and_then(|i| i.as_str()).unwrap_or(call_id);
+                    let name = item.get("name").and_then(|n| n.as_str()).unwrap_or("");
+                    let arguments = item.get("arguments").and_then(|a| a.as_str()).unwrap_or("{}");
+                    events.push(sse(
+                        "response.function_call_arguments.done",
+                        &json!({
+                            "type": "response.function_call_arguments.done",
+                            "item_id": item_id,
+                            "call_id": call_id,
+                            "name": name,
+                            "arguments": arguments
+                        }),
+                    ));
+
+                    // output_item.done
+                    events.push(sse(
+                        "response.output_item.done",
+                        &json!({
+                            "type": "response.output_item.done",
+                            "output_index": output_index,
+                            "item": item
+                        }),
+                    ));
+                }
+
+                "reasoning" => {
+                    // output_item.added
+                    events.push(sse(
+                        "response.output_item.added",
+                        &json!({
+                            "type": "response.output_item.added",
+                            "output_index": output_index,
+                            "item": item
+                        }),
+                    ));
+
+                    // reasoning.delta — emit all reasoning text in one delta
+                    if let Some(summary) = item.get("summary").and_then(|s| s.as_array()) {
+                        for s_item in summary {
+                            if let Some(text) = s_item.get("text").and_then(|t| t.as_str()) {
+                                events.push(sse(
+                                    "response.reasoning.delta",
+                                    &json!({
+                                        "type": "response.reasoning.delta",
+                                        "delta": text
+                                    }),
+                                ));
+                            }
+                        }
+                    }
+
+                    // reasoning.done
+                    events.push(sse(
+                        "response.reasoning.done",
+                        &json!({"type": "response.reasoning.done"}),
+                    ));
+
+                    // output_item.done
+                    events.push(sse(
+                        "response.output_item.done",
+                        &json!({
+                            "type": "response.output_item.done",
+                            "output_index": output_index,
+                            "item": item
+                        }),
+                    ));
+                }
+
+                _ => {}
+            }
+        }
+    }
+
+    // 4. response.completed — full response object with final usage
+    events.push(sse(
+        "response.completed",
+        &json!({
+            "type": "response.completed",
+            "response": {
+                "id": response_id,
+                "object": "response",
+                "status": "completed",
+                "model": model,
+                "output": output.unwrap_or(&vec![]),
+                "usage": { "input_tokens": input_tokens, "output_tokens": output_tokens, "total_tokens": input_tokens + output_tokens }
+            }
+        }),
+    ));
+
+    // 5. [DONE] termination
+    events.push("data: [DONE]\n".to_string());
+
+    let sse_body = events.join("\n");
+
+    log::debug!(
+        "[{}] Chat Completions → Responses SSE: {} bytes, {} events",
+        ctx.tag,
+        sse_body.len(),
+        events.len()
+    );
+
+    let builder = axum::response::Response::builder()
+        .status(200)
+        .header("content-type", "text/event-stream")
+        .header("cache-control", "no-cache")
+        .header("x-request-id", response_id);
+
+    let body = axum::body::Body::from(sse_body);
+    builder.body(body).map_err(|e| {
+        log::error!("[{tag}] 构建 SSE 响应失败: {e}", tag = ctx.tag);
+        ProxyError::Internal(format!("Failed to build SSE response: {e}"))
+    })
 }
 
 /// 处理 /v1/responses/compact 请求（OpenAI Responses Compact API - Codex CLI 透传）
