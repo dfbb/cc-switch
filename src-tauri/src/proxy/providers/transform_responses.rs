@@ -575,6 +575,42 @@ pub fn responses_to_anthropic(body: Value) -> Result<Value, ProxyError> {
 
     Ok(result)
 }
+/// Recursively strip all image content blocks from a content value,
+/// replacing them with "[Image]" text placeholders. This is a safety net
+/// for text-only models (DeepSeek, etc.) that reject image_url blocks.
+fn sanitize_image_content(content: &Value) -> Value {
+    match content {
+        Value::Array(arr) => {
+            let sanitized: Vec<Value> = arr
+                .iter()
+                .map(|item| {
+                    if let Some(bt) = item.get("type").and_then(|t| t.as_str()) {
+                        match bt {
+                            // Chat Completions image format
+                            "image_url" => {
+                                json!({"type": "text", "text": "[Image]"})
+                            }
+                            // Responses API image format (should not appear here,
+                            // but handled defensively)
+                            "input_image" | "output_image" => {
+                                json!({"type": "text", "text": "[Image]"})
+                            }
+                            // Pass through non-image blocks unchanged
+                            _ => item.clone(),
+                        }
+                    } else {
+                        item.clone()
+                    }
+                })
+                .collect();
+            Value::Array(sanitized)
+        }
+        // String content is always safe
+        _ => content.clone(),
+    }
+}
+
+
 
 /// OpenAI Responses 请求 → Chat Completions 请求
 ///
@@ -651,7 +687,6 @@ pub fn responses_to_chat_completions(body: Value) -> Result<Value, ProxyError> {
                     };
                     if let Some(content) = item.get("content").and_then(|c| c.as_array()) {
                         let mut text_parts: Vec<String> = Vec::new();
-                        let mut image_parts: Vec<Value> = Vec::new();
                         for block in content {
                             let bt = block.get("type").and_then(|t| t.as_str()).unwrap_or("");
                             match bt {
@@ -663,29 +698,44 @@ pub fn responses_to_chat_completions(body: Value) -> Result<Value, ProxyError> {
                                     }
                                 }
                                 "input_image" => {
-                                    if let Some(url) = block.get("image_url") {
-                                        image_parts.push(json!({
-                                            "type": "image_url",
-                                            "image_url": url
-                                        }));
+                                    // DeepSeek and other text-only models don't support
+                                    // multimodal input. Replace image with a text
+                                    // placeholder so the request doesn't fail.
+                                    if let Some(img_url) = block.get("image_url") {
+                                        if let Some(url_str) = img_url.as_str() {
+                                            if url_str.len() <= 120 {
+                                                text_parts.push(format!("[Image: {}]", url_str));
+                                            } else {
+                                                // Truncate long data URIs to keep prompt size reasonable
+                                                text_parts.push(format!(
+                                                    "[Image: {}...]",
+                                                    &url_str[..117]
+                                                ));
+                                            }
+                                        } else {
+                                            text_parts.push("[Image]".to_string());
+                                        }
+                                    } else {
+                                        text_parts.push("[Image]".to_string());
                                     }
                                 }
                                 _ => {}
                             }
                         }
-                        // Build content: string if pure text & single, array if multimodal
-                        if image_parts.is_empty() && text_parts.len() <= 1 {
+                        // Build content: always text-only (multimodal images
+                        // are converted to [Image] placeholders above for
+                        // text-only model compatibility)
+                        if text_parts.len() <= 1 {
                             let text = text_parts.first().cloned().unwrap_or_default();
                             messages.push(json!({
                                 "role": role,
                                 "content": text
                             }));
                         } else {
-                            let mut parts: Vec<Value> = Vec::new();
-                            for t in &text_parts {
-                                parts.push(json!({"type": "text", "text": t}));
-                            }
-                            parts.extend(image_parts);
+                            let parts: Vec<Value> = text_parts
+                                .iter()
+                                .map(|t| json!({"type": "text", "text": t}))
+                                .collect();
                             messages.push(json!({
                                 "role": role,
                                 "content": parts
@@ -775,15 +825,25 @@ pub fn responses_to_chat_completions(body: Value) -> Result<Value, ProxyError> {
                 }
 
                 _ => {
-                    // Unknown item type — pass through as a user message
+                    // Unknown item type — sanitize content and pass through as user message.
+                    // Strip any image blocks to prevent text-only models from rejecting the request.
                     if let Some(role) = item.get("role").and_then(|r| r.as_str()) {
+                        let raw_content = item.get("content").cloned().unwrap_or(json!(""));
+                        let safe_content = sanitize_image_content(&raw_content);
                         messages.push(json!({
                             "role": role,
-                            "content": item.get("content").cloned().unwrap_or(json!(""))
+                            "content": safe_content
                         }));
                     }
                 }
             }
+        }
+    }
+    // Final safety net: strip any image content from all messages.
+    // Text-only models (DeepSeek, etc.) reject image_url / input_image blocks.
+    for msg in &mut messages {
+        if let Some(msg_content) = msg.get("content").cloned() {
+            msg["content"] = sanitize_image_content(&msg_content);
         }
     }
     result["messages"] = json!(messages);
