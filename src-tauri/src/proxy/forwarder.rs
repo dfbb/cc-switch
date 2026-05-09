@@ -34,6 +34,8 @@ pub struct ForwardResult {
     pub response: ProxyResponse,
     pub provider: Provider,
     pub claude_api_format: Option<String>,
+    /// Whether the response body needs to be transformed back (e.g. Chat Completions → Responses)
+    pub needs_response_transform: bool,
 }
 
 pub struct ForwardError {
@@ -237,7 +239,7 @@ impl RequestForwarder {
                         if should_switch {
                             status.failover_count += 1;
 
-                            // 异步触发供应商切换，更新 UI/托盘，并把“当前供应商”同步为实际使用的 provider
+                            // 异步触发供应商切换，更新 UI/托盘，并把”当前供应商”同步为实际使用的 provider
                             let fm = self.failover_manager.clone();
                             let ah = self.app_handle.clone();
                             let pid = provider.id.clone();
@@ -256,10 +258,14 @@ impl RequestForwarder {
                         }
                     }
 
+                    let needs_resp_transform = adapter.name() == "Codex"
+                        && adapter.needs_transform(provider);
+
                     return Ok(ForwardResult {
                         response,
                         provider: provider.clone(),
                         claude_api_format,
+                        needs_response_transform: needs_resp_transform,
                     });
                 }
                 Err(e) => {
@@ -396,6 +402,7 @@ impl RequestForwarder {
                                             response,
                                             provider: provider.clone(),
                                             claude_api_format,
+                                            needs_response_transform: false,
                                         });
                                     }
                                     Err(retry_err) => {
@@ -589,6 +596,7 @@ impl RequestForwarder {
                                         response,
                                         provider: provider.clone(),
                                         claude_api_format,
+                                        needs_response_transform: false,
                                     });
                                 }
                                 Err(retry_err) => {
@@ -963,6 +971,23 @@ impl RequestForwarder {
                     .as_deref()
                     .unwrap_or_else(|| super::providers::get_claude_api_format(provider));
                 rewrite_claude_transform_endpoint(endpoint, api_format, is_copilot, &mapped_body)
+            } else if needs_transform && adapter.name() == "Codex" {
+                // Codex Responses → Chat Completions: rewrite /responses → /chat/completions
+                let rewritten = if endpoint == "/responses" || endpoint.starts_with("/responses?")
+                {
+                    endpoint.replacen("/responses", "/chat/completions", 1)
+                } else {
+                    endpoint.to_string()
+                };
+                let query = split_endpoint_and_query(&rewritten)
+                    .1
+                    .map(ToString::to_string);
+                log::debug!(
+                    "[Codex] 端点重写: {} → {}",
+                    endpoint,
+                    rewritten
+                );
+                (rewritten, query)
             } else {
                 (
                     endpoint.to_string(),
