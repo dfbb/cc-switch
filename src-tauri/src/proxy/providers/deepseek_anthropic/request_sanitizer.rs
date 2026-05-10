@@ -1162,9 +1162,13 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
 
     // ⑩ tool_choice sanitize
     sanitize_tool_choice(body);
-    // If tool_choice names a specific tool that was removed by filter_server_tools, downgrade to auto.
+    // After filter_server_tools, sync tool_choice with the remaining tool list.
+    // Cases that require downgrade to "auto":
+    //   (a) type=tool and the named tool was removed
+    //   (b) type=any or type=tool and no tools remain at all (sending "must use a tool" with
+    //       an empty tools array causes upstream 400/422)
     {
-        let remaining_tool_names: std::collections::HashSet<String> = body
+        let remaining: Vec<String> = body
             .get("tools")
             .and_then(|v| v.as_array())
             .map(|arr| {
@@ -1176,9 +1180,21 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
         let should_downgrade = body
             .get("tool_choice")
             .and_then(|v| v.as_object())
-            .filter(|tc| tc.get("type").and_then(|t| t.as_str()) == Some("tool"))
-            .and_then(|tc| tc.get("name").and_then(|n| n.as_str()))
-            .map(|name| !remaining_tool_names.contains(name))
+            .map(|tc| {
+                let kind = tc.get("type").and_then(|t| t.as_str()).unwrap_or("");
+                match kind {
+                    "any" => remaining.is_empty(),
+                    "tool" => {
+                        remaining.is_empty()
+                            || tc
+                                .get("name")
+                                .and_then(|n| n.as_str())
+                                .map(|name| !remaining.iter().any(|r| r == name))
+                                .unwrap_or(false)
+                    }
+                    _ => false,
+                }
+            })
             .unwrap_or(false);
         if should_downgrade {
             if let Some(tc) = body.get_mut("tool_choice").and_then(|v| v.as_object_mut()) {
@@ -1348,5 +1364,33 @@ mod tests_sanitize_request {
         sanitize_request(&mut body);
         assert_eq!(body["tool_choice"]["type"], "tool");
         assert_eq!(body["tool_choice"]["name"], "Bash");
+    }
+
+    #[test]
+    fn test_tool_choice_any_downgraded_when_all_tools_filtered() {
+        // Only server tools present; all get removed by filter_server_tools.
+        // tool_choice "any" must be downgraded to "auto" — sending "must use a tool"
+        // with an empty tools list causes upstream 400/422.
+        let mut body = json!({
+            "model": "claude-sonnet-4-6",
+            "messages": [],
+            "tools": [{"type": "web_search_20250305", "name": "web_search"}],
+            "tool_choice": {"type": "any"}
+        });
+        sanitize_request(&mut body);
+        assert!(body["tools"].as_array().unwrap().is_empty());
+        assert_eq!(body["tool_choice"]["type"], "auto");
+    }
+
+    #[test]
+    fn test_tool_choice_any_kept_when_tools_remain() {
+        let mut body = json!({
+            "model": "claude-sonnet-4-6",
+            "messages": [],
+            "tools": [{"name": "Bash", "description": "run bash", "input_schema": {}}],
+            "tool_choice": {"type": "any"}
+        });
+        sanitize_request(&mut body);
+        assert_eq!(body["tool_choice"]["type"], "any");
     }
 }
