@@ -7,7 +7,6 @@ pub struct SseBlockPolicyState {
     pub by_upstream: HashMap<usize, UpstreamBlockState>,
     pub dropped_indexes: HashSet<usize>,
     pub pending_suppressed_stops: HashSet<usize>,
-    pub message_stopped: bool,
     pub bypass: bool,
 }
 
@@ -58,6 +57,7 @@ pub fn transform_native_sse_block_event(
     let (event_type, mut payload) = match parse_event(event) {
         Some(v) => v,
         None => {
+            log::warn!("[deepseek_sse] malformed event, switching to bypass: {:?}", &event[..event.len().min(200)]);
             state.bypass = true;
             return vec![event.to_string()];
         }

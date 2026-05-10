@@ -2,6 +2,7 @@ use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub(crate) enum RepairOp {
     SplitAndPromote {
         source_user_idx: usize,
@@ -36,7 +37,7 @@ pub(crate) struct ToolRepairPlan {
     pub original_content: HashMap<usize, Vec<Value>>,
 }
 
-pub(crate) fn build_plan(messages: &mut Vec<Value>) -> ToolRepairPlan {
+pub(crate) fn build_plan(messages: &mut [Value]) -> ToolRepairPlan {
     let mut plan = ToolRepairPlan::default();
 
     for (idx, msg) in messages.iter().enumerate() {
@@ -85,11 +86,29 @@ pub(crate) fn build_plan(messages: &mut Vec<Value>) -> ToolRepairPlan {
             continue;
         }
 
-        let next_user_idx = (assistant_idx + 1..messages.len()).find(|&i| {
-            messages[i].get("role").and_then(|r| r.as_str()) == Some("user")
-        });
+        // case(a) requires the IMMEDIATELY adjacent message to be a user message.
+        // A non-adjacent user (with assistant/system in between) must fall through to case(b).
+        let adjacent_user_idx = {
+            let next = assistant_idx + 1;
+            if next < messages.len()
+                && messages[next].get("role").and_then(|r| r.as_str()) == Some("user")
+            {
+                Some(next)
+            } else {
+                None
+            }
+        };
 
-        let is_case_a = if let Some(nu) = next_user_idx {
+        // For case(b)/(c) scanning we still need the first user anywhere after assistant_idx.
+        let next_user_idx = if adjacent_user_idx.is_some() {
+            adjacent_user_idx
+        } else {
+            (assistant_idx + 1..messages.len()).find(|&i| {
+                messages[i].get("role").and_then(|r| r.as_str()) == Some("user")
+            })
+        };
+
+        let is_case_a = if let Some(nu) = adjacent_user_idx {
             if let Some(content) = messages[nu].get("content").and_then(|v| v.as_array()) {
                 let n = expected_ids.len();
                 content.len() >= n
@@ -396,7 +415,7 @@ pub fn repair_tool_order(messages: &mut Vec<Value>) {
     let mut plan = build_plan(messages);
     let messages_snapshot: Vec<Value> = messages.clone();
     add_delete_ops(&messages_snapshot, &mut plan);
-    aggregate_paired_remaining(&messages_snapshot, &mut plan);
+    aggregate_paired_remaining(&mut plan);
     apply_plan(messages, plan);
 }
 
@@ -437,6 +456,35 @@ mod tests_build_plan {
             .iter()
             .any(|op| matches!(op, RepairOp::SplitAndPromote { .. }));
         assert!(has_split, "order mismatch should produce SplitAndPromote");
+    }
+
+    #[test]
+    fn test_case_a_requires_adjacent_user_non_adjacent_is_case_b() {
+        // assistant(tool_use A) → assistant(text) → user(tool_result A)
+        // The user is NOT adjacent to the first assistant; must be case(b), not case(a).
+        let mut messages = vec![
+            json!({"role": "assistant", "content": [tool_use("A")]}),
+            json!({"role": "assistant", "content": [{"type": "text", "text": "thinking"}]}),
+            json!({"role": "user", "content": [tool_result("A")]}),
+        ];
+        let plan = build_plan(&mut messages);
+        // case(a) would mark accepted_in_place; case(b) produces SplitAndPromote
+        let accepted_in_place = plan
+            .accepted_in_place_by_user
+            .values()
+            .any(|s| !s.is_empty());
+        let has_split = plan
+            .ops
+            .iter()
+            .any(|op| matches!(op, RepairOp::SplitAndPromote { .. }));
+        assert!(
+            !accepted_in_place,
+            "non-adjacent user must NOT be accepted in-place as case(a)"
+        );
+        assert!(
+            has_split,
+            "non-adjacent user must produce SplitAndPromote (case b)"
+        );
     }
 
     #[test]
@@ -706,8 +754,9 @@ mod tests_add_delete_ops {
     }
 }
 
-pub(crate) fn aggregate_paired_remaining(messages: &[serde_json::Value], plan: &mut ToolRepairPlan) {
+pub(crate) fn aggregate_paired_remaining(plan: &mut ToolRepairPlan) {
     let mut user_will_be_removed: HashSet<usize> = HashSet::new();
+    #[allow(clippy::collapsible_match)]
     for op in &plan.ops {
         match op {
             RepairOp::SplitAndPromote { source_user_idx, .. } => {
@@ -877,7 +926,7 @@ mod tests_aggregate {
         plan.extracted_by_user.entry(1).or_default().insert(1);
         plan.ops.push(make_split_op(1, 0));
 
-        aggregate_paired_remaining(&messages, &mut plan);
+        aggregate_paired_remaining(&mut plan);
 
         if let RepairOp::SplitAndPromote {
             ref paired_remaining_blocks,
@@ -924,7 +973,7 @@ mod tests_aggregate {
             paired_source_user_idx: None,
         });
 
-        aggregate_paired_remaining(&messages, &mut plan);
+        aggregate_paired_remaining(&mut plan);
 
         if let RepairOp::SplitAndPromote {
             insert_after_assistant_idx: 2,
@@ -969,7 +1018,7 @@ mod tests_aggregate {
             block_idx: 0,
         });
 
-        aggregate_paired_remaining(&messages, &mut plan);
+        aggregate_paired_remaining(&mut plan);
 
         let has_remove = plan
             .ops

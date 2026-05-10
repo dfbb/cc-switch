@@ -21,7 +21,7 @@ fn is_unsupported_block(v: &Value) -> bool {
         .is_some_and(|t| UNSUPPORTED_BLOCK_TYPES.contains(&t))
 }
 
-pub(crate) fn strip_unsupported_attachments(messages: &mut Vec<Value>) {
+pub(crate) fn strip_unsupported_attachments(messages: &mut [Value]) {
     const PLACEHOLDER_TEXT: &str = "[attachment omitted: DeepSeek does not support image, document, search_result, server_tool_use, web_search_tool_result, code_execution_tool_result, mcp_tool_use, mcp_tool_result, container_upload]";
 
     for msg in messages.iter_mut() {
@@ -170,7 +170,7 @@ mod tests_strip_unsupported {
 }
 
 pub(crate) fn sanitize_thinking_blocks(
-    messages: &mut Vec<serde_json::Value>,
+    messages: &mut [serde_json::Value],
     effective_thinking_enabled: bool,
 ) {
     for msg in messages.iter_mut() {
@@ -195,7 +195,7 @@ pub(crate) fn sanitize_thinking_blocks(
     }
 }
 
-pub(crate) fn strip_reasoning_content(messages: &mut Vec<serde_json::Value>) {
+pub(crate) fn strip_reasoning_content(messages: &mut [serde_json::Value]) {
     for msg in messages.iter_mut() {
         if let Some(obj) = msg.as_object_mut() {
             obj.remove("reasoning_content");
@@ -276,7 +276,7 @@ mod tests_thinking_blocks {
     }
 }
 
-pub(crate) fn normalize_tool_result_content(messages: &mut Vec<serde_json::Value>) {
+pub(crate) fn normalize_tool_result_content(messages: &mut [serde_json::Value]) {
     for msg in messages.iter_mut() {
         let Some(content) = msg.get_mut("content").and_then(|v| v.as_array_mut()) else {
             continue;
@@ -895,7 +895,11 @@ pub(crate) fn sanitize_tool_choice(body: &mut serde_json::Value) {
 
     match verdict {
         Verdict::Keep => {}
-        Verdict::RemoveNonObject | Verdict::RemoveUnknown(_) => {
+        Verdict::RemoveNonObject => {
+            obj.remove("tool_choice");
+        }
+        Verdict::RemoveUnknown(kind) => {
+            log::warn!("[deepseek_sanitize] removing unknown tool_choice type='{}'", kind);
             obj.remove("tool_choice");
         }
     }
@@ -1092,7 +1096,6 @@ mod tests_output_config_and_tokens {
 
 pub struct SanitizeResult {
     pub fake_model: String,
-    pub target_model: String,
     pub effective_thinking_enabled: bool,
 }
 
@@ -1159,6 +1162,31 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
 
     // ⑩ tool_choice sanitize
     sanitize_tool_choice(body);
+    // If tool_choice names a specific tool that was removed by filter_server_tools, downgrade to auto.
+    {
+        let remaining_tool_names: std::collections::HashSet<String> = body
+            .get("tools")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|t| t.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+                    .collect()
+            })
+            .unwrap_or_default();
+        let should_downgrade = body
+            .get("tool_choice")
+            .and_then(|v| v.as_object())
+            .filter(|tc| tc.get("type").and_then(|t| t.as_str()) == Some("tool"))
+            .and_then(|tc| tc.get("name").and_then(|n| n.as_str()))
+            .map(|name| !remaining_tool_names.contains(name))
+            .unwrap_or(false);
+        if should_downgrade {
+            if let Some(tc) = body.get_mut("tool_choice").and_then(|v| v.as_object_mut()) {
+                tc.insert("type".into(), serde_json::Value::String("auto".into()));
+                tc.remove("name");
+            }
+        }
+    }
 
     // cleanup _dsk_accepted (from tool_repair)
     if let Some(messages) = body
@@ -1178,7 +1206,6 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
 
     SanitizeResult {
         fake_model,
-        target_model,
         effective_thinking_enabled,
     }
 }
@@ -1197,7 +1224,6 @@ mod tests_sanitize_request {
         });
         let result = sanitize_request(&mut body);
         assert_eq!(result.fake_model, "claude-opus-4-7");
-        assert_eq!(result.target_model, "deepseek-v4-pro");
         assert_eq!(body["model"], "deepseek-v4-pro");
     }
 
@@ -1287,5 +1313,40 @@ mod tests_sanitize_request {
         let content = body["messages"][0]["content"].as_array().unwrap();
         assert_eq!(content.len(), 1);
         assert_eq!(content[0]["type"], "text");
+    }
+
+    #[test]
+    fn test_tool_choice_downgraded_when_named_tool_filtered() {
+        // web_search is removed by filter_server_tools; tool_choice naming it must be downgraded.
+        let mut body = json!({
+            "model": "claude-sonnet-4-6",
+            "messages": [],
+            "tools": [
+                {"type": "web_search_20250305", "name": "web_search"},
+                {"name": "Bash", "description": "run bash", "input_schema": {}}
+            ],
+            "tool_choice": {"type": "tool", "name": "web_search"}
+        });
+        sanitize_request(&mut body);
+        // web_search should have been removed from tools
+        let tools = body["tools"].as_array().unwrap();
+        assert_eq!(tools.len(), 1);
+        assert_eq!(tools[0]["name"], "Bash");
+        // tool_choice should have been downgraded to auto
+        assert_eq!(body["tool_choice"]["type"], "auto");
+        assert!(body["tool_choice"].get("name").is_none());
+    }
+
+    #[test]
+    fn test_tool_choice_kept_when_named_tool_still_present() {
+        let mut body = json!({
+            "model": "claude-sonnet-4-6",
+            "messages": [],
+            "tools": [{"name": "Bash", "description": "run bash", "input_schema": {}}],
+            "tool_choice": {"type": "tool", "name": "Bash"}
+        });
+        sanitize_request(&mut body);
+        assert_eq!(body["tool_choice"]["type"], "tool");
+        assert_eq!(body["tool_choice"]["name"], "Bash");
     }
 }

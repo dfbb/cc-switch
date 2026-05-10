@@ -36,8 +36,7 @@ where
                 buffer.extend_from_slice(&chunk);
                 let mut events_out: Vec<Result<Bytes, std::io::Error>> = Vec::new();
 
-                loop {
-                    if let Some(pos) = find_double_newline(&buffer) {
+                while let Some(pos) = find_double_newline(&buffer) {
                         let event_bytes = buffer[..pos].to_vec();
                         buffer.drain(..pos + 2);
 
@@ -53,10 +52,7 @@ where
                         for e in patched {
                             events_out.push(Ok(Bytes::from(format!("{}\n\n", e))));
                         }
-                    } else {
-                        break;
                     }
-                }
                 events_out
             }
         };
@@ -116,13 +112,6 @@ mod tests_sse_stream {
         );
         let result = patch_sse_event(&e, &mut state, "fake", false);
         assert!(result.is_empty());
-    }
-
-    fn bytes_from_events(events: Vec<&str>) -> Vec<Bytes> {
-        events
-            .into_iter()
-            .map(|e| Bytes::from(format!("{}\n\n", e)))
-            .collect()
     }
 
     async fn collect_stream_output(
