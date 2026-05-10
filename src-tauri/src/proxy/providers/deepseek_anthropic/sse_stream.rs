@@ -14,8 +14,16 @@ pub fn patch_sse_event(
     transform_native_sse_block_event(event, state, fake_model, thinking_enabled)
 }
 
-fn find_double_newline(buf: &[u8]) -> Option<usize> {
-    buf.windows(2).position(|w| w == b"\n\n")
+fn find_double_newline(buf: &[u8]) -> Option<(usize, usize)> {
+    // Search CRLF first (longer match), then LF-only; return (position, delimiter_len).
+    let crlf = buf.windows(4).position(|w| w == b"\r\n\r\n").map(|p| (p, 4usize));
+    let lf = buf.windows(2).position(|w| w == b"\n\n").map(|p| (p, 2usize));
+    match (crlf, lf) {
+        (Some(c), Some(l)) => Some(if c.0 <= l.0 { c } else { l }),
+        (Some(c), None) => Some(c),
+        (None, Some(l)) => Some(l),
+        (None, None) => None,
+    }
 }
 
 pub fn wrap_sse_stream<S>(
@@ -36,9 +44,9 @@ where
                 buffer.extend_from_slice(&chunk);
                 let mut events_out: Vec<Result<Bytes, std::io::Error>> = Vec::new();
 
-                while let Some(pos) = find_double_newline(&buffer) {
+                while let Some((pos, delim_len)) = find_double_newline(&buffer) {
                         let event_bytes = buffer[..pos].to_vec();
-                        buffer.drain(..pos + 2);
+                        buffer.drain(..pos + delim_len);
 
                         let event_str = match std::str::from_utf8(&event_bytes) {
                             Ok(s) => s.trim_end_matches('\n').to_string(),
@@ -210,5 +218,40 @@ mod tests_sse_stream {
                 item
             );
         }
+    }
+
+    #[tokio::test]
+    async fn test_wrap_stream_crlf_delimiter_recognized() {
+        // DeepSeek or an intermediary may use \r\n\r\n as the SSE delimiter.
+        // wrap_sse_stream must emit the event rather than buffering forever.
+        let raw = "event: ping\r\ndata: {}\r\n\r\n".to_string();
+        let chunks = vec![Bytes::from(raw)];
+        let output = collect_stream_output(chunks, "fake", false).await;
+        assert!(
+            !output.is_empty(),
+            "CRLF-delimited SSE event must be emitted"
+        );
+        assert!(output.iter().any(|s| s.contains("ping")));
+    }
+
+    #[test]
+    fn test_find_double_newline_lf() {
+        assert_eq!(find_double_newline(b"abc\n\nxyz"), Some((3, 2)));
+    }
+
+    #[test]
+    fn test_find_double_newline_crlf() {
+        assert_eq!(find_double_newline(b"abc\r\n\r\nxyz"), Some((3, 4)));
+    }
+
+    #[test]
+    fn test_find_double_newline_prefers_earlier() {
+        // CRLF at pos 3, LF at pos 5 → pick CRLF (pos 3)
+        assert_eq!(find_double_newline(b"abc\r\n\r\n\n\n"), Some((3, 4)));
+    }
+
+    #[test]
+    fn test_find_double_newline_none() {
+        assert_eq!(find_double_newline(b"abc\ndef"), None);
     }
 }
