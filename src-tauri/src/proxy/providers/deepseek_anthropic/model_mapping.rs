@@ -4,7 +4,7 @@ pub fn map_claude_to_deepseek(claude_model: &str) -> &'static str {
         return "deepseek-v4-pro";
     }
     if lower.contains("sonnet") {
-        return "deepseek-v4-flash";
+        return "deepseek-v4-pro";
     }
     if lower.contains("haiku") {
         return "deepseek-v4-flash";
@@ -26,18 +26,27 @@ mod tests {
     }
 
     #[test]
-    fn test_sonnet_maps_to_flash() {
-        assert_eq!(map_claude_to_deepseek("claude-sonnet-4-6"), "deepseek-v4-flash");
+    fn test_sonnet_maps_to_pro() {
+        assert_eq!(
+            map_claude_to_deepseek("claude-sonnet-4-6"),
+            "deepseek-v4-pro"
+        );
     }
 
     #[test]
     fn test_haiku_maps_to_flash() {
-        assert_eq!(map_claude_to_deepseek("claude-haiku-3-5"), "deepseek-v4-flash");
+        assert_eq!(
+            map_claude_to_deepseek("claude-haiku-3-5"),
+            "deepseek-v4-flash"
+        );
     }
 
     #[test]
     fn test_unknown_maps_to_flash() {
-        assert_eq!(map_claude_to_deepseek("some-unknown-model"), "deepseek-v4-flash");
+        assert_eq!(
+            map_claude_to_deepseek("some-unknown-model"),
+            "deepseek-v4-flash"
+        );
     }
 
     #[test]

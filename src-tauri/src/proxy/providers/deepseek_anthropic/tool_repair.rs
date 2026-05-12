@@ -58,7 +58,9 @@ pub(crate) fn build_plan(messages: &mut [Value]) -> ToolRepairPlan {
                     .enumerate()
                     .filter_map(|(bi, b)| {
                         if b.get("type").and_then(|t| t.as_str()) == Some("tool_use") {
-                            b.get("id").and_then(|i| i.as_str()).map(|id| (bi, id.to_string()))
+                            b.get("id")
+                                .and_then(|i| i.as_str())
+                                .map(|id| (bi, id.to_string()))
                         } else {
                             None
                         }
@@ -80,8 +82,10 @@ pub(crate) fn build_plan(messages: &mut [Value]) -> ToolRepairPlan {
     }
 
     for (assistant_idx, expected_ids_with_blocks) in &assistant_tool_uses {
-        let expected_ids: Vec<String> =
-            expected_ids_with_blocks.iter().map(|(_, id)| id.clone()).collect();
+        let expected_ids: Vec<String> = expected_ids_with_blocks
+            .iter()
+            .map(|(_, id)| id.clone())
+            .collect();
         if expected_ids.is_empty() {
             continue;
         }
@@ -103,20 +107,22 @@ pub(crate) fn build_plan(messages: &mut [Value]) -> ToolRepairPlan {
         let next_user_idx = if adjacent_user_idx.is_some() {
             adjacent_user_idx
         } else {
-            (assistant_idx + 1..messages.len()).find(|&i| {
-                messages[i].get("role").and_then(|r| r.as_str()) == Some("user")
-            })
+            (assistant_idx + 1..messages.len())
+                .find(|&i| messages[i].get("role").and_then(|r| r.as_str()) == Some("user"))
         };
 
         let is_case_a = if let Some(nu) = adjacent_user_idx {
             if let Some(content) = messages[nu].get("content").and_then(|v| v.as_array()) {
                 let n = expected_ids.len();
                 content.len() >= n
-                    && content[..n].iter().zip(expected_ids.iter()).all(|(block, eid)| {
-                        block.get("type").and_then(|t| t.as_str()) == Some("tool_result")
-                            && block.get("tool_use_id").and_then(|i| i.as_str())
-                                == Some(eid.as_str())
-                    })
+                    && content[..n]
+                        .iter()
+                        .zip(expected_ids.iter())
+                        .all(|(block, eid)| {
+                            block.get("type").and_then(|t| t.as_str()) == Some("tool_result")
+                                && block.get("tool_use_id").and_then(|i| i.as_str())
+                                    == Some(eid.as_str())
+                        })
             } else {
                 false
             }
@@ -127,8 +133,9 @@ pub(crate) fn build_plan(messages: &mut [Value]) -> ToolRepairPlan {
         if is_case_a {
             let nu = next_user_idx.unwrap();
             let n = expected_ids.len();
-            if let Some(content) =
-                messages[nu].get_mut("content").and_then(|v| v.as_array_mut())
+            if let Some(content) = messages[nu]
+                .get_mut("content")
+                .and_then(|v| v.as_array_mut())
             {
                 for block in content[..n].iter_mut() {
                     if let Some(obj) = block.as_object_mut() {
@@ -269,7 +276,11 @@ pub(crate) fn apply_plan(messages: &mut Vec<Value>, plan: ToolRepairPlan) {
         .ops
         .iter()
         .filter_map(|op| {
-            if let RepairOp::DeleteBlock { user_idx, block_idx } = op {
+            if let RepairOp::DeleteBlock {
+                user_idx,
+                block_idx,
+            } = op
+            {
                 Some((*user_idx, *block_idx))
             } else {
                 None
@@ -303,18 +314,16 @@ pub(crate) fn apply_plan(messages: &mut Vec<Value>, plan: ToolRepairPlan) {
             _ => None,
         })
         .collect();
-    b_op_indices.sort_by_key(|&i| {
-        match &plan.ops[i] {
-            RepairOp::SplitAndPromote {
-                insert_after_assistant_idx: ia,
-                ..
-            } => usize::MAX - ia,
-            RepairOp::SynthesizePlaceholder {
-                insert_after_assistant_idx: ia,
-                ..
-            } => usize::MAX - ia,
-            _ => 0,
-        }
+    b_op_indices.sort_by_key(|&i| match &plan.ops[i] {
+        RepairOp::SplitAndPromote {
+            insert_after_assistant_idx: ia,
+            ..
+        } => usize::MAX - ia,
+        RepairOp::SynthesizePlaceholder {
+            insert_after_assistant_idx: ia,
+            ..
+        } => usize::MAX - ia,
+        _ => 0,
     });
 
     for op_idx in b_op_indices {
@@ -630,8 +639,9 @@ pub(crate) fn add_delete_ops(messages: &[serde_json::Value], plan: &mut ToolRepa
             if block.get("type").and_then(|t| t.as_str()) != Some("tool_result") {
                 continue;
             }
-            let is_accepted_in_place =
-                accepted_in_place.map(|s| s.contains(&block_idx)).unwrap_or(false);
+            let is_accepted_in_place = accepted_in_place
+                .map(|s| s.contains(&block_idx))
+                .unwrap_or(false);
             let is_extracted = extracted.map(|s| s.contains(&block_idx)).unwrap_or(false);
             let is_marker = block
                 .get("_dsk_accepted")
@@ -640,8 +650,10 @@ pub(crate) fn add_delete_ops(messages: &[serde_json::Value], plan: &mut ToolRepa
             if is_accepted_in_place || is_extracted || is_marker {
                 continue;
             }
-            plan.ops
-                .push(RepairOp::DeleteBlock { user_idx, block_idx });
+            plan.ops.push(RepairOp::DeleteBlock {
+                user_idx,
+                block_idx,
+            });
             plan.deleted_by_user
                 .entry(user_idx)
                 .or_default()
@@ -674,7 +686,10 @@ mod tests_add_delete_ops {
             json!({"role": "user", "content": [tool_result("A"), tool_result("ORPHAN")]}),
         ];
         let mut plan = ToolRepairPlan::default();
-        plan.accepted_in_place_by_user.entry(1).or_default().insert(0);
+        plan.accepted_in_place_by_user
+            .entry(1)
+            .or_default()
+            .insert(0);
 
         add_delete_ops(&messages, &mut plan);
 
@@ -682,7 +697,13 @@ mod tests_add_delete_ops {
             .ops
             .iter()
             .filter(|op| {
-                matches!(op, RepairOp::DeleteBlock { user_idx: 1, block_idx: 1 })
+                matches!(
+                    op,
+                    RepairOp::DeleteBlock {
+                        user_idx: 1,
+                        block_idx: 1
+                    }
+                )
             })
             .collect();
         assert_eq!(deletes.len(), 1, "orphan ORPHAN should be deleted");
@@ -695,7 +716,10 @@ mod tests_add_delete_ops {
             json!({"role": "user", "content": [tool_result_accepted("A"), tool_result("A")]}),
         ];
         let mut plan = ToolRepairPlan::default();
-        plan.accepted_in_place_by_user.entry(1).or_default().insert(0);
+        plan.accepted_in_place_by_user
+            .entry(1)
+            .or_default()
+            .insert(0);
 
         add_delete_ops(&messages, &mut plan);
 
@@ -703,7 +727,13 @@ mod tests_add_delete_ops {
             .ops
             .iter()
             .filter(|op| {
-                matches!(op, RepairOp::DeleteBlock { user_idx: 1, block_idx: 1 })
+                matches!(
+                    op,
+                    RepairOp::DeleteBlock {
+                        user_idx: 1,
+                        block_idx: 1
+                    }
+                )
             })
             .collect();
         assert_eq!(deletes.len(), 1, "duplicate A at block 1 should be deleted");
@@ -721,7 +751,13 @@ mod tests_add_delete_ops {
         add_delete_ops(&messages, &mut plan);
 
         let has_delete = plan.ops.iter().any(|op| {
-            matches!(op, RepairOp::DeleteBlock { user_idx: 2, block_idx: 0 })
+            matches!(
+                op,
+                RepairOp::DeleteBlock {
+                    user_idx: 2,
+                    block_idx: 0
+                }
+            )
         });
         assert!(has_delete, "unapproved legitimate id should be deleted");
     }
@@ -733,7 +769,10 @@ mod tests_add_delete_ops {
             json!({"role": "user", "content": [tool_result_accepted("A")]}),
         ];
         let mut plan = ToolRepairPlan::default();
-        plan.accepted_in_place_by_user.entry(1).or_default().insert(0);
+        plan.accepted_in_place_by_user
+            .entry(1)
+            .or_default()
+            .insert(0);
 
         add_delete_ops(&messages, &mut plan);
 
@@ -759,7 +798,9 @@ pub(crate) fn aggregate_paired_remaining(plan: &mut ToolRepairPlan) {
     #[allow(clippy::collapsible_match)]
     for op in &plan.ops {
         match op {
-            RepairOp::SplitAndPromote { source_user_idx, .. } => {
+            RepairOp::SplitAndPromote {
+                source_user_idx, ..
+            } => {
                 if !plan
                     .extracted_by_user
                     .get(source_user_idx)
@@ -1117,9 +1158,10 @@ mod tests_apply_plan {
         ];
         repair_tool_order(&mut messages);
         let content = messages[1]["content"].as_array().unwrap();
-        assert!(content
-            .iter()
-            .all(|b| b.get("tool_use_id").map(|id| id != "ORPHAN").unwrap_or(true)));
+        assert!(content.iter().all(|b| b
+            .get("tool_use_id")
+            .map(|id| id != "ORPHAN")
+            .unwrap_or(true)));
     }
 
     #[test]
@@ -1182,7 +1224,10 @@ mod tests_apply_plan {
             .map(|m| m["role"].as_str().unwrap_or(""))
             .collect();
         for w in roles.windows(2) {
-            assert!(!(w[0] == "user" && w[1] == "user"), "consecutive users found");
+            assert!(
+                !(w[0] == "user" && w[1] == "user"),
+                "consecutive users found"
+            );
         }
     }
 }

@@ -57,8 +57,16 @@ pub fn transform_native_sse_block_event(
     let (event_type, mut payload) = match parse_event(event) {
         Some(v) => v,
         None => {
-            let preview_end = event.char_indices().map(|(i, _)| i).take(201).last().unwrap_or(event.len());
-            log::warn!("[deepseek_sse] malformed event, switching to bypass: {:?}", &event[..preview_end.min(event.len())]);
+            let preview_end = event
+                .char_indices()
+                .map(|(i, _)| i)
+                .take(201)
+                .last()
+                .unwrap_or(event.len());
+            log::warn!(
+                "[deepseek_sse] malformed event, switching to bypass: {:?}",
+                &event[..preview_end.min(event.len())]
+            );
             state.bypass = true;
             return vec![event.to_string()];
         }
@@ -279,8 +287,7 @@ mod tests_sse_state {
                 "message": {"model": "deepseek-v4-pro", "usage": {}}
             }),
         );
-        let result =
-            transform_native_sse_block_event(&event, &mut state, "claude-opus-4-7", true);
+        let result = transform_native_sse_block_event(&event, &mut state, "claude-opus-4-7", true);
         assert_eq!(result.len(), 1);
         let parsed: serde_json::Value = serde_json::from_str(
             result[0]
@@ -327,7 +334,10 @@ mod tests_sse_state {
             }),
         );
         let result = transform_native_sse_block_event(&event, &mut state, "fake", false);
-        assert!(result.is_empty(), "thinking block should be dropped when disabled");
+        assert!(
+            result.is_empty(),
+            "thinking block should be dropped when disabled"
+        );
         assert!(state.dropped_indexes.contains(&0));
     }
 
@@ -524,6 +534,9 @@ mod tests_sse_state {
             .strip_prefix("data: ")
             .unwrap();
         let parsed: serde_json::Value = serde_json::from_str(data_str).unwrap();
-        assert_eq!(parsed["index"], 0, "first non-dropped block should get index 0");
+        assert_eq!(
+            parsed["index"], 0,
+            "first non-dropped block should get index 0"
+        );
     }
 }

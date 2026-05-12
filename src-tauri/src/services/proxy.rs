@@ -21,6 +21,10 @@ use tokio::sync::RwLock;
 /// 用于接管 Live 配置时的占位符（避免客户端提示缺少 key，同时不泄露真实 Token）
 const PROXY_TOKEN_PLACEHOLDER: &str = "PROXY_MANAGED";
 
+/// 切换至 DeepSeek Disguise (`deepseek_anthropic`) 预设时，用于记录原始接管状态的 settings 键。
+/// 切回非伪装预设时据此恢复接管开关。
+const AUTO_TAKEOVER_ORIGIN_CLAUDE_KEY: &str = "auto_takeover_origin_claude";
+
 /// 代理接管模式下需要从 Claude Live 配置中移除的"模型覆盖"字段。
 ///
 /// 原因：接管模式切换供应商时不会写回 Live 配置，如果保留这些字段，
@@ -454,6 +458,85 @@ impl ProxyService {
             }
         }
 
+        Ok(())
+    }
+
+    /// 切换到 Claude 供应商前调用：若目标是 `deepseek_anthropic` 伪装预设
+    /// 且我们尚未记录原始状态，则记下当前接管开关并自动启用接管。
+    ///
+    /// 伪装预设依赖代理层做请求改写（claude-* → deepseek-*），所以必须经过本地 proxy。
+    pub async fn ensure_disguise_takeover_for_target(
+        &self,
+        app: &AppType,
+        target: &Provider,
+    ) -> Result<(), String> {
+        if !matches!(app, AppType::Claude) {
+            return Ok(());
+        }
+        if crate::proxy::providers::get_claude_api_format(target) != "deepseek_anthropic" {
+            return Ok(());
+        }
+        if self
+            .db
+            .get_setting(AUTO_TAKEOVER_ORIGIN_CLAUDE_KEY)
+            .map_err(|e| format!("读取接管自动恢复标志失败: {e}"))?
+            .is_some()
+        {
+            return Ok(());
+        }
+
+        let current_enabled = self
+            .db
+            .get_proxy_config_for_app(AppType::Claude.as_str())
+            .await
+            .map(|c| c.enabled)
+            .unwrap_or(false);
+        let origin = if current_enabled { "on" } else { "off" };
+        self.db
+            .set_setting(AUTO_TAKEOVER_ORIGIN_CLAUDE_KEY, origin)
+            .map_err(|e| format!("写入接管自动恢复标志失败: {e}"))?;
+
+        if !current_enabled {
+            if let Err(e) = self
+                .set_takeover_for_app(AppType::Claude.as_str(), true)
+                .await
+            {
+                let _ = self.db.delete_setting(AUTO_TAKEOVER_ORIGIN_CLAUDE_KEY);
+                return Err(e);
+            }
+        }
+        Ok(())
+    }
+
+    /// 切换到 Claude 供应商后调用：若目标不是伪装预设且我们之前自动启用过接管，
+    /// 则按记录的原始状态恢复（原始为 off 时关闭接管；原始为 on 时保持）。
+    pub async fn revert_disguise_takeover_for_target(
+        &self,
+        app: &AppType,
+        target: &Provider,
+    ) -> Result<(), String> {
+        if !matches!(app, AppType::Claude) {
+            return Ok(());
+        }
+        if crate::proxy::providers::get_claude_api_format(target) == "deepseek_anthropic" {
+            return Ok(());
+        }
+        let Some(origin) = self
+            .db
+            .get_setting(AUTO_TAKEOVER_ORIGIN_CLAUDE_KEY)
+            .map_err(|e| format!("读取接管自动恢复标志失败: {e}"))?
+        else {
+            return Ok(());
+        };
+
+        self.db
+            .delete_setting(AUTO_TAKEOVER_ORIGIN_CLAUDE_KEY)
+            .map_err(|e| format!("清除接管自动恢复标志失败: {e}"))?;
+
+        if origin == "off" {
+            self.set_takeover_for_app(AppType::Claude.as_str(), false)
+                .await?;
+        }
         Ok(())
     }
 

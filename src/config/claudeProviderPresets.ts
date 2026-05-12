@@ -1036,8 +1036,8 @@ export const providerPresets: ProviderPreset[] = [
       env: {
         ANTHROPIC_BASE_URL: "https://api.deepseek.com/anthropic",
         ANTHROPIC_API_KEY: "",
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: "claude-sonnet-4-6",
-        ANTHROPIC_DEFAULT_SONNET_MODEL: "claude-opus-4-7",
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: "claude-haiku-3-5",
+        ANTHROPIC_DEFAULT_SONNET_MODEL: "claude-sonnet-4-6",
         ANTHROPIC_DEFAULT_OPUS_MODEL: "claude-opus-4-7",
       },
     },

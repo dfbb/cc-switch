@@ -1401,6 +1401,16 @@ impl ProviderService {
             return Self::switch_normal(state, app_type, id, &providers);
         }
 
+        // DeepSeek Disguise (deepseek_anthropic) 预设依赖本地 proxy 做请求改写，
+        // 若目标是该预设则自动启用接管（必要时启动 proxy 服务）。
+        // 用 tauri::async_runtime::block_on 而非 futures-executor —— 启动 TcpListener 需要 Tokio reactor。
+        tauri::async_runtime::block_on(
+            state
+                .proxy_service
+                .ensure_disguise_takeover_for_target(&app_type, _provider),
+        )
+        .map_err(AppError::Message)?;
+
         // Check if proxy takeover mode is active AND proxy server is actually running
         // Both conditions must be true to use hot-switch mode
         // Use blocking wait since this is a sync function
@@ -1427,7 +1437,7 @@ impl ProviderService {
             ));
         }
 
-        if should_hot_switch {
+        let result = if should_hot_switch {
             // Proxy takeover mode: hot-switch only, don't write Live config
             log::info!(
                 "代理接管模式：热切换 {} 的目标供应商为 {}",
@@ -1444,11 +1454,22 @@ impl ProviderService {
 
             // Note: No Live config write, no MCP sync
             // The proxy server will route requests to the new provider via is_current
-            return Ok(SwitchResult::default());
-        }
+            SwitchResult::default()
+        } else {
+            // Normal mode: full switch with Live config write
+            Self::switch_normal(state, app_type.clone(), id, &providers)?
+        };
 
-        // Normal mode: full switch with Live config write
-        Self::switch_normal(state, app_type, id, &providers)
+        // 切走非伪装目标时按记录恢复接管开关（仅 Claude 生效，其余 app 内部 no-op）。
+        // 同 ensure，使用 Tauri 运行时以便 stop/start proxy 时 TcpListener 能用 Tokio reactor。
+        tauri::async_runtime::block_on(
+            state
+                .proxy_service
+                .revert_disguise_takeover_for_target(&app_type, _provider),
+        )
+        .map_err(AppError::Message)?;
+
+        Ok(result)
     }
 
     /// Normal switch flow (non-proxy mode)

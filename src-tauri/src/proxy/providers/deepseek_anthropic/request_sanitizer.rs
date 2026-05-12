@@ -1,7 +1,7 @@
 // Implemented by T04a–T07
-use serde_json::{json, Value};
 use crate::proxy::providers::deepseek_anthropic::model_mapping::map_claude_to_deepseek;
 use crate::proxy::providers::deepseek_anthropic::tool_repair::repair_tool_order;
+use serde_json::{json, Value};
 
 pub(crate) const UNSUPPORTED_BLOCK_TYPES: &[&str] = &[
     "image",
@@ -252,18 +252,16 @@ mod tests_thinking_blocks {
 
     #[test]
     fn test_skips_non_assistant_roles() {
-        let mut msgs = vec![
-            json!({"role":"user","content":[{"type":"thinking","thinking":"..."}]}),
-        ];
+        let mut msgs =
+            vec![json!({"role":"user","content":[{"type":"thinking","thinking":"..."}]})];
         sanitize_thinking_blocks(&mut msgs, false);
         assert_eq!(msgs[0]["content"].as_array().unwrap().len(), 1);
     }
 
     #[test]
     fn test_strip_reasoning_content_removes_field() {
-        let mut msgs = vec![
-            json!({"role":"assistant","content":"hi","reasoning_content":"secret"}),
-        ];
+        let mut msgs =
+            vec![json!({"role":"assistant","content":"hi","reasoning_content":"secret"})];
         strip_reasoning_content(&mut msgs);
         assert!(msgs[0].get("reasoning_content").is_none());
     }
@@ -285,25 +283,26 @@ pub(crate) fn normalize_tool_result_content(messages: &mut [serde_json::Value]) 
             if block.get("type").and_then(|t| t.as_str()) != Some("tool_result") {
                 continue;
             }
-            let Some(obj) = block.as_object_mut() else { continue; };
+            let Some(obj) = block.as_object_mut() else {
+                continue;
+            };
             let normalized: String = match obj.get("content") {
                 None => String::new(),
                 Some(serde_json::Value::String(_)) => continue,
-                Some(serde_json::Value::Array(arr)) => {
-                    arr.iter()
-                        .map(|item| {
-                            if item.get("type").and_then(|t| t.as_str()) == Some("text") {
-                                item.get("text")
-                                    .and_then(|t| t.as_str())
-                                    .unwrap_or("")
-                                    .to_string()
-                            } else {
-                                serde_json::to_string(item).unwrap_or_default()
-                            }
-                        })
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                }
+                Some(serde_json::Value::Array(arr)) => arr
+                    .iter()
+                    .map(|item| {
+                        if item.get("type").and_then(|t| t.as_str()) == Some("text") {
+                            item.get("text")
+                                .and_then(|t| t.as_str())
+                                .unwrap_or("")
+                                .to_string()
+                        } else {
+                            serde_json::to_string(item).unwrap_or_default()
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n"),
                 Some(other) => serde_json::to_string(other).unwrap_or_default(),
             };
             obj.insert("content".into(), serde_json::Value::String(normalized));
@@ -403,8 +402,13 @@ mod tests_normalize_tool_result {
 }
 
 pub(crate) fn filter_context_management_edits(body: &mut serde_json::Value) {
-    let Some(obj) = body.as_object_mut() else { return; };
-    let Some(cm) = obj.get_mut("context_management").and_then(|v| v.as_object_mut()) else {
+    let Some(obj) = body.as_object_mut() else {
+        return;
+    };
+    let Some(cm) = obj
+        .get_mut("context_management")
+        .and_then(|v| v.as_object_mut())
+    else {
         return;
     };
 
@@ -556,12 +560,17 @@ fn detect_replayable_thinking_before_tool_use(body: &serde_json::Value) -> bool 
     false
 }
 
-pub(crate) fn rebuild_thinking_field(body: &mut serde_json::Value, target_model: &str) -> bool {
+pub(crate) fn rebuild_thinking_field(
+    body: &mut serde_json::Value,
+    target_model: &str,
+) -> (bool, bool) {
     // Run immutable checks before taking mutable borrow
     let has_tool_history = detect_tool_history(body);
     let has_replayable = detect_replayable_thinking_before_tool_use(body);
 
-    let obj = body.as_object_mut().expect("body must be object");
+    let Some(obj) = body.as_object_mut() else {
+        return (false, false);
+    };
 
     let original_thinking = obj.remove("thinking");
     let client_intent: Option<bool> = original_thinking
@@ -590,25 +599,16 @@ pub(crate) fn rebuild_thinking_field(body: &mut serde_json::Value, target_model:
             .and_then(|t| t.get("budget_tokens"))
             .cloned();
         let mut thinking_obj = serde_json::Map::new();
-        thinking_obj.insert(
-            "type".into(),
-            serde_json::Value::String("enabled".into()),
-        );
+        thinking_obj.insert("type".into(), serde_json::Value::String("enabled".into()));
         if let Some(bt) = budget_tokens {
             thinking_obj.insert("budget_tokens".into(), bt);
         }
-        obj.insert(
-            "thinking".into(),
-            serde_json::Value::Object(thinking_obj),
-        );
+        obj.insert("thinking".into(), serde_json::Value::Object(thinking_obj));
     } else {
-        obj.insert(
-            "thinking".into(),
-            serde_json::json!({"type": "disabled"}),
-        );
+        obj.insert("thinking".into(), serde_json::json!({"type": "disabled"}));
     }
 
-    effective
+    (effective, unsafe_tool_followup)
 }
 
 #[cfg(test)]
@@ -677,7 +677,7 @@ mod tests_thinking_rebuild {
     #[test]
     fn test_pro_no_tool_history_default_enabled() {
         let mut body = json!({"model": "deepseek-v4-pro", "messages": []});
-        let enabled = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
+        let (enabled, _) = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
         assert!(enabled);
         assert_eq!(body["thinking"]["type"], "enabled");
     }
@@ -686,7 +686,7 @@ mod tests_thinking_rebuild {
     fn test_pro_unsafe_tool_followup_forced_disabled() {
         let mut body = make_body_with_tool_history(false);
         body["thinking"] = json!(null);
-        let enabled = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
+        let (enabled, _) = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
         assert!(!enabled);
         assert_eq!(body["thinking"]["type"], "disabled");
     }
@@ -698,7 +698,7 @@ mod tests_thinking_rebuild {
             "messages": [],
             "thinking": {"type": "disabled"}
         });
-        let enabled = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
+        let (enabled, _) = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
         assert!(!enabled);
         assert_eq!(body["thinking"]["type"], "disabled");
     }
@@ -706,7 +706,7 @@ mod tests_thinking_rebuild {
     #[test]
     fn test_flash_no_client_intent_default_disabled() {
         let mut body = json!({"model": "deepseek-v4-flash", "messages": []});
-        let enabled = rebuild_thinking_field(&mut body, "deepseek-v4-flash");
+        let (enabled, _) = rebuild_thinking_field(&mut body, "deepseek-v4-flash");
         assert!(!enabled);
         assert_eq!(body["thinking"]["type"], "disabled");
     }
@@ -718,7 +718,7 @@ mod tests_thinking_rebuild {
             "messages": [],
             "thinking": {"type": "enabled"}
         });
-        let enabled = rebuild_thinking_field(&mut body, "deepseek-v4-flash");
+        let (enabled, _) = rebuild_thinking_field(&mut body, "deepseek-v4-flash");
         assert!(enabled);
         assert_eq!(body["thinking"]["type"], "enabled");
     }
@@ -730,14 +730,14 @@ mod tests_thinking_rebuild {
             "messages": [],
             "thinking": {"type": "future_type"}
         });
-        let enabled = rebuild_thinking_field(&mut body, "deepseek-v4-flash");
+        let (enabled, _) = rebuild_thinking_field(&mut body, "deepseek-v4-flash");
         assert!(!enabled);
     }
 
     #[test]
     fn test_pro_with_replayable_thinking_stays_enabled() {
         let mut body = make_body_with_tool_history(true);
-        let enabled = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
+        let (enabled, _) = rebuild_thinking_field(&mut body, "deepseek-v4-pro");
         assert!(enabled);
         assert_eq!(body["thinking"]["type"], "enabled");
     }
@@ -848,7 +848,9 @@ mod tests_tools_blacklist {
 }
 
 pub(crate) fn sanitize_tool_choice(body: &mut serde_json::Value) {
-    let Some(obj) = body.as_object_mut() else { return; };
+    let Some(obj) = body.as_object_mut() else {
+        return;
+    };
     if !obj.contains_key("tool_choice") {
         return;
     }
@@ -860,7 +862,9 @@ pub(crate) fn sanitize_tool_choice(body: &mut serde_json::Value) {
     }
 
     let verdict = {
-        let tc = obj.get_mut("tool_choice").expect("contains_key checked above");
+        let Some(tc) = obj.get_mut("tool_choice") else {
+            return;
+        };
         match tc.as_object_mut() {
             None => Verdict::RemoveNonObject,
             Some(tc_obj) => {
@@ -879,10 +883,7 @@ pub(crate) fn sanitize_tool_choice(body: &mut serde_json::Value) {
                                 .map(|s| !s.is_empty())
                                 .unwrap_or(false)
                         {
-                            tc_obj.insert(
-                                "type".into(),
-                                serde_json::Value::String("auto".into()),
-                            );
+                            tc_obj.insert("type".into(), serde_json::Value::String("auto".into()));
                             tc_obj.remove("name");
                         }
                         Verdict::Keep
@@ -899,7 +900,10 @@ pub(crate) fn sanitize_tool_choice(body: &mut serde_json::Value) {
             obj.remove("tool_choice");
         }
         Verdict::RemoveUnknown(kind) => {
-            log::warn!("[deepseek_sanitize] removing unknown tool_choice type='{}'", kind);
+            log::warn!(
+                "[deepseek_sanitize] removing unknown tool_choice type='{}'",
+                kind
+            );
             obj.remove("tool_choice");
         }
     }
@@ -941,10 +945,11 @@ mod tests_tool_choice {
 
     #[test]
     fn test_disable_parallel_tool_use_removed() {
-        let mut body =
-            json!({"tool_choice": {"type": "auto", "disable_parallel_tool_use": true}});
+        let mut body = json!({"tool_choice": {"type": "auto", "disable_parallel_tool_use": true}});
         sanitize_tool_choice(&mut body);
-        assert!(body["tool_choice"].get("disable_parallel_tool_use").is_none());
+        assert!(body["tool_choice"]
+            .get("disable_parallel_tool_use")
+            .is_none());
     }
 
     #[test]
@@ -988,7 +993,9 @@ mod tests_tool_choice {
 const OUTPUT_CONFIG_ALLOWED: &[&str] = &["effort"];
 
 pub(crate) fn sanitize_output_config(body: &mut serde_json::Value, unsafe_tool_followup: bool) {
-    let Some(obj) = body.as_object_mut() else { return; };
+    let Some(obj) = body.as_object_mut() else {
+        return;
+    };
     let Some(oc) = obj.get_mut("output_config").and_then(|v| v.as_object_mut()) else {
         return;
     };
@@ -1002,11 +1009,32 @@ pub(crate) fn sanitize_output_config(body: &mut serde_json::Value, unsafe_tool_f
 }
 
 pub(crate) fn apply_max_tokens_fallback(body: &mut serde_json::Value) {
-    let Some(obj) = body.as_object_mut() else { return; };
+    let Some(obj) = body.as_object_mut() else {
+        return;
+    };
     let needs_fallback = matches!(obj.get("max_tokens"), None | Some(serde_json::Value::Null));
     if needs_fallback {
         obj.insert("max_tokens".into(), serde_json::json!(8192));
     }
+}
+
+/// Opus → deepseek-v4-pro 走 max 模式：注入 reasoning_effort=max 并强制 max_tokens=384000。
+/// Sonnet/Haiku 等其他来源即使最终落到 pro 也不走 max。
+pub(crate) fn apply_opus_max_mode(
+    body: &mut serde_json::Value,
+    fake_model: &str,
+    target_model: &str,
+) {
+    let is_opus = fake_model.to_ascii_lowercase().contains("opus");
+    let is_pro = target_model.contains("pro");
+    if !(is_opus && is_pro) {
+        return;
+    }
+    let Some(obj) = body.as_object_mut() else {
+        return;
+    };
+    obj.insert("reasoning_effort".into(), serde_json::json!("max"));
+    obj.insert("max_tokens".into(), serde_json::json!(384000));
 }
 
 pub(crate) fn remove_mcp_servers(body: &mut serde_json::Value) {
@@ -1079,6 +1107,37 @@ mod tests_output_config_and_tokens {
     }
 
     #[test]
+    fn test_opus_pro_injects_max_mode() {
+        let mut body = json!({"model": "deepseek-v4-pro", "max_tokens": 1024});
+        apply_opus_max_mode(&mut body, "claude-opus-4-7", "deepseek-v4-pro");
+        assert_eq!(body["reasoning_effort"], "max");
+        assert_eq!(body["max_tokens"], 384000);
+    }
+
+    #[test]
+    fn test_sonnet_pro_no_max_mode() {
+        let mut body = json!({"model": "deepseek-v4-pro", "max_tokens": 1024});
+        apply_opus_max_mode(&mut body, "claude-sonnet-4-6", "deepseek-v4-pro");
+        assert!(body.get("reasoning_effort").is_none());
+        assert_eq!(body["max_tokens"], 1024);
+    }
+
+    #[test]
+    fn test_opus_flash_no_max_mode() {
+        let mut body = json!({"model": "deepseek-v4-flash"});
+        apply_opus_max_mode(&mut body, "claude-opus-4-7", "deepseek-v4-flash");
+        assert!(body.get("reasoning_effort").is_none());
+        assert!(body.get("max_tokens").is_none());
+    }
+
+    #[test]
+    fn test_opus_pro_overrides_user_max_tokens() {
+        let mut body = json!({"model": "deepseek-v4-pro", "max_tokens": 32000});
+        apply_opus_max_mode(&mut body, "CLAUDE-OPUS-4", "deepseek-v4-pro");
+        assert_eq!(body["max_tokens"], 384000);
+    }
+
+    #[test]
     fn test_mcp_servers_removed() {
         let mut body = json!({"mcp_servers": [{"name": "fs"}], "model": "m"});
         remove_mcp_servers(&mut body);
@@ -1096,6 +1155,8 @@ mod tests_output_config_and_tokens {
 
 pub struct SanitizeResult {
     pub fake_model: String,
+    #[allow(dead_code)]
+    pub target_model: String,
     pub effective_thinking_enabled: bool,
 }
 
@@ -1117,22 +1178,21 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
     // ② server tools blacklist
     filter_server_tools(body);
 
+    // ②.5 opus → pro 注入 max 模式（在 thinking/max_tokens 处理之前）
+    apply_opus_max_mode(body, &fake_model, &target_model);
+
     // ③ thinking field rebuild
-    let effective_thinking_enabled = rebuild_thinking_field(body, &target_model);
+    let (effective_thinking_enabled, unsafe_tool_followup) =
+        rebuild_thinking_field(body, &target_model);
 
     // ④ output_config whitelist
-    let unsafe_tool_followup =
-        detect_tool_history(body) && !detect_replayable_thinking_before_tool_use(body);
     sanitize_output_config(body, unsafe_tool_followup);
 
     // ⑤ mcp_servers removal
     remove_mcp_servers(body);
 
     // ⑥ messages pipeline
-    if let Some(messages) = body
-        .get_mut("messages")
-        .and_then(|m| m.as_array_mut())
-    {
+    if let Some(messages) = body.get_mut("messages").and_then(|m| m.as_array_mut()) {
         strip_unsupported_attachments(messages);
         sanitize_thinking_blocks(messages, effective_thinking_enabled);
         normalize_tool_result_content(messages);
@@ -1150,10 +1210,7 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
     filter_context_management_edits(body);
 
     // ⑧ tool order repair
-    if let Some(messages) = body
-        .get_mut("messages")
-        .and_then(|m| m.as_array_mut())
-    {
+    if let Some(messages) = body.get_mut("messages").and_then(|m| m.as_array_mut()) {
         repair_tool_order(messages);
     }
 
@@ -1173,7 +1230,11 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
             .and_then(|v| v.as_array())
             .map(|arr| {
                 arr.iter()
-                    .filter_map(|t| t.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
+                    .filter_map(|t| {
+                        t.get("name")
+                            .and_then(|n| n.as_str())
+                            .map(|s| s.to_string())
+                    })
                     .collect()
             })
             .unwrap_or_default();
@@ -1205,10 +1266,7 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
     }
 
     // cleanup _dsk_accepted (from tool_repair)
-    if let Some(messages) = body
-        .get_mut("messages")
-        .and_then(|m| m.as_array_mut())
-    {
+    if let Some(messages) = body.get_mut("messages").and_then(|m| m.as_array_mut()) {
         for msg in messages.iter_mut() {
             if let Some(content) = msg.get_mut("content").and_then(|v| v.as_array_mut()) {
                 for block in content.iter_mut() {
@@ -1222,6 +1280,7 @@ pub fn sanitize_request(body: &mut serde_json::Value) -> SanitizeResult {
 
     SanitizeResult {
         fake_model,
+        target_model,
         effective_thinking_enabled,
     }
 }
@@ -1240,6 +1299,7 @@ mod tests_sanitize_request {
         });
         let result = sanitize_request(&mut body);
         assert_eq!(result.fake_model, "claude-opus-4-7");
+        assert_eq!(result.target_model, "deepseek-v4-pro");
         assert_eq!(body["model"], "deepseek-v4-pro");
     }
 
@@ -1251,6 +1311,32 @@ mod tests_sanitize_request {
         });
         sanitize_request(&mut body);
         assert_eq!(body["max_tokens"], 8192);
+    }
+
+    #[test]
+    fn test_opus_pro_end_to_end_max_mode() {
+        let mut body = json!({
+            "model": "claude-opus-4-7",
+            "messages": [],
+            "max_tokens": 1024
+        });
+        let result = sanitize_request(&mut body);
+        assert_eq!(result.target_model, "deepseek-v4-pro");
+        assert_eq!(body["reasoning_effort"], "max");
+        assert_eq!(body["max_tokens"], 384000);
+    }
+
+    #[test]
+    fn test_sonnet_pro_end_to_end_normal_mode() {
+        let mut body = json!({
+            "model": "claude-sonnet-4-6",
+            "messages": [],
+            "max_tokens": 1024
+        });
+        let result = sanitize_request(&mut body);
+        assert_eq!(result.target_model, "deepseek-v4-pro");
+        assert!(body.get("reasoning_effort").is_none());
+        assert_eq!(body["max_tokens"], 1024);
     }
 
     #[test]
@@ -1283,7 +1369,7 @@ mod tests_sanitize_request {
     #[test]
     fn test_flash_thinking_disabled() {
         let mut body = json!({
-            "model": "claude-sonnet-4-6",
+            "model": "claude-haiku-3-5",
             "messages": []
         });
         let result = sanitize_request(&mut body);

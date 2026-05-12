@@ -18,6 +18,7 @@ mod codex;
 pub mod codex_oauth_auth;
 pub mod copilot_auth;
 pub mod copilot_model_map;
+pub mod deepseek_anthropic;
 mod gemini;
 pub(crate) mod gemini_schema;
 pub mod gemini_shadow;
@@ -28,7 +29,6 @@ pub mod streaming_responses;
 pub mod transform;
 pub mod transform_gemini;
 pub mod transform_responses;
-pub mod deepseek_anthropic;
 
 use crate::app_config::AppType;
 use crate::provider::Provider;

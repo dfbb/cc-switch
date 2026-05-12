@@ -813,9 +813,7 @@ impl RequestForwarder {
             super::providers::get_claude_api_format(provider),
             "deepseek_anthropic"
         ) {
-            Some(crate::proxy::providers::deepseek_anthropic::sanitize_request(
-                &mut mapped_body,
-            ))
+            Some(crate::proxy::providers::deepseek_anthropic::sanitize_request(&mut mapped_body))
         } else {
             None
         };
@@ -1273,11 +1271,7 @@ impl RequestForwarder {
             let key_str = key.as_str();
             let name_lower = key_str.to_ascii_lowercase();
 
-            if is_deepseek
-                && DEEPSEEK_HEADER_BLACKLIST
-                    .iter()
-                    .any(|b| *b == name_lower)
-            {
+            if is_deepseek && DEEPSEEK_HEADER_BLACKLIST.iter().any(|b| *b == name_lower) {
                 continue;
             }
 

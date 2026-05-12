@@ -16,8 +16,14 @@ pub fn patch_sse_event(
 
 fn find_double_newline(buf: &[u8]) -> Option<(usize, usize)> {
     // Search CRLF first (longer match), then LF-only; return (position, delimiter_len).
-    let crlf = buf.windows(4).position(|w| w == b"\r\n\r\n").map(|p| (p, 4usize));
-    let lf = buf.windows(2).position(|w| w == b"\n\n").map(|p| (p, 2usize));
+    let crlf = buf
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .map(|p| (p, 4usize));
+    let lf = buf
+        .windows(2)
+        .position(|w| w == b"\n\n")
+        .map(|p| (p, 2usize));
     match (crlf, lf) {
         (Some(c), Some(l)) => Some(if c.0 <= l.0 { c } else { l }),
         (Some(c), None) => Some(c),
@@ -45,22 +51,31 @@ where
                 let mut events_out: Vec<Result<Bytes, std::io::Error>> = Vec::new();
 
                 while let Some((pos, delim_len)) = find_double_newline(&buffer) {
-                        let event_bytes = buffer[..pos].to_vec();
-                        buffer.drain(..pos + delim_len);
+                    let event_bytes = buffer[..pos].to_vec();
+                    buffer.drain(..pos + delim_len);
 
-                        let event_str = match std::str::from_utf8(&event_bytes) {
-                            Ok(s) => s.trim_end_matches('\n').to_string(),
-                            Err(_) => {
-                                continue;
-                            }
-                        };
-
-                        let patched =
-                            patch_sse_event(&event_str, &mut state, &fake_model, thinking_enabled);
-                        for e in patched {
-                            events_out.push(Ok(Bytes::from(format!("{}\n\n", e))));
+                    let event_str = match std::str::from_utf8(&event_bytes) {
+                        Ok(s) => s.trim_end_matches('\n').to_string(),
+                        Err(_) => {
+                            log::warn!("[deepseek_sse] UTF-8 decode failed, switching to bypass");
+                            state.bypass = true;
+                            let mut raw_event = event_bytes;
+                            raw_event.extend_from_slice(if delim_len == 4 {
+                                b"\r\n\r\n"
+                            } else {
+                                b"\n\n"
+                            });
+                            events_out.push(Ok(Bytes::from(raw_event)));
+                            continue;
                         }
+                    };
+
+                    let patched =
+                        patch_sse_event(&event_str, &mut state, &fake_model, thinking_enabled);
+                    for e in patched {
+                        events_out.push(Ok(Bytes::from(format!("{}\n\n", e))));
                     }
+                }
                 events_out
             }
         };
@@ -127,8 +142,7 @@ mod tests_sse_stream {
         fake_model: &str,
         thinking_enabled: bool,
     ) -> Vec<String> {
-        let upstream =
-            futures::stream::iter(chunks.into_iter().map(Ok::<_, std::io::Error>));
+        let upstream = futures::stream::iter(chunks.into_iter().map(Ok::<_, std::io::Error>));
         let stream = wrap_sse_stream(upstream, fake_model.to_string(), thinking_enabled);
         stream
             .map(|r| String::from_utf8(r.unwrap().to_vec()).unwrap())

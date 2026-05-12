@@ -340,7 +340,13 @@ pub async fn handle_non_streaming(
                     strip_entity_headers_for_rebuilt_body(&mut response_headers);
                     bytes::Bytes::from(new_bytes)
                 }
-                Err(_) => body_bytes,
+                Err(e) => {
+                    log::warn!(
+                        "[deepseek] non-streaming response serialization failed: {}, falling back to original body",
+                        e
+                    );
+                    body_bytes
+                }
             }
         } else {
             body_bytes
