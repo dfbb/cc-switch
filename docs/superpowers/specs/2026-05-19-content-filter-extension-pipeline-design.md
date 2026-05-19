@@ -279,9 +279,9 @@ extension 实际执行 = config.enabled.unwrap_or(false)          // 总开关�
 | microcompact-stability | 350 | Request | 微压缩 sentinel 检测和标准化 |
 | rate-limit-log | 660 | ResponseStart | 429 限流事件日志 |
 | request-log | 700 | ResponseStart | 请求计时 NDJSON 日志 |
-| usage-log | 710 | ResponseStart | 每请求用量记录写入 `~/.claude/usage.jsonl`（MeterRowSchema v:1） |
-| output-efficiency-rewrite | — | Request | 重写系统 prompt 的效率章节 |
-| prefix-diff | — | Request | 请求前缀差异诊断 |
+| usage-log | 710 | Response | 从响应体提取 token 用量，写入 `~/.claude/usage.jsonl`（MeterRowSchema v:1） |
+| output-efficiency-rewrite | 370 | Request | 重写系统 prompt 的效率章节 |
+| prefix-diff | 680 | Request | 请求前缀差异诊断（需在所有修改后 snapshot） |
 
 ## 6. 与 DeepSeek Disguise 的兼容
 
