@@ -20,6 +20,7 @@
 - 不做代码生成器。翻译过程在 Claude Code 中手动完成
 - 不替换已有的 `deepseek_anthropic/` sanitize 逻辑
 - 不改变现有非 DeepSeek provider 的行为（除非用户主动启用扩展）
+- 默认迁移策略：`ExtensionFilterConfig.enabled` 缺失时视为 `false`，已有 provider 不受影响
 
 ## 2. 架构
 
@@ -42,16 +43,34 @@ Claude Code CLI → CC Switch Proxy
 在 `forwarder.rs` 和 `response_processor.rs` 中嵌入：
 
 ```
-1. 解析请求 → RequestContext
-2. [NEW] registry.run_request_pipeline(&mut ctx)
-   → 返回 Some((status, body)) 则短路返回
-3. [仅 disguise] request_sanitizer::sanitize_request()
-4. forwarder.forward() — 发送到上游
-5. [NEW] registry.run_response_start_pipeline(&mut ctx)
-6. [NEW] [stream] registry.run_stream_event_pipeline(&mut ctx) × N
+1. 解析请求 → RequestContext（body + headers 的副本）
+2. forwarder.forward_with_retry() — 故障转移循环
+   for each provider:
+     a. [NEW] registry.run_request_pipeline(&mut ctx, &provider)
+        → 按当前 provider 的 extension_filter_config 过滤执行
+        → 返回 Some((status, body)) 则短路返回
+     b. [仅 disguise] request_sanitizer::sanitize_request()
+     c. forward() — 发送到上游
+     d. 成功: 跳出循环; 失败: 尝试下一个 provider
+3. [NEW] registry.run_response_start_pipeline(&mut ctx)
+4. [NEW] [stream] registry.run_stream_event_pipeline(&mut ctx) × N
    [NEW] [non-stream] registry.run_response_pipeline(&mut ctx)
-7. 返回给客户端
+5. 返回给客户端
 ```
+
+请求管道放在 per-attempt provider 选择之后，确保每个 provider 的独立配置生效。
+故障转移时，下一个 provider 会基于原始 ctx 重新运行管道。
+
+### 响应管道的统一接入
+
+现有 `handle_claude_transform`（openai_chat/openai_responses/gemini_native 路径）在格式转换后
+直接返回，不经过 `response_processor.rs` 的通用 `process_response`。需要抽出统一的响应包装层，
+确保所有路径（透传 + 格式转换）都经过 extension 响应管道：
+
+- 在 `response_processor.rs` 中新增 `process_response_with_extensions()` 函数
+- 该函数在现有 `process_response` 逻辑的前后嵌入 `run_response_start_pipeline` 和
+  `run_response_pipeline` / `run_stream_event_pipeline`
+- `handle_claude_transform` 改用此统一包装层，不再直接返回原始响应
 
 ## 3. Trait 设计
 
@@ -108,17 +127,24 @@ Extension 只实现需要的 trait。例如 `fingerprint-strip` 只需 `RequestE
 
 ```rust
 pub struct ExtensionRegistry {
-    extensions: Vec<Box<dyn Extension>>,
-    request_exts: Vec<usize>,    // 实现 RequestExtension 的索引
-    response_exts: Vec<usize>,   // 实现 ResponseExtension 的索引
-    stream_exts: Vec<usize>,     // 实现 StreamExtension 的索引
+    // Rust 不支持从 dyn Extension 向下转型到子 trait，
+    // 因此按 trait 分别存储各自的 trait object，直接可用。
+    request_exts: Vec<Box<dyn RequestExtension>>,
+    response_exts: Vec<Box<dyn ResponseExtension>>,
+    stream_exts: Vec<Box<dyn StreamExtension>>,
+}
+
+impl ExtensionRegistry {
+    /// 加载所有 extension，按 order 排序，按 enabled 过滤，
+    /// 然后根据实现的 trait 分别存入对应 Vec
+    pub fn load_all() -> Self { ... }
 }
 ```
 
 - 代理启动时加载 `extensions/config.json`
 - 按 order 排序，根据 enabled 过滤
-- 支持文件监控热重载（watch config.json 变化）
 - 单个 extension 错误不中断整个管道
+- v1 不做文件监控热重载（后续版本考虑）
 
 ### 管道执行
 
@@ -137,6 +163,9 @@ impl ExtensionRegistry {
 ```
 
 ## 5. Extension 清单（23 个）
+
+> 表中的"默认启用/禁用"仅表示出厂预设。实际运行时，需 `ExtensionFilterConfig.enabled == Some(true)` 才会执行。
+> 已有 provider 升级后该字段缺失 → 管道不运行 → 行为不变。
 
 ### 缓存稳定性（5 个，默认启用）
 
@@ -251,12 +280,12 @@ src-tauri/src/proxy/
 
 ### 后端配置
 
-`extensions/config.json` — 控制每个 extension 的加载和顺序：
+`extensions/config.json` — 定义每个 extension 的默认 order 和出厂状态：
 
 ```json
 {
-  "fingerprint-strip": { "enabled": true, "order": 100 },
-  "sort-stabilization": { "enabled": true, "order": 200 }
+  "fingerprint-strip": { "default_enabled": true, "order": 100 },
+  "sort-stabilization": { "default_enabled": true, "order": 200 }
 }
 ```
 
@@ -264,11 +293,19 @@ src-tauri/src/proxy/
 
 ```rust
 pub struct ExtensionFilterConfig {
-    pub enabled: bool,                       // 总开关
-    pub extensions: HashMap<String, bool>,   // 每个 extension 独立开关
-    pub preset: String,                      // "full" | "cache-only" | "minimal"
+    /// 总开关。缺失/None 时视为 false——已有 provider 不受影响
+    pub enabled: Option<bool>,
+    /// 每个 extension 独立开关，覆盖 config.json 的 default_enabled
+    pub extensions: HashMap<String, bool>,
+    /// 预设标识: "full" | "cache-only" | "minimal" | "" (自定义)
+    pub preset: Option<String>,
 }
 ```
+
+迁移策略：
+- `enabled` 字段缺失或 `None` → 管道不运行，行为与升级前完全一致
+- `preset` 为空字符串或 `None` → 使用自定义开关
+- 用户从 UI 选择预设后，`enabled` 和 `extensions` 由前端写入显式值
 
 ### 前端 UI
 
