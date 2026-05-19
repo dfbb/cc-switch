@@ -85,7 +85,10 @@ Anthropic 的 `message_start`、`message_delta` 事件结构和 model 字段）�
   - 非流式：转换后的 JSON body → 构造 `ResponseContext` → `run_response_pipeline`
   - 流式：转换后 SSE 流的每个事件 → 构造 `StreamEventContext` → `run_stream_event_pipeline`
 - `run_response_start_pipeline` 在所有路径的统一位置调用，传入最终返回给客户端的
-  HTTP status 和 headers
+  HTTP status 和 headers，同时保留原始上游 headers 在 `upstream_headers` 字段
+- **Entity header 重建**：`run_response_pipeline` 之后，若 body 被修改，
+  接入点必须剥离 `Content-Length`、`Content-Encoding`、`Transfer-Encoding`，
+  由 HTTP 层根据最终 body 重新计算，避免客户端截断或解码错误
 
 ## 3. Trait 设计
 
@@ -130,11 +133,48 @@ pub trait StreamExtension: Extension {
 | Context | 阶段 | 可修改 |
 |---------|------|--------|
 | `RequestContext` | 请求前 | body, headers, meta |
-| `ResponseStartContext` | 响应 headers | status, headers（只读）, meta |
+| `ResponseStartContext` | 响应 headers | status, headers（最终客户端 headers，只读）, upstream_headers（原始上游 headers，只读）, meta |
 | `ResponseContext` | 响应体 | body, headers, meta |
 | `StreamEventContext` | SSE 事件 | data, drop, meta, telemetry |
 
 Extension 只实现需要的 trait。例如 `fingerprint-strip` 只需 `RequestExtension`。
+
+关键 Context struct：
+
+```rust
+pub struct RequestContext {
+    pub body: serde_json::Value,
+    pub headers: HeaderMap,
+    pub meta: ExtensionMeta,
+}
+
+pub struct ResponseStartContext {
+    pub status: u16,
+    pub headers: HeaderMap,              // 最终返回给客户端的 headers（只读）
+    pub upstream_headers: HeaderMap,     // 原始上游响应 headers（只读；含 quota/ratelimit 等）
+    pub meta: ExtensionMeta,
+}
+
+pub struct ResponseContext {
+    pub status: u16,
+    pub headers: HeaderMap,
+    pub body: Vec<u8>,
+    pub meta: ExtensionMeta,
+}
+
+pub struct StreamEventContext {
+    pub event_type: String,               // "message_start", "content_block_delta", ...
+    pub data: serde_json::Value,
+    pub drop: bool,
+    pub meta: ExtensionMeta,
+    pub telemetry: TelemetryCollector,
+}
+```
+
+`ResponseStartContext.upstream_headers` 保存原始上游 headers，确保 `cache-telemetry`
+（quota 数据）、`overage-warning`（超量阈值）、`rate-limit-log`（429 检测）等
+extension 能读取到上游的 `anthropic-ratelimit-*`、`x-should-retry`、`retry-after` 等头，
+即使格式转换过程中这些头被剥离或改写。
 
 ## 4. Extension 注册和执行
 
@@ -353,13 +393,24 @@ src-tauri/src/proxy/
 ```rust
 pub struct ExtensionFilterConfig {
     /// 总开关。缺失/None 时视为 false——已有 provider 不受影响
+    #[serde(default)]
     pub enabled: Option<bool>,
-    /// 每个 extension 独立开关，覆盖 config.json 的 default_enabled
+    /// 每个 extension 独立开关，覆盖 config.json 的 default_enabled。
+    /// #[serde(default)] — 字段缺失时回退到 default_enabled
+    #[serde(default)]
     pub extensions: HashMap<String, bool>,
     /// 预设标识: "full" | "cache-only" | "minimal" | "" (自定义)
+    #[serde(default)]
     pub preset: Option<String>,
 }
 ```
+
+迁移策略：
+- 整个 `extension_filter_config` 字段缺失 → 管道不运行
+- `enabled` 缺失或 `None` → 管道不运行
+- `extensions` 缺失 → 空 map，所有 extension 回退到 `default_enabled`
+- `preset` 缺失或 `None` → 使用自定义开关
+- 用户从 UI 选择预设后，`enabled`、`extensions` 和 `preset` 由前端写入显式值
 
 迁移策略：
 - `enabled` 字段缺失或 `None` → 管道不运行，行为与升级前完全一致
