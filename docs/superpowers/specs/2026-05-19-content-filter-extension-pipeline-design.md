@@ -73,14 +73,19 @@ Claude Code CLI → CC Switch Proxy
 
 ### 响应管道的统一接入
 
-现有 `handle_claude_transform`（openai_chat/openai_responses/gemini_native 路径）在格式转换后
-直接返回，不经过 `response_processor.rs` 的通用 `process_response`。需要抽出统一的响应包装层，
-确保所有路径（透传 + 格式转换）都经过 extension 响应管道：
+响应 extension 必须看到 Anthropic 格式的 body/SSE 事件（cache-telemetry 等依赖
+Anthropic 的 `message_start`、`message_delta` 事件结构和 model 字段），因此管道 hook
+放在格式转换**之后**，而非原始上游响应之上：
 
-- 在 `response_processor.rs` 中新增 `process_response_with_extensions()` 函数
-- 该函数在现有 `process_response` 逻辑的前后嵌入 `run_response_start_pipeline` 和
-  `run_response_pipeline` / `run_stream_event_pipeline`
-- `handle_claude_transform` 改用此统一包装层，不再直接返回原始响应
+- **透传路径**（anthropic / deepseek_anthropic）：原始响应即是 Anthropic 格式，
+  直接嵌入 `run_response_start_pipeline` → `run_response_pipeline` / `run_stream_event_pipeline`
+- **转换路径**（openai_chat / openai_responses / gemini_native）：
+  `handle_claude_transform` 先将上游响应转换为 Anthropic 格式的 body 或 SSE 流，
+  然后在转换结果上运行响应管道。具体做法：
+  - 非流式：转换后的 JSON body → 构造 `ResponseContext` → `run_response_pipeline`
+  - 流式：转换后 SSE 流的每个事件 → 构造 `StreamEventContext` → `run_stream_event_pipeline`
+- `run_response_start_pipeline` 在所有路径的统一位置调用，传入最终返回给客户端的
+  HTTP status 和 headers
 
 ## 3. Trait 设计
 
@@ -125,7 +130,7 @@ pub trait StreamExtension: Extension {
 | Context | 阶段 | 可修改 |
 |---------|------|--------|
 | `RequestContext` | 请求前 | body, headers, meta |
-| `ResponseStartContext` | 响应 headers | headers（只读）, meta |
+| `ResponseStartContext` | 响应 headers | status, headers（只读）, meta |
 | `ResponseContext` | 响应体 | body, headers, meta |
 | `StreamEventContext` | SSE 事件 | data, drop, meta, telemetry |
 
@@ -158,6 +163,24 @@ impl ExtensionRegistry {
 - 这样用户在任何 provider 中显式启用某个默认禁用的诊断 extension 时，
   registry 中已有该 extension 可直接执行
 - v1 不做文件监控热重载（后续版本考虑）
+
+### 跨阶段状态共享
+
+三个 Vec 分别存储不同 trait object，同一 extension 若实现多个 trait 会注册到多个 Vec
+中。extension 实例本身不应持有跨阶段可变状态（会被多次不可变借用），所有需要在
+Request → ResponseStart → Stream/Response 之间传递的数据统一通过 `ctx.meta` 传递：
+
+```rust
+// ExtensionMeta 贯穿整个请求生命周期
+pub struct ExtensionMeta {
+    data: HashMap<String, serde_json::Value>,
+}
+```
+
+- `ttl-tier-detect`（Request）写入 `ctx.meta["_ttlTier"]`，`ttl-management`（Request）读取
+- `cache-telemetry`（Request）写入 `ctx.meta["_sessionId"]`，
+  ResponseStart 写入 `ctx.meta["_quotaData"]`，Stream 读取两者
+- extension 实例保持无状态或仅持有不可变配置
 
 ### 管道执行
 
@@ -370,10 +393,12 @@ pub struct ExtensionFilterConfig {
 
 ## 10. 错误处理
 
-- 单个 extension 错误使用 `log::warn!` 记录，不中断管道
-- `ExtensionError` 包含 extension name 和错误详情
-- 管道返回 `Result`，由调用方决定是否降级
-- JSON 解析失败不 panic，记录 warning 并跳过该 extension
+- 单个 extension 执行错误（如 JSON 解析失败、字段缺失）由 `ExtensionRegistry` 内部
+  捕获，使用 `log::warn!` 记录（含 extension name 和错误详情），继续执行后续 extension
+- `run_*_pipeline()` 方法签名上的 `Result` 仅用于**框架级致命错误**（如 registry 锁中毒），
+  正常 extension 错误不会传播出管道
+- 接入点无需 `?` 处理 extension 错误——extension 错误不存在时管道保证返回 `Ok`
+- 原则：一个 extension 出错不影响同一 pipeline 中其他 extension，也不影响请求的转发/响应
 
 ## 11. 测试策略
 
