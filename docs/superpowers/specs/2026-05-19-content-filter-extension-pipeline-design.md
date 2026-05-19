@@ -399,23 +399,23 @@ pub struct ExtensionFilterConfig {
     /// #[serde(default)] — 字段缺失时回退到 default_enabled
     #[serde(default)]
     pub extensions: HashMap<String, bool>,
-    /// 预设标识: "full" | "cache-only" | "minimal" | "" (自定义)
+    /// 预设标识: "full" | "cache-only" | "minimal" | null (自定义)。
+    /// 仅 UI 记录用途，后端执行时不依赖此字段做启用判定。
     #[serde(default)]
     pub preset: Option<String>,
 }
 ```
 
-迁移策略：
-- 整个 `extension_filter_config` 字段缺失 → 管道不运行
-- `enabled` 缺失或 `None` → 管道不运行
-- `extensions` 缺失 → 空 map，所有 extension 回退到 `default_enabled`
-- `preset` 缺失或 `None` → 使用自定义开关
-- 用户从 UI 选择预设后，`enabled`、`extensions` 和 `preset` 由前端写入显式值
+迁移策略（唯一规则，serde 反序列化后按以下优先级判定）：
 
-迁移策略：
-- `enabled` 字段缺失或 `None` → 管道不运行，行为与升级前完全一致
-- `preset` 为空字符串或 `None` → 使用自定义开关
-- 用户从 UI 选择预设后，`enabled` 和 `extensions` 由前端写入显式值
+1. 整个 `extension_filter_config` 字段缺失 → 管道不运行（已有 provider 行为不变）
+2. `enabled` 为 `None` 或 `false` → 管道不运行
+3. `enabled` 为 `true`：
+   - `extensions` 中有显式条目的 extension → 使用显式值
+   - `extensions` 中无条目的 extension → 回退到 `default_enabled`
+   - `preset` 仅作为 UI 快捷选择的记录，后端执行时不依赖 preset 做决策
+4. 用户从 UI 选择预设后，前端同时写入 `enabled`、`extensions`（根据预设展开）和 `preset`（预设标识）
+5. 用户手动微调个别 extension 后，前端更新 `extensions` 并将 `preset` 清为 `None`（表示自定义）
 
 ### 前端 UI
 
