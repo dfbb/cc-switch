@@ -32,8 +32,6 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Provider, VisibleApps } from "@/types";
 import type { EnvConflict } from "@/types/env";
 import { useProvidersQuery, useSettingsQuery } from "@/lib/query";
-import { useUsageSummary } from "@/lib/query/usage";
-import { fmtTokenAbbr } from "@/components/usage/format";
 import {
   providersApi,
   settingsApi,
@@ -167,6 +165,8 @@ function App() {
   const queryClient = useQueryClient();
 
   const [activeApp, setActiveApp] = useState<AppId>(getInitialApp);
+  const sharedFeatureApp: AppId =
+    activeApp === "claude-desktop" ? "claude" : activeApp;
   const [currentView, setCurrentView] = useState<View>(getInitialView);
   const [settingsDefaultTab, setSettingsDefaultTab] = useState("general");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -212,16 +212,16 @@ function App() {
   useEffect(() => {
     if (
       currentView === "sessions" &&
-      activeApp !== "claude" &&
-      activeApp !== "codex" &&
-      activeApp !== "opencode" &&
-      activeApp !== "openclaw" &&
-      activeApp !== "gemini" &&
-      activeApp !== "hermes"
+      sharedFeatureApp !== "claude" &&
+      sharedFeatureApp !== "codex" &&
+      sharedFeatureApp !== "opencode" &&
+      sharedFeatureApp !== "openclaw" &&
+      sharedFeatureApp !== "gemini" &&
+      sharedFeatureApp !== "hermes"
     ) {
       setCurrentView("providers");
     }
-  }, [activeApp, currentView]);
+  }, [sharedFeatureApp, currentView]);
 
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [usageProvider, setUsageProvider] = useState<Provider | null>(null);
@@ -264,31 +264,6 @@ function App() {
     isProxyRunning,
   });
   const providers = useMemo(() => data?.providers ?? {}, [data]);
-
-  const { data: allTimeSummary } = useUsageSummary(
-    { preset: "all" },
-    undefined,
-    { refetchInterval: 60000 },
-  );
-  const { data: todaySummary } = useUsageSummary(
-    { preset: "today" },
-    undefined,
-    { refetchInterval: 30000 },
-  );
-  const tokensBadge = useMemo(() => {
-    const sumTokens = (s: typeof allTimeSummary) =>
-      s
-        ? (s.totalInputTokens ?? 0) +
-          (s.totalOutputTokens ?? 0) +
-          (s.totalCacheCreationTokens ?? 0) +
-          (s.totalCacheReadTokens ?? 0)
-        : 0;
-    const todayTotal = sumTokens(todaySummary);
-    const allTotal = sumTokens(allTimeSummary);
-    if (allTotal === 0) return null;
-    const todayPart = todayTotal > 0 ? fmtTokenAbbr(todayTotal) : "0";
-    return `(${todayPart}/${fmtTokenAbbr(allTotal)})`;
-  }, [allTimeSummary, todaySummary]);
   const currentProviderId = data?.currentProviderId ?? "";
   const isOpenClawView =
     activeApp === "openclaw" &&
@@ -300,14 +275,14 @@ function App() {
       currentView === "openclawAgents");
   const { data: openclawHealthWarnings = [] } =
     useOpenClawHealth(isOpenClawView);
-  const hasSkillsSupport = activeApp !== "claude-desktop";
+  const hasSkillsSupport = sharedFeatureApp !== "openclaw";
   const hasSessionSupport =
-    activeApp === "claude" ||
-    activeApp === "codex" ||
-    activeApp === "opencode" ||
-    activeApp === "openclaw" ||
-    activeApp === "gemini" ||
-    activeApp === "hermes";
+    sharedFeatureApp === "claude" ||
+    sharedFeatureApp === "codex" ||
+    sharedFeatureApp === "opencode" ||
+    sharedFeatureApp === "openclaw" ||
+    sharedFeatureApp === "gemini" ||
+    sharedFeatureApp === "hermes";
 
   const {
     addProvider,
@@ -358,34 +333,42 @@ function App() {
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
+    let active = true;
 
     const setupListener = async () => {
       try {
-        unsubscribe = await providersApi.onSwitched(
+        const off = await providersApi.onSwitched(
           async (event: ProviderSwitchEvent) => {
             if (event.appType === activeApp) {
               await refetch();
             }
           },
         );
+        if (!active) {
+          off();
+          return;
+        }
+        unsubscribe = off;
       } catch (error) {
         console.error("[App] Failed to subscribe provider switch event", error);
       }
     };
 
-    setupListener();
+    void setupListener();
     return () => {
+      active = false;
       unsubscribe?.();
     };
   }, [activeApp, refetch]);
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
+    let active = true;
 
     const setupListener = async () => {
       try {
         const { listen } = await import("@tauri-apps/api/event");
-        unsubscribe = await listen("universal-provider-synced", async () => {
+        const off = await listen("universal-provider-synced", async () => {
           await queryClient.invalidateQueries({ queryKey: ["providers"] });
           try {
             await providersApi.updateTrayMenu();
@@ -393,6 +376,11 @@ function App() {
             console.error("[App] Failed to update tray menu", error);
           }
         });
+        if (!active) {
+          off();
+          return;
+        }
+        unsubscribe = off;
       } catch (error) {
         console.error(
           "[App] Failed to subscribe universal-provider-synced event",
@@ -401,8 +389,9 @@ function App() {
       }
     };
 
-    setupListener();
+    void setupListener();
     return () => {
+      active = false;
       unsubscribe?.();
     };
   }, [queryClient]);
@@ -454,9 +443,10 @@ function App() {
   // Listen for proxy-official-warning: warn when takeover is enabled with an official provider
   useEffect(() => {
     let unsubscribe: (() => void) | undefined;
+    let active = true;
 
     const setup = async () => {
-      unsubscribe = await listen("proxy-official-warning", (event) => {
+      const off = await listen("proxy-official-warning", (event) => {
         const { providerName } = event.payload as {
           appType: string;
           providerName: string;
@@ -469,10 +459,16 @@ function App() {
           { duration: 8000 },
         );
       });
+      if (!active) {
+        off();
+        return;
+      }
+      unsubscribe = off;
     };
 
     void setup();
     return () => {
+      active = false;
       unsubscribe?.();
     };
   }, [t]);
@@ -938,7 +934,7 @@ function App() {
               ref={promptPanelRef}
               open={true}
               onOpenChange={() => setCurrentView("providers")}
-              appId={activeApp}
+              appId={sharedFeatureApp}
             />
           );
         case "hermesMemory":
@@ -948,14 +944,18 @@ function App() {
             <UnifiedSkillsPanel
               ref={unifiedSkillsPanelRef}
               onOpenDiscovery={() => setCurrentView("skillsDiscovery")}
-              currentApp={activeApp === "openclaw" ? "claude" : activeApp}
+              currentApp={
+                sharedFeatureApp === "openclaw" ? "claude" : sharedFeatureApp
+              }
             />
           );
         case "skillsDiscovery":
           return (
             <SkillsPage
               ref={skillsPageRef}
-              initialApp={activeApp === "openclaw" ? "claude" : activeApp}
+              initialApp={
+                sharedFeatureApp === "openclaw" ? "claude" : sharedFeatureApp
+              }
             />
           );
         case "mcp":
@@ -977,7 +977,12 @@ function App() {
           );
 
         case "sessions":
-          return <SessionManagerPage key={activeApp} appId={activeApp} />;
+          return (
+            <SessionManagerPage
+              key={sharedFeatureApp}
+              appId={sharedFeatureApp}
+            />
+          );
         case "workspace":
           return <WorkspaceFilesPanel />;
         case "openclawEnv":
@@ -1190,7 +1195,9 @@ function App() {
                 <h1 className="text-lg font-semibold">
                   {currentView === "settings" && t("settings.title")}
                   {currentView === "prompts" &&
-                    t("prompts.title", { appName: t(`apps.${activeApp}`) })}
+                    t("prompts.title", {
+                      appName: t(`apps.${sharedFeatureApp}`),
+                    })}
                   {currentView === "skills" && t("skills.title")}
                   {currentView === "skillsDiscovery" && t("skills.title")}
                   {currentView === "mcp" && t("mcp.unifiedPanel.title")}
@@ -1211,12 +1218,10 @@ function App() {
             ) : (
               <div className="flex items-center gap-2">
                 <div className="relative inline-flex items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSettingsDefaultTab("usage");
-                      setCurrentView("settings");
-                    }}
+                  <a
+                    href="https://ccswitch.io"
+                    target="_blank"
+                    rel="noreferrer"
                     className={cn(
                       "text-xl font-semibold transition-colors",
                       isProxyRunning && isCurrentAppTakeoverActive
@@ -1225,12 +1230,7 @@ function App() {
                     )}
                   >
                     CC Switch
-                    {tokensBadge && (
-                      <span className="ml-1.5 text-xl font-semibold text-amber-800 dark:text-amber-600">
-                        {tokensBadge}
-                      </span>
-                    )}
-                  </button>
+                  </a>
                 </div>
                 <Button
                   variant="ghost"
@@ -1530,17 +1530,15 @@ function App() {
                               >
                                 <Wrench className="flex-shrink-0 w-4 h-4" />
                               </Button>
-                              {activeApp !== "claude-desktop" && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setCurrentView("prompts")}
-                                  className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
-                                  title={t("prompts.manage")}
-                                >
-                                  <Book className="w-4 h-4" />
-                                </Button>
-                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setCurrentView("prompts")}
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
+                                title={t("prompts.manage")}
+                              >
+                                <Book className="w-4 h-4" />
+                              </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -1556,17 +1554,15 @@ function App() {
                               >
                                 <History className="flex-shrink-0 w-4 h-4" />
                               </Button>
-                              {activeApp !== "claude-desktop" && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setCurrentView("mcp")}
-                                  className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
-                                  title={t("mcp.title")}
-                                >
-                                  <McpIcon size={16} />
-                                </Button>
-                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setCurrentView("mcp")}
+                                className="text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5 w-8 px-2"
+                                title={t("mcp.title")}
+                              >
+                                <McpIcon size={16} />
+                              </Button>
                             </>
                           )}
                         </motion.div>

@@ -9,20 +9,23 @@
 
 use super::{
     error_mapper::{get_error_message, map_proxy_error_to_status},
+    forwarder::ActiveConnectionGuard,
     handler_config::{
-        CLAUDE_PARSER_CONFIG, CODEX_PARSER_CONFIG, GEMINI_PARSER_CONFIG, OPENAI_PARSER_CONFIG,
+        claude_stream_usage_event_filter, codex_stream_usage_event_filter, CLAUDE_PARSER_CONFIG,
+        CODEX_PARSER_CONFIG, GEMINI_PARSER_CONFIG, OPENAI_PARSER_CONFIG,
     },
     handler_context::RequestContext,
     providers::{
         get_adapter, get_claude_api_format, streaming::create_anthropic_sse_stream,
+        streaming_codex_chat::create_responses_sse_stream_from_chat,
         streaming_gemini::create_anthropic_sse_stream_from_gemini,
         streaming_responses::create_anthropic_sse_stream_from_responses, transform,
-        transform_gemini, transform_responses,
+        transform_codex_chat, transform_gemini, transform_responses,
     },
     response_processor::{
         create_logged_passthrough_stream, process_response, read_decoded_body,
         strip_entity_headers_for_rebuilt_body, strip_hop_by_hop_response_headers,
-        SseUsageCollector,
+        usage_logging_enabled, SseUsageCollector,
     },
     server::ProxyState,
     sse::{strip_sse_field, take_sse_block},
@@ -31,6 +34,7 @@ use super::{
     ProxyError,
 };
 use crate::app_config::AppType;
+use crate::database::PRICING_SOURCE_REQUEST;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use bytes::Bytes;
 use http_body_util::BodyExt;
@@ -94,96 +98,15 @@ pub async fn handle_claude_desktop_models(
     headers: axum::http::HeaderMap,
 ) -> Result<Json<Value>, ProxyError> {
     validate_claude_desktop_gateway_auth(&state, &headers)?;
-    let provider = select_models_endpoint_provider(&state, "claude-desktop").await?;
-
-    if get_claude_api_format(&provider) == "deepseek_anthropic" {
-        return Ok(Json(build_deepseek_disguised_models_payload(&provider)));
-    }
-
-    let response = crate::claude_desktop_config::model_list_response(&provider)
-        .map_err(|e| ProxyError::ConfigError(e.to_string()))?;
-    Ok(Json(response))
-}
-
-/// 处理 /v1/models 请求（Claude API）
-///
-/// 仅在 DeepSeek Anthropic 兼容供应商上返回伪装的模型列表（claude-* 名）。
-/// 其它 Claude 供应商上游若未实现 /v1/models，统一返回 404，避免误透传。
-pub async fn handle_claude_models(
-    State(state): State<ProxyState>,
-    _headers: axum::http::HeaderMap,
-) -> axum::response::Response {
-    let provider = match select_models_endpoint_provider(&state, "claude").await {
-        Ok(p) => p,
-        Err(e) => return e.into_response(),
-    };
-    if get_claude_api_format(&provider) == "deepseek_anthropic" {
-        return Json(build_deepseek_disguised_models_payload(&provider)).into_response();
-    }
-    StatusCode::NOT_FOUND.into_response()
-}
-
-/// 用于伪装模型列表的 env keys（顺序 = 输出顺序）
-const MODEL_ENV_KEYS: &[&str] = &[
-    "ANTHROPIC_MODEL",
-    "ANTHROPIC_DEFAULT_OPUS_MODEL",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL",
-];
-
-/// 从 provider.settings_config.env 中提取 ANTHROPIC_* 模型名，构建伪装的 /v1/models 响应。
-///
-/// - 按 MODEL_ENV_KEYS 顺序取值，跳过空字符串
-/// - 去重（按出现顺序保留首次）
-/// - 若全空，回退为 ["claude-sonnet-4-6"]
-pub(crate) fn build_deepseek_disguised_models_payload(
-    provider: &crate::provider::Provider,
-) -> Value {
-    let env_map = provider
-        .settings_config
-        .get("env")
-        .and_then(|v| v.as_object());
-    let mut disguised: Vec<String> = Vec::new();
-    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
-    for key in MODEL_ENV_KEYS {
-        if let Some(s) = env_map
-            .and_then(|m| m.get(*key))
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.is_empty())
-        {
-            if seen.insert(s.to_string()) {
-                disguised.push(s.to_string());
-            }
-        }
-    }
-    if disguised.is_empty() {
-        disguised.push("claude-sonnet-4-6".to_string());
-    }
-    let data: Vec<Value> = disguised
-        .into_iter()
-        .map(|name| json!({"type": "model", "id": name, "display_name": name}))
-        .collect();
-    json!({ "data": data })
-}
-
-/// /v1/models 端点选取 provider 的统一逻辑（不做健康度过滤外的额外校验）
-async fn select_models_endpoint_provider(
-    state: &ProxyState,
-    app_type_str: &'static str,
-) -> Result<crate::provider::Provider, ProxyError> {
     let providers = state
         .provider_router
-        .select_providers(app_type_str)
+        .select_providers("claude-desktop")
         .await
-        .map_err(|e| match e {
-            crate::error::AppError::AllProvidersCircuitOpen => ProxyError::AllProvidersCircuitOpen,
-            crate::error::AppError::NoProvidersConfigured => ProxyError::NoProvidersConfigured,
-            other => ProxyError::DatabaseError(other.to_string()),
-        })?;
-    providers
-        .into_iter()
-        .next()
-        .ok_or(ProxyError::NoAvailableProvider)
+        .map_err(|e| ProxyError::DatabaseError(e.to_string()))?;
+    let provider = providers.first().ok_or(ProxyError::NoAvailableProvider)?;
+    let response = crate::claude_desktop_config::model_list_response(provider)
+        .map_err(|e| ProxyError::ConfigError(e.to_string()))?;
+    Ok(Json(response))
 }
 
 async fn handle_messages_for_app(
@@ -195,6 +118,7 @@ async fn handle_messages_for_app(
     strip_prefix: Option<&'static str>,
 ) -> Result<axum::response::Response, ProxyError> {
     let (parts, body) = request.into_parts();
+    let method = parts.method.clone();
     let uri = parts.uri;
     let headers = parts.headers;
     let extensions = parts.extensions;
@@ -224,9 +148,10 @@ async fn handle_messages_for_app(
 
     // 转发请求
     let forwarder = ctx.create_forwarder(&state);
-    let result = match forwarder
+    let mut result = match forwarder
         .forward_with_retry(
             &app_type,
+            method,
             endpoint,
             body.clone(),
             headers,
@@ -245,13 +170,13 @@ async fn handle_messages_for_app(
         }
     };
 
+    let connection_guard = result.connection_guard.take();
     ctx.provider = result.provider;
     let api_format = result
         .claude_api_format
         .as_deref()
         .unwrap_or_else(|| get_claude_api_format(&ctx.provider))
         .to_string();
-    let deepseek_context = result.deepseek_context;
     let response = result.response;
 
     // 检查是否需要格式转换（OpenRouter 等中转服务）
@@ -260,8 +185,16 @@ async fn handle_messages_for_app(
 
     // Claude 特有：格式转换处理
     if needs_transform {
-        return handle_claude_transform(response, &ctx, &state, &body, is_stream, &api_format)
-            .await;
+        return handle_claude_transform(
+            response,
+            &ctx,
+            &state,
+            &body,
+            is_stream,
+            &api_format,
+            connection_guard,
+        )
+        .await;
     }
 
     // 通用响应处理（透传模式）
@@ -270,7 +203,7 @@ async fn handle_messages_for_app(
         &ctx,
         &state,
         &CLAUDE_PARSER_CONFIG,
-        deepseek_context.as_ref(),
+        connection_guard,
     )
     .await
 }
@@ -312,6 +245,7 @@ async fn handle_claude_transform(
     original_body: &Value,
     is_stream: bool,
     api_format: &str,
+    connection_guard: Option<ActiveConnectionGuard>,
 ) -> Result<axum::response::Response, ProxyError> {
     let status = response.status();
     let is_codex_oauth = ctx
@@ -359,40 +293,49 @@ async fn handle_claude_transform(
             Box::new(Box::pin(create_anthropic_sse_stream(stream)))
         };
 
-        // 创建使用量收集器
-        let usage_collector = {
+        // 创建使用量收集器；关闭 usage logging 时不要再解析转换后的 SSE。
+        let usage_collector = if usage_logging_enabled(state) {
             let state = state.clone();
             let provider_id = ctx.provider.id.clone();
             let model = ctx.request_model.clone();
             let status_code = status.as_u16();
             let start_time = ctx.start_time;
+            let session_id = ctx.session_id.clone();
 
-            SseUsageCollector::new(start_time, move |events, first_token_ms| {
-                if let Some(usage) = TokenUsage::from_claude_stream_events(&events) {
-                    let latency_ms = start_time.elapsed().as_millis() as u64;
-                    let state = state.clone();
-                    let provider_id = provider_id.clone();
-                    let model = model.clone();
+            Some(SseUsageCollector::new(
+                start_time,
+                Some(claude_stream_usage_event_filter),
+                move |events, first_token_ms| {
+                    if let Some(usage) = TokenUsage::from_claude_stream_events(&events) {
+                        let latency_ms = start_time.elapsed().as_millis() as u64;
+                        let state = state.clone();
+                        let provider_id = provider_id.clone();
+                        let model = model.clone();
+                        let session_id = session_id.clone();
 
-                    tokio::spawn(async move {
-                        log_usage(
-                            &state,
-                            &provider_id,
-                            "claude",
-                            &model,
-                            &model,
-                            usage,
-                            latency_ms,
-                            first_token_ms,
-                            true,
-                            status_code,
-                        )
-                        .await;
-                    });
-                } else {
-                    log::debug!("[Claude] OpenRouter 流式响应缺少 usage 统计，跳过消费记录");
-                }
-            })
+                        tokio::spawn(async move {
+                            log_usage(
+                                &state,
+                                &provider_id,
+                                "claude",
+                                &model,
+                                &model,
+                                usage,
+                                latency_ms,
+                                first_token_ms,
+                                true,
+                                status_code,
+                                Some(session_id),
+                            )
+                            .await;
+                        });
+                    } else {
+                        log::debug!("[Claude] OpenRouter 流式响应缺少 usage 统计，跳过消费记录");
+                    }
+                },
+            ))
+        } else {
+            None
         };
 
         // 获取流式超时配置
@@ -401,8 +344,9 @@ async fn handle_claude_transform(
         let logged_stream = create_logged_passthrough_stream(
             sse_stream,
             "Claude/OpenRouter",
-            Some(usage_collector),
+            usage_collector,
             timeout_config,
+            connection_guard,
         );
 
         let mut headers = axum::http::HeaderMap::new();
@@ -472,6 +416,7 @@ async fn handle_claude_transform(
             let state = state.clone();
             let provider_id = ctx.provider.id.clone();
             let model = model.to_string();
+            let session_id = ctx.session_id.clone();
             async move {
                 log_usage(
                     &state,
@@ -484,6 +429,7 @@ async fn handle_claude_transform(
                     None,
                     false,
                     status.as_u16(),
+                    Some(session_id),
                 )
                 .await;
             }
@@ -530,6 +476,7 @@ pub async fn handle_chat_completions(
     request: axum::extract::Request,
 ) -> Result<axum::response::Response, ProxyError> {
     let (parts, req_body) = request.into_parts();
+    let method = parts.method.clone();
     let uri = parts.uri;
     let headers = parts.headers;
     let extensions = parts.extensions;
@@ -551,9 +498,10 @@ pub async fn handle_chat_completions(
         .unwrap_or(false);
 
     let forwarder = ctx.create_forwarder(&state);
-    let result = match forwarder
+    let mut result = match forwarder
         .forward_with_retry(
             &AppType::Codex,
+            method,
             &endpoint,
             body,
             headers,
@@ -572,10 +520,18 @@ pub async fn handle_chat_completions(
         }
     };
 
+    let connection_guard = result.connection_guard.take();
     ctx.provider = result.provider;
     let response = result.response;
 
-    process_response(response, &ctx, &state, &OPENAI_PARSER_CONFIG, None).await
+    process_response(
+        response,
+        &ctx,
+        &state,
+        &OPENAI_PARSER_CONFIG,
+        connection_guard,
+    )
+    .await
 }
 
 /// 处理 /v1/responses 请求（OpenAI Responses API - Codex CLI 透传）
@@ -584,6 +540,7 @@ pub async fn handle_responses(
     request: axum::extract::Request,
 ) -> Result<axum::response::Response, ProxyError> {
     let (parts, req_body) = request.into_parts();
+    let method = parts.method.clone();
     let uri = parts.uri;
     let headers = parts.headers;
     let extensions = parts.extensions;
@@ -605,9 +562,10 @@ pub async fn handle_responses(
         .unwrap_or(false);
 
     let forwarder = ctx.create_forwarder(&state);
-    let result = match forwarder
+    let mut result = match forwarder
         .forward_with_retry(
             &AppType::Codex,
+            method,
             &endpoint,
             body,
             headers,
@@ -626,10 +584,29 @@ pub async fn handle_responses(
         }
     };
 
+    let connection_guard = result.connection_guard.take();
     ctx.provider = result.provider;
     let response = result.response;
 
-    process_response(response, &ctx, &state, &CODEX_PARSER_CONFIG, None).await
+    if super::providers::should_convert_codex_responses_to_chat(&ctx.provider, &endpoint) {
+        return handle_codex_chat_to_responses_transform(
+            response,
+            &ctx,
+            &state,
+            is_stream,
+            connection_guard,
+        )
+        .await;
+    }
+
+    process_response(
+        response,
+        &ctx,
+        &state,
+        &CODEX_PARSER_CONFIG,
+        connection_guard,
+    )
+    .await
 }
 
 /// 处理 /v1/responses/compact 请求（OpenAI Responses Compact API - Codex CLI 透传）
@@ -638,6 +615,7 @@ pub async fn handle_responses_compact(
     request: axum::extract::Request,
 ) -> Result<axum::response::Response, ProxyError> {
     let (parts, req_body) = request.into_parts();
+    let method = parts.method.clone();
     let uri = parts.uri;
     let headers = parts.headers;
     let extensions = parts.extensions;
@@ -659,9 +637,10 @@ pub async fn handle_responses_compact(
         .unwrap_or(false);
 
     let forwarder = ctx.create_forwarder(&state);
-    let result = match forwarder
+    let mut result = match forwarder
         .forward_with_retry(
             &AppType::Codex,
+            method,
             &endpoint,
             body,
             headers,
@@ -680,10 +659,185 @@ pub async fn handle_responses_compact(
         }
     };
 
+    let connection_guard = result.connection_guard.take();
     ctx.provider = result.provider;
     let response = result.response;
 
-    process_response(response, &ctx, &state, &CODEX_PARSER_CONFIG, None).await
+    if super::providers::should_convert_codex_responses_to_chat(&ctx.provider, &endpoint) {
+        return handle_codex_chat_to_responses_transform(
+            response,
+            &ctx,
+            &state,
+            is_stream,
+            connection_guard,
+        )
+        .await;
+    }
+
+    process_response(
+        response,
+        &ctx,
+        &state,
+        &CODEX_PARSER_CONFIG,
+        connection_guard,
+    )
+    .await
+}
+
+async fn handle_codex_chat_to_responses_transform(
+    response: super::hyper_client::ProxyResponse,
+    ctx: &RequestContext,
+    state: &ProxyState,
+    is_stream: bool,
+    connection_guard: Option<ActiveConnectionGuard>,
+) -> Result<axum::response::Response, ProxyError> {
+    let status = response.status();
+
+    if !status.is_success() {
+        return process_response(response, ctx, state, &CODEX_PARSER_CONFIG, connection_guard)
+            .await;
+    }
+
+    if is_stream || response.is_sse() {
+        let stream = response.bytes_stream();
+        let sse_stream = create_responses_sse_stream_from_chat(stream);
+
+        let usage_collector = if usage_logging_enabled(state) {
+            let state = state.clone();
+            let provider_id = ctx.provider.id.clone();
+            let request_model = ctx.request_model.clone();
+            let start_time = ctx.start_time;
+            let session_id = ctx.session_id.clone();
+
+            Some(SseUsageCollector::new(
+                start_time,
+                Some(codex_stream_usage_event_filter),
+                move |events, first_token_ms| {
+                    let usage =
+                        TokenUsage::from_codex_stream_events_auto(&events).unwrap_or_default();
+                    let model = usage.model.clone().unwrap_or_else(|| request_model.clone());
+                    let latency_ms = start_time.elapsed().as_millis() as u64;
+
+                    let state = state.clone();
+                    let provider_id = provider_id.clone();
+                    let request_model = request_model.clone();
+                    let session_id = session_id.clone();
+
+                    tokio::spawn(async move {
+                        log_usage(
+                            &state,
+                            &provider_id,
+                            "codex",
+                            &model,
+                            &request_model,
+                            usage,
+                            latency_ms,
+                            first_token_ms,
+                            true,
+                            status.as_u16(),
+                            Some(session_id),
+                        )
+                        .await;
+                    });
+                },
+            ))
+        } else {
+            None
+        };
+
+        let logged_stream = create_logged_passthrough_stream(
+            sse_stream,
+            ctx.tag,
+            usage_collector,
+            ctx.streaming_timeout_config(),
+            connection_guard,
+        );
+
+        let mut headers = axum::http::HeaderMap::new();
+        headers.insert(
+            "Content-Type",
+            axum::http::HeaderValue::from_static("text/event-stream"),
+        );
+        headers.insert(
+            "Cache-Control",
+            axum::http::HeaderValue::from_static("no-cache"),
+        );
+
+        let body = axum::body::Body::from_stream(logged_stream);
+        return Ok((headers, body).into_response());
+    }
+
+    let _connection_guard = connection_guard;
+    let body_timeout =
+        if ctx.app_config.auto_failover_enabled && ctx.app_config.non_streaming_timeout > 0 {
+            std::time::Duration::from_secs(ctx.app_config.non_streaming_timeout as u64)
+        } else {
+            std::time::Duration::ZERO
+        };
+    let (mut response_headers, status, body_bytes) =
+        read_decoded_body(response, ctx.tag, body_timeout).await?;
+    let body_str = String::from_utf8_lossy(&body_bytes);
+    let chat_response: Value = serde_json::from_slice(&body_bytes).map_err(|e| {
+        log::error!("[Codex] 解析 Chat 上游响应失败: {e}, body: {body_str}");
+        ProxyError::TransformError(format!("Failed to parse upstream chat response: {e}"))
+    })?;
+    let responses_response = transform_codex_chat::chat_completion_to_response(chat_response)
+        .map_err(|e| {
+            log::error!("[Codex] Chat → Responses 响应转换失败: {e}");
+            e
+        })?;
+
+    if let Some(usage) = TokenUsage::from_codex_response_auto(&responses_response) {
+        let model = responses_response
+            .get("model")
+            .and_then(|m| m.as_str())
+            .unwrap_or(&ctx.request_model);
+        let request_model = ctx.request_model.clone();
+        tokio::spawn({
+            let state = state.clone();
+            let provider_id = ctx.provider.id.clone();
+            let model = model.to_string();
+            let session_id = ctx.session_id.clone();
+            let latency_ms = ctx.latency_ms();
+            async move {
+                log_usage(
+                    &state,
+                    &provider_id,
+                    "codex",
+                    &model,
+                    &request_model,
+                    usage,
+                    latency_ms,
+                    None,
+                    false,
+                    status.as_u16(),
+                    Some(session_id),
+                )
+                .await;
+            }
+        });
+    }
+
+    strip_entity_headers_for_rebuilt_body(&mut response_headers);
+    strip_hop_by_hop_response_headers(&mut response_headers);
+
+    let mut builder = axum::response::Response::builder().status(status);
+    for (key, value) in response_headers.iter() {
+        builder = builder.header(key, value);
+    }
+    builder = builder.header("content-type", "application/json");
+
+    let response_body = serde_json::to_vec(&responses_response).map_err(|e| {
+        log::error!("[Codex] 序列化 Responses 响应失败: {e}");
+        ProxyError::TransformError(format!("Failed to serialize responses response: {e}"))
+    })?;
+
+    builder
+        .body(axum::body::Body::from(response_body))
+        .map_err(|e| {
+            log::error!("[Codex] 构建 Responses 响应失败: {e}");
+            ProxyError::Internal(format!("Failed to build response: {e}"))
+        })
 }
 
 // ============================================================================
@@ -697,6 +851,7 @@ pub async fn handle_gemini(
     request: axum::extract::Request,
 ) -> Result<axum::response::Response, ProxyError> {
     let (parts, req_body) = request.into_parts();
+    let method = parts.method.clone();
     let headers = parts.headers;
     let extensions = parts.extensions;
     let body_bytes = req_body
@@ -704,8 +859,14 @@ pub async fn handle_gemini(
         .await
         .map_err(|e| ProxyError::Internal(format!("Failed to read request body: {e}")))?
         .to_bytes();
-    let body: Value = serde_json::from_slice(&body_bytes)
-        .map_err(|e| ProxyError::Internal(format!("Failed to parse request body: {e}")))?;
+    // GET 类只读端点（/v1beta/models、/v1beta/models/<model> 等）没有请求体，
+    // 不能强制 parse 为 JSON —— 否则空 body 会被拒绝。
+    let body: Value = if body_bytes.is_empty() {
+        Value::Null
+    } else {
+        serde_json::from_slice(&body_bytes)
+            .map_err(|e| ProxyError::Internal(format!("Failed to parse request body: {e}")))?
+    };
 
     // Gemini 的模型名称在 URI 中
     let mut ctx = RequestContext::new(&state, &body, &headers, AppType::Gemini, "Gemini", "gemini")
@@ -724,9 +885,10 @@ pub async fn handle_gemini(
         .unwrap_or(false);
 
     let forwarder = ctx.create_forwarder(&state);
-    let result = match forwarder
+    let mut result = match forwarder
         .forward_with_retry(
             &AppType::Gemini,
+            method,
             endpoint,
             body,
             headers,
@@ -745,10 +907,18 @@ pub async fn handle_gemini(
         }
     };
 
+    let connection_guard = result.connection_guard.take();
     ctx.provider = result.provider;
     let response = result.response;
 
-    process_response(response, &ctx, &state, &GEMINI_PARSER_CONFIG, None).await
+    process_response(
+        response,
+        &ctx,
+        &state,
+        &GEMINI_PARSER_CONFIG,
+        connection_guard,
+    )
+    .await
 }
 
 fn should_use_claude_transform_streaming(
@@ -878,14 +1048,19 @@ async fn log_usage(
     first_token_ms: Option<u64>,
     is_streaming: bool,
     status_code: u16,
+    session_id: Option<String>,
 ) {
     use super::usage::logger::UsageLogger;
+
+    if !usage_logging_enabled(state) {
+        return;
+    }
 
     let logger = UsageLogger::new(&state.db);
 
     let (multiplier, pricing_model_source) =
         logger.resolve_pricing_config(provider_id, app_type).await;
-    let pricing_model = if pricing_model_source == "request" {
+    let pricing_model = if pricing_model_source == PRICING_SOURCE_REQUEST {
         request_model
     } else {
         model
@@ -905,7 +1080,7 @@ async fn log_usage(
         latency_ms,
         first_token_ms,
         status_code,
-        None,
+        session_id,
         None, // provider_type
         is_streaming,
     ) {
@@ -1001,89 +1176,5 @@ data: {\"type\":\"response.failed\",\"response\":{\"error\":{\"message\":\"upstr
 data: {\"type\":\"response.output_item.done\",\"item\":{\"type\":\"message\"}}\n\n";
 
         assert!(responses_sse_to_response_value(sse).is_err());
-    }
-}
-
-#[cfg(test)]
-mod tests_models {
-    use super::build_deepseek_disguised_models_payload;
-    use crate::provider::Provider;
-    use serde_json::json;
-
-    fn make_provider_with_env(env: serde_json::Value) -> Provider {
-        Provider {
-            id: "test".to_string(),
-            name: "Test".to_string(),
-            settings_config: json!({ "env": env }),
-            website_url: None,
-            category: Some("claude".to_string()),
-            created_at: None,
-            sort_index: None,
-            notes: None,
-            meta: None,
-            icon: None,
-            icon_color: None,
-            in_failover_queue: false,
-        }
-    }
-
-    #[test]
-    fn test_disguised_payload_basic() {
-        let provider = make_provider_with_env(json!({
-            "ANTHROPIC_MODEL": "claude-opus-4-7",
-            "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-7",
-            "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
-            "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-sonnet-4-6",
-        }));
-        let payload = build_deepseek_disguised_models_payload(&provider);
-        let data = payload["data"].as_array().unwrap();
-        assert_eq!(data.len(), 2);
-        assert_eq!(data[0]["id"], "claude-opus-4-7");
-        assert_eq!(data[1]["id"], "claude-sonnet-4-6");
-    }
-
-    #[test]
-    fn test_disguised_payload_empty_env_fallback() {
-        let provider = make_provider_with_env(json!({}));
-        let payload = build_deepseek_disguised_models_payload(&provider);
-        let data = payload["data"].as_array().unwrap();
-        assert_eq!(data.len(), 1);
-        assert_eq!(data[0]["id"], "claude-sonnet-4-6");
-    }
-
-    #[test]
-    fn test_disguised_payload_deduplication_order() {
-        let provider = make_provider_with_env(json!({
-            "ANTHROPIC_MODEL": "claude-sonnet-4-6",
-            "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-7",
-        }));
-        let payload = build_deepseek_disguised_models_payload(&provider);
-        let data = payload["data"].as_array().unwrap();
-        assert_eq!(data[0]["id"], "claude-sonnet-4-6");
-        assert_eq!(data[1]["id"], "claude-opus-4-7");
-    }
-
-    #[test]
-    fn test_disguised_payload_skips_empty_string() {
-        let provider = make_provider_with_env(json!({
-            "ANTHROPIC_MODEL": "",
-            "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
-        }));
-        let payload = build_deepseek_disguised_models_payload(&provider);
-        let data = payload["data"].as_array().unwrap();
-        assert_eq!(data.len(), 1);
-        assert_eq!(data[0]["id"], "claude-sonnet-4-6");
-    }
-
-    #[test]
-    fn test_disguised_payload_item_shape() {
-        let provider = make_provider_with_env(json!({
-            "ANTHROPIC_MODEL": "claude-opus-4-7",
-        }));
-        let payload = build_deepseek_disguised_models_payload(&provider);
-        let item = &payload["data"][0];
-        assert_eq!(item["type"], "model");
-        assert_eq!(item["id"], "claude-opus-4-7");
-        assert_eq!(item["display_name"], "claude-opus-4-7");
     }
 }
