@@ -66,7 +66,10 @@ Claude Code CLI → CC Switch Proxy
   body/header 变更不会泄漏到下一个 provider（例如 A 启用 image-strip 失败后，
   B 未启用扩展也不应收到已剥离图片的请求）
 - 成功的 provider：其修改后的 ctx 保留并带入响应阶段
-- 所有 provider 都失败：管道短路返回的拦截响应直接返回给客户端
+- 任意 attempt 中 `run_request_pipeline()` 返回 `Some((status, body))`：
+  extension 主动拦截请求，合成响应直接返回客户端，不经过上游
+- 所有 provider 的 HTTP 转发都失败（包括重试耗尽和不可重试错误）：
+  按已有故障转移逻辑返回最后一个错误，不走拦截响应路径
 
 ### 响应管道的统一接入
 
