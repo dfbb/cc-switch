@@ -59,7 +59,14 @@ Claude Code CLI → CC Switch Proxy
 ```
 
 请求管道放在 per-attempt provider 选择之后，确保每个 provider 的独立配置生效。
-故障转移时，下一个 provider 会基于原始 ctx 重新运行管道。
+
+每次 attempt 基于原始请求的克隆执行：
+- 进入循环前，保存一份 `original_body` 和 `original_headers` 的副本
+- 每次 attempt 开始时，从原始副本重建 `RequestContext`，确保上一个 provider 的
+  body/header 变更不会泄漏到下一个 provider（例如 A 启用 image-strip 失败后，
+  B 未启用扩展也不应收到已剥离图片的请求）
+- 成功的 provider：其修改后的 ctx 保留并带入响应阶段
+- 所有 provider 都失败：管道短路返回的拦截响应直接返回给客户端
 
 ### 响应管道的统一接入
 
@@ -81,7 +88,7 @@ Claude Code CLI → CC Switch Proxy
 pub trait Extension: Send + Sync {
     fn name(&self) -> &str;
     fn order(&self) -> u32;
-    fn enabled(&self) -> bool;
+    fn default_enabled(&self) -> bool;  // 出厂默认，实际启用由 provider 配置覆盖
 }
 ```
 
@@ -135,32 +142,57 @@ pub struct ExtensionRegistry {
 }
 
 impl ExtensionRegistry {
-    /// 加载所有 extension，按 order 排序，按 enabled 过滤，
-    /// 然后根据实现的 trait 分别存入对应 Vec
+    /// 加载全部 extension，只按 order 排序，不做 enabled 过滤。
+    /// 过滤推迟到管道执行时，根据当前 provider 的配置决定。
     pub fn load_all() -> Self { ... }
 }
 ```
 
-- 代理启动时加载 `extensions/config.json`
-- 按 order 排序，根据 enabled 过滤
-- 单个 extension 错误不中断整个管道
+- 代理启动时加载 `extensions/config.json`，读取 order 和 default_enabled
+- **全部 extension 都载入**并按 order 排序，不在此阶段过滤
+- 过滤决策推迟到 `run_*_pipeline()` 执行时：结合当前 provider 的
+  `extension_filter_config` 与 extension 的 `default_enabled` 决定是否调用
+- 这样用户在任何 provider 中显式启用某个默认禁用的诊断 extension 时，
+  registry 中已有该 extension 可直接执行
 - v1 不做文件监控热重载（后续版本考虑）
 
 ### 管道执行
 
 ```rust
 impl ExtensionRegistry {
-    // 每个管道方法：遍历索引，调用对应 trait 方法，catch 错误
-    pub fn run_request_pipeline(&self, ctx: &mut RequestContext)
-        -> Result<Option<(u16, Vec<u8>)>, ExtensionError>;
-    pub fn run_response_start_pipeline(&self, ctx: &mut ResponseStartContext)
-        -> Result<(), ExtensionError>;
-    pub fn run_response_pipeline(&self, ctx: &mut ResponseContext)
-        -> Result<(), ExtensionError>;
-    pub fn run_stream_event_pipeline(&self, ctx: &mut StreamEventContext)
-        -> Result<(), ExtensionError>;
+    // 每个管道方法接收 &Provider 以读取 extension_filter_config，
+    // 结合 extension 的 default_enabled 决定是否调用
+    pub fn run_request_pipeline(
+        &self, ctx: &mut RequestContext, config: &ExtensionFilterConfig,
+    ) -> Result<Option<(u16, Vec<u8>)>, ExtensionError>;
+
+    pub fn run_response_start_pipeline(
+        &self, ctx: &mut ResponseStartContext, config: &ExtensionFilterConfig,
+    ) -> Result<(), ExtensionError>;
+
+    pub fn run_response_pipeline(
+        &self, ctx: &mut ResponseContext, config: &ExtensionFilterConfig,
+    ) -> Result<(), ExtensionError>;
+
+    pub fn run_stream_event_pipeline(
+        &self, ctx: &mut StreamEventContext, config: &ExtensionFilterConfig,
+    ) -> Result<(), ExtensionError>;
 }
 ```
+
+**执行时的启用判定逻辑**：
+
+```
+extension 实际执行 = config.enabled.unwrap_or(false)          // 总开关必须为 true
+                    && config.extensions[name].unwrap_or(     // 优先取 provider 显式设置
+                        extension.default_enabled              // 回退到出厂默认
+                    )
+```
+
+- `config.enabled` 缺失或 `false` → 跳过所有 extension
+- `config.enabled == Some(true)` → 逐个检查 extension 级别的开关
+  - `config.extensions[name]` 有值 → 使用显式设置
+  - `config.extensions[name]` 无值 → 使用 `extension.default_enabled`（来自 config.json）
 
 ## 5. Extension 清单（23 个）
 
