@@ -232,8 +232,8 @@ extension 实际执行 = config.enabled.unwrap_or(false)          // 总开关�
 
 | Extension | Order | Trait | 功能 |
 |-----------|-------|-------|------|
-| ttl-tier-detect | 75 | ResponseStart | 检测请求的 TTL 层级（5m/1h） |
-| ttl-management | 500 | Request | 根据 TTL 层级注入正确的 cache_control |
+| ttl-tier-detect | 75 | Request | 从请求体 cache_control 检测 TTL 层级，写入 ctx.meta._ttlTier |
+| ttl-management | 500 | Request | 根据 ctx.meta._ttlTier 注入正确的 cache_control（跨 extension 通讯） |
 
 ### 会话持久化（1 个，默认启用）
 
@@ -245,10 +245,10 @@ extension 实际执行 = config.enabled.unwrap_or(false)          // 总开关�
 
 | Extension | Order | Trait | 功能 |
 |-----------|-------|-------|------|
-| cache-telemetry | 600 | Stream | 从 SSE 流提取缓存命中率并持久化 |
-| overage-warning | 610 | ResponseStart | 超量阈值告警，写入 stderr + JSONL |
+| cache-telemetry | 600 | Request + ResponseStart + Stream | Request 存 sessionId → ResponseStart 存 quotaData → Stream 提取缓存命中率并持久化 |
+| overage-warning | 610 | ResponseStart | 从响应 headers 检测超量阈值，写入 stderr + JSONL |
 
-### 检测/诊断（6 个，默认禁用）
+### 检测/诊断（7 个，默认禁用）
 
 | Extension | Order | Trait | 功能 |
 |-----------|-------|-------|------|
@@ -256,6 +256,7 @@ extension 实际执行 = config.enabled.unwrap_or(false)          // 总开关�
 | microcompact-stability | 350 | Request | 微压缩 sentinel 检测和标准化 |
 | rate-limit-log | 660 | ResponseStart | 429 限流事件日志 |
 | request-log | 700 | ResponseStart | 请求计时 NDJSON 日志 |
+| usage-log | 710 | ResponseStart | 每请求用量记录写入 `~/.claude/usage.jsonl`（MeterRowSchema v:1） |
 | output-efficiency-rewrite | — | Request | 重写系统 prompt 的效率章节 |
 | prefix-diff | — | Request | 请求前缀差异诊断 |
 
