@@ -65,6 +65,25 @@ pub async fn get_status(State(state): State<ProxyState>) -> Result<Json<ProxySta
 // Claude API 处理器（包含格式转换逻辑）
 // ============================================================================
 
+/// 处理 /v1/models 请求（Claude API）
+///
+/// 在 DeepSeek Anthropic 兼容场景下返回伪装模型列表。
+pub async fn handle_claude_models(
+    State(state): State<ProxyState>,
+) -> Result<Json<Value>, ProxyError> {
+    let providers = state
+        .provider_router
+        .select_providers("claude")
+        .await
+        .map_err(|e| ProxyError::DatabaseError(e.to_string()))?;
+    let provider = providers
+        .first()
+        .ok_or(ProxyError::NoAvailableProvider)?;
+    let response = crate::claude_desktop_config::model_list_response(provider)
+        .map_err(|e| ProxyError::ConfigError(e.to_string()))?;
+    Ok(Json(response))
+}
+
 /// 处理 /v1/messages 请求（Claude API）
 ///
 /// Claude 处理器包含独特的格式转换逻辑：

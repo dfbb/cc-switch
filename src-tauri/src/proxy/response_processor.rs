@@ -942,6 +942,7 @@ mod tests {
             gemini_shadow: Arc::new(GeminiShadowStore::default()),
             app_handle: None,
             failover_manager: Arc::new(FailoverSwitchManager::new(db)),
+            extension_registry: Arc::new(crate::proxy::extensions::load::load_extensions()),
         }
     }
 
