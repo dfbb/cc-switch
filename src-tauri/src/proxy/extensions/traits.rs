@@ -27,11 +27,15 @@ pub trait ResponseExtension: Extension {
     /// 响应状态和 headers 到达时立即调用（body 尚未读取）。
     fn on_response_start(
         &self,
-        ctx: &mut ResponseStartContext,
-    ) -> Result<(), ExtensionError>;
+        _ctx: &mut ResponseStartContext,
+    ) -> Result<(), ExtensionError> {
+        Ok(())
+    }
 
     /// 完整响应体就绪后调用（非流式路径）。
-    fn on_response(&self, ctx: &mut ResponseContext) -> Result<(), ExtensionError>;
+    fn on_response(&self, _ctx: &mut ResponseContext) -> Result<(), ExtensionError> {
+        Ok(())
+    }
 }
 
 /// SSE 流事件处理 extension。
@@ -43,4 +47,68 @@ pub trait StreamExtension: Extension {
         &self,
         ctx: &mut StreamEventContext,
     ) -> Result<(), ExtensionError>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::HeaderMap;
+    use serde_json::json;
+
+    struct NoopExtension;
+    impl Extension for NoopExtension {
+        fn name(&self) -> &str { "noop" }
+        fn order(&self) -> u32 { 0 }
+        fn default_enabled(&self) -> bool { true }
+    }
+    impl RequestExtension for NoopExtension {
+        fn on_request(&self, _ctx: &mut RequestContext) -> Result<Option<(u16, Vec<u8>)>, ExtensionError> {
+            Ok(None)
+        }
+    }
+    impl ResponseExtension for NoopExtension {}
+    impl StreamExtension for NoopExtension {
+        fn on_stream_event(&self, _ctx: &mut StreamEventContext) -> Result<(), ExtensionError> {
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn extension_is_object_safe() {
+        let ext: &dyn Extension = &NoopExtension;
+        assert_eq!(ext.name(), "noop");
+        assert_eq!(ext.order(), 0);
+        assert!(ext.default_enabled());
+    }
+
+    #[test]
+    fn request_extension_returns_none_by_default() {
+        let ext = NoopExtension;
+        let mut ctx = RequestContext {
+            body: json!({}),
+            headers: HeaderMap::new(),
+            meta: ExtensionMeta::default(),
+        };
+        let result = ext.on_request(&mut ctx).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn response_extension_default_impls_return_ok() {
+        let ext = NoopExtension;
+        let mut rsc = ResponseStartContext {
+            status: 200,
+            headers: HeaderMap::new(),
+            upstream_headers: HeaderMap::new(),
+            meta: ExtensionMeta::default(),
+        };
+        let mut rc = ResponseContext {
+            status: 200,
+            headers: HeaderMap::new(),
+            body: vec![],
+            meta: ExtensionMeta::default(),
+        };
+        assert!(ext.on_response_start(&mut rsc).is_ok());
+        assert!(ext.on_response(&mut rc).is_ok());
+    }
 }

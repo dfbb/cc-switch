@@ -10,12 +10,6 @@ pub struct ExtensionMeta {
 }
 
 impl ExtensionMeta {
-    pub fn new() -> Self {
-        Self {
-            data: HashMap::new(),
-        }
-    }
-
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.data.get(key)
     }
@@ -36,7 +30,7 @@ pub struct TelemetryCollector {
 }
 
 /// 请求预处理上下文 — per-attempt 从原始请求克隆重建。
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RequestContext {
     /// 可变请求体（serde_json::Value）
     pub body: Value,
@@ -47,20 +41,20 @@ pub struct RequestContext {
 }
 
 /// 响应 headers 阶段上下文。
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ResponseStartContext {
     /// HTTP 状态码
     pub status: u16,
-    /// 最终返回给客户端的 headers（只读）
+    /// 最终返回给客户端的 headers
     pub headers: HeaderMap,
-    /// 原始上游响应 headers（只读，含 quota/ratelimit 等）
+    /// 原始上游响应 headers（含 quota/ratelimit 等）
     pub upstream_headers: HeaderMap,
     /// 跨阶段共享元数据
     pub meta: ExtensionMeta,
 }
 
 /// 完整响应体上下文（非流式路径）。
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ResponseContext {
     /// HTTP 状态码
     pub status: u16,
@@ -73,13 +67,13 @@ pub struct ResponseContext {
 }
 
 /// SSE 流事件上下文。
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct StreamEventContext {
     /// 事件类型: "message_start", "content_block_delta", "message_delta", ...
     pub event_type: String,
     /// 当前 SSE 事件的完整 JSON data
     pub data: Value,
-    /// 原始上游响应 headers（只读）
+    /// 原始上游响应 headers
     pub response_headers: HeaderMap,
     /// 设为 true 则丢弃此事件
     pub drop: bool,

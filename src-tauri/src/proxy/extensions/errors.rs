@@ -35,6 +35,8 @@ impl fmt::Display for ExtensionError {
     }
 }
 
+impl std::error::Error for ExtensionError {}
+
 impl ExtensionError {
     pub fn json(name: &str, msg: impl Into<String>) -> Self {
         let msg = msg.into();
@@ -49,8 +51,16 @@ impl ExtensionError {
         let msg = msg.into();
         Self {
             extension_name: name.to_string(),
-            message: msg.clone(),
-            kind: ExtensionErrorKind::Logic(msg),
+            message: msg,
+            kind: ExtensionErrorKind::Logic("".into()),
+        }
+    }
+
+    pub fn io(name: &str, err: std::io::Error) -> Self {
+        Self {
+            extension_name: name.to_string(),
+            message: err.to_string(),
+            kind: ExtensionErrorKind::Io(err),
         }
     }
 }
