@@ -309,19 +309,23 @@ extension 实际执行 = config.enabled.unwrap_or(false)          // 总开关�
 | Extension | Order | Trait | 功能 |
 |-----------|-------|-------|------|
 | cache-telemetry | 600 | Request + ResponseStart + Stream | Request 存 sessionId → ResponseStart 存 quotaData → Stream 提取缓存命中率并持久化 |
-| overage-warning | 610 | ResponseStart | 从响应 headers 检测超量阈值，写入 stderr + JSONL |
+| overage-warning | 610 | ResponseStart + Stream | ResponseStart 从 headers 设触发状态 → Stream 在 message_delta 写 stderr/JSONL |
 
-### 检测/诊断（7 个，默认禁用）
+### 诊断/日志（7 个）
 
-| Extension | Order | Trait | 功能 |
-|-----------|-------|-------|------|
-| upstream-change-detection | 50 | Request | 上游请求结构指纹变更检测 |
-| microcompact-stability | 350 | Request | 微压缩 sentinel 检测和标准化 |
-| rate-limit-log | 660 | ResponseStart | 429 限流事件日志 |
-| request-log | 700 | ResponseStart | 请求计时 NDJSON 日志 |
-| usage-log | 710 | Response | 从响应体提取 token 用量，写入 `~/.claude/usage.jsonl`（MeterRowSchema v:1） |
-| output-efficiency-rewrite | 370 | Request | 重写系统 prompt 的效率章节 |
-| prefix-diff | 680 | Request | 请求前缀差异诊断（需在所有修改后 snapshot） |
+| Extension | Order | Trait | default_enabled | 功能 |
+|-----------|-------|-------|-----------------|------|
+| upstream-change-detection | 50 | Request | `true` | 上游请求结构指纹变更检测（env var `CACHE_FIX_UPSTREAM_DETECTION=1` 激活） |
+| output-efficiency-rewrite | 90 | Request | `false` | 重写系统 prompt 的效率章节 |
+| microcompact-stability | 350 | Request | `true` | 微压缩 sentinel 检测和标准化（env var `CACHE_FIX_NORMALIZE_MICROCOMPACT=1` 激活） |
+| rate-limit-log | 660 | Request + ResponseStart | `false` | Request 提取 model → ResponseStart 检测 429 并记录 |
+| usage-log | 650 | Stream | `false` | 从 SSE 流事件提取 token 用量，写入 `~/.claude/usage.jsonl`（MeterRowSchema v:1） |
+| request-log | 700 | Request + ResponseStart + Stream | `false` | Request 记录开始时间 → ResponseStart 记 status → Stream 记 usage 事件 |
+| prefix-diff | 680 | Request | `false` | 请求前缀差异诊断（需在所有修改后 snapshot） |
+
+> `upstream-change-detection` 和 `microcompact-stability` 的 `default_enabled=true`
+> 匹配上游加载行为——它们始终注册在 pipeline 中，但内部通过 env var 门控是否实际执行。
+> 用户只需设置对应 env var 即可激活，无需在 UI 中额外启用。其他 5 个为 `default_enabled=false`。
 
 ## 6. 与 DeepSeek Disguise 的兼容
 
