@@ -351,6 +351,13 @@ pub struct ProviderMeta {
     /// 用于多账号支持，关联到特定的 GitHub 账号
     #[serde(rename = "githubAccountId", skip_serializing_if = "Option::is_none")]
     pub github_account_id: Option<String>,
+    /// Extension 过滤配置（每个 provider 独立控制扩展管道）
+    #[serde(
+        default,
+        rename = "extensionFilterConfig",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub extension_filter_config: Option<ExtensionFilterConfig>,
 }
 
 impl ProviderMeta {
@@ -377,6 +384,15 @@ impl ProviderMeta {
         }
 
         None
+    }
+
+    /// 获取 extension 过滤配置，缺失时返回默认（管道不运行）。
+    pub fn get_extension_filter_config(&self) -> ExtensionFilterConfig {
+        self.extension_filter_config.clone().unwrap_or(ExtensionFilterConfig {
+            enabled: None,
+            extensions: Default::default(),
+            preset: None,
+        })
     }
 }
 
