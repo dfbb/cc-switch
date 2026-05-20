@@ -17,6 +17,8 @@ English | [中文](README_ZH.md) | [日本語](README_JA.md) | [Changelog](CHANG
 
 </div>
 
+> 💡 **新特性使用指南**: [DeepSeek 伪装 + Claude 内容过滤](filter.md) — 用 DeepSeek 跑 Claude Code，并通过 23 个 extension 自动优化请求，显著降低 Token 消耗
+
 ## ❤️Sponsor
 
 > [Want to appear here?](mailto:farion1231@gmail.com)
