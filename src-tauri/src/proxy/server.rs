@@ -9,6 +9,7 @@
 //! a direct (non-proxied) CLI request.
 
 use super::{
+    extensions::{load_extensions, ExtensionRegistry},
     failover_switch::FailoverSwitchManager, handlers, log_codes::srv as log_srv,
     provider_router::ProviderRouter, providers::gemini_shadow::GeminiShadowStore, types::*,
     ProxyError,
@@ -42,6 +43,8 @@ pub struct ProxyState {
     pub app_handle: Option<tauri::AppHandle>,
     /// 故障转移切换管理器
     pub failover_manager: Arc<FailoverSwitchManager>,
+    /// Extension 注册表（跨请求共享）
+    pub extension_registry: Arc<ExtensionRegistry>,
 }
 
 /// 代理HTTP服务器
@@ -74,6 +77,7 @@ impl ProxyServer {
             gemini_shadow: Arc::new(GeminiShadowStore::default()),
             app_handle,
             failover_manager,
+            extension_registry: Arc::new(load_extensions()),
         };
 
         Self {
