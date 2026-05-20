@@ -16,6 +16,7 @@ import type {
   ClaudeApiFormat,
   CodexApiFormat,
   ClaudeApiKeyField,
+  ExtensionFilterConfig,
 } from "@/types";
 import {
   providerPresets,
@@ -239,6 +240,9 @@ function ProviderFormFull({
   const [testConfig, setTestConfig] = useState<ProviderTestConfig>(
     () => initialData?.meta?.testConfig ?? { enabled: false },
   );
+  const [extensionFilterConfig, setExtensionFilterConfig] = useState<
+    ExtensionFilterConfig | undefined
+  >(() => initialData?.meta?.extensionFilterConfig);
   const [pricingConfig, setPricingConfig] = useState<{
     enabled: boolean;
     costMultiplier?: string;
@@ -1313,6 +1317,13 @@ function ProviderFormFull({
         supportsFullUrl && category !== "official" && localIsFullUrl
           ? true
           : undefined,
+      extensionFilterConfig:
+        extensionFilterConfig?.enabled ||
+        extensionFilterConfig?.preset ||
+        (extensionFilterConfig?.extensions &&
+          Object.keys(extensionFilterConfig.extensions).length > 0)
+          ? extensionFilterConfig
+          : undefined,
     };
 
     if (!isCodexOauthProvider && "codexFastMode" in nextMeta) {
@@ -1910,6 +1921,8 @@ function ProviderFormFull({
               onApiKeyFieldChange={handleApiKeyFieldChange}
               isFullUrl={localIsFullUrl}
               onFullUrlChange={setLocalIsFullUrl}
+              extensionFilterConfig={extensionFilterConfig}
+              onExtensionFilterConfigChange={setExtensionFilterConfig}
             />
           )}
 

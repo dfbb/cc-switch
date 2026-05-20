@@ -36,6 +36,7 @@ import EndpointSpeedTest from "./EndpointSpeedTest";
 import { ApiKeySection, EndpointField, ModelInputWithFetch } from "./shared";
 import { CopilotAuthSection } from "./CopilotAuthSection";
 import { CodexOAuthSection } from "./CodexOAuthSection";
+import { ContentFilterPanel } from "./ContentFilterPanel";
 import {
   copilotGetModels,
   copilotGetModelsForAccount,
@@ -51,6 +52,7 @@ import type {
   ProviderCategory,
   ClaudeApiFormat,
   ClaudeApiKeyField,
+  ExtensionFilterConfig,
 } from "@/types";
 import {
   hasClaudeOneMMarker,
@@ -138,6 +140,10 @@ interface ClaudeFormFieldsProps {
   // Full URL mode
   isFullUrl: boolean;
   onFullUrlChange: (value: boolean) => void;
+
+  // Extension 内容过滤配置
+  extensionFilterConfig?: ExtensionFilterConfig | undefined;
+  onExtensionFilterConfigChange?: (v: ExtensionFilterConfig) => void;
 }
 
 export function ClaudeFormFields({
@@ -190,6 +196,8 @@ export function ClaudeFormFields({
   onApiKeyFieldChange,
   isFullUrl,
   onFullUrlChange,
+  extensionFilterConfig,
+  onExtensionFilterConfigChange = () => {},
 }: ClaudeFormFieldsProps) {
   const { t } = useTranslation();
   const hasAnyAdvancedValue = !!(
@@ -198,7 +206,8 @@ export function ClaudeFormFields({
     defaultSonnetModel ||
     defaultOpusModel ||
     apiFormat !== "anthropic" ||
-    apiKeyField !== "ANTHROPIC_AUTH_TOKEN"
+    apiKeyField !== "ANTHROPIC_AUTH_TOKEN" ||
+    extensionFilterConfig?.enabled
   );
   const [advancedExpanded, setAdvancedExpanded] = useState(hasAnyAdvancedValue);
 
@@ -938,6 +947,12 @@ export function ClaudeFormFields({
                 })}
               </p>
             </div>
+
+            {/* Extension 内容过滤面板 */}
+            <ContentFilterPanel
+              value={extensionFilterConfig}
+              onChange={onExtensionFilterConfigChange}
+            />
           </CollapsibleContent>
         </Collapsible>
       )}

@@ -184,6 +184,8 @@ export interface ProviderMeta {
   codexFastMode?: boolean;
   // 供应商类型（用于识别 Copilot 等特殊供应商）
   providerType?: string;
+  // Extension 内容过滤配置
+  extensionFilterConfig?: ExtensionFilterConfig;
   // GitHub Copilot 关联账号 ID（旧字段，保留兼容读取）
   githubAccountId?: string;
 }
@@ -212,6 +214,12 @@ export type ClaudeApiFormat =
 export type CodexApiFormat = "openai_responses" | "openai_chat";
 
 // Claude 认证字段类型
+export interface ExtensionFilterConfig {
+  enabled?: boolean;
+  extensions?: Record<string, boolean>;
+  preset?: "full" | "cache-only" | "minimal" | null;
+}
+
 export type ClaudeApiKeyField = "ANTHROPIC_AUTH_TOKEN" | "ANTHROPIC_API_KEY";
 
 // 主页面显示的应用配置
