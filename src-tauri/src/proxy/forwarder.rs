@@ -2,6 +2,7 @@
 //!
 //! 负责将请求转发到上游Provider，支持故障转移
 
+use super::extensions::{ExtensionMeta, ExtensionRegistry};
 use super::hyper_client::ProxyResponse;
 use super::{
     body_filter::filter_private_params_with_whitelist,
@@ -22,6 +23,7 @@ use super::{
     ProxyError,
 };
 use crate::commands::{CodexOAuthState, CopilotAuthState};
+use crate::provider::ExtensionFilterConfig;
 use crate::proxy::providers::codex_oauth_auth::CodexOAuthManager;
 use crate::proxy::providers::copilot_auth::CopilotAuthManager;
 use crate::{app_config::AppType, provider::Provider};
@@ -118,6 +120,8 @@ pub struct RequestForwarder {
     /// `max_attempts = max_retries + 1`，所以 max_retries=0 表示仅尝试一家、
     /// max_retries=3（默认）表示最多 4 家。loop 同时受 providers.len() 自然限制。
     max_attempts: usize,
+    /// Extension 注册表 — per-attempt 请求管道执行引擎。
+    extension_registry: Arc<ExtensionRegistry>,
 }
 
 impl RequestForwarder {
@@ -139,6 +143,7 @@ impl RequestForwarder {
         optimizer_config: OptimizerConfig,
         copilot_optimizer_config: CopilotOptimizerConfig,
         max_retries: u32,
+        extension_registry: Arc<ExtensionRegistry>,
     ) -> Self {
         // max_retries 是「失败后重试次数」语义，attempt 上限 = retries + 1。
         // saturating_add 防止 u32::MAX + 1 溢出。
@@ -161,6 +166,7 @@ impl RequestForwarder {
                 streaming_first_byte_timeout,
             ),
             max_attempts,
+            extension_registry,
         }
     }
 
@@ -337,6 +343,10 @@ impl RequestForwarder {
         // 单 Provider 场景下跳过熔断器检查（故障转移关闭时）
         let bypass_circuit_breaker = providers.len() == 1;
 
+        // Extension 请求管道 — 每个 provider attempt 都从原始请求克隆
+        let original_body = body.clone();
+        let original_headers = headers.clone();
+
         // 依次尝试每个供应商
         for provider in providers.iter() {
             // 整流器重试标记：每个 provider 独立持有，避免标记跨 provider 短路故障转移
@@ -386,6 +396,46 @@ impl RequestForwarder {
                 } else {
                     body.clone()
                 };
+
+            // Extension 请求管道 — per-attempt 从原始请求克隆
+            let ext_config = provider
+                .meta
+                .as_ref()
+                .map(|m| m.get_extension_filter_config())
+                .unwrap_or(ExtensionFilterConfig {
+                    enabled: Some(false),
+                    extensions: std::collections::HashMap::new(),
+                    preset: None,
+                });
+            let mut ext_ctx = super::extensions::RequestContext {
+                body: original_body.clone(),
+                headers: original_headers.clone(),
+                meta: ExtensionMeta::default(),
+            };
+            let registry = &self.extension_registry;
+            if let Some((status, body_bytes)) = registry
+                .run_request_pipeline(&mut ext_ctx, &ext_config)
+                .unwrap_or(None)
+            {
+                log::info!(
+                    "[EXTENSIONS] 请求被拦截: status={status}, provider={}",
+                    provider.name
+                );
+                return Ok(ForwardResult {
+                    response: ProxyResponse::Synthetic {
+                        status,
+                        headers: axum::http::HeaderMap::new(),
+                        body: body_bytes,
+                    },
+                    provider: provider.clone(),
+                    claude_api_format: None,
+                    connection_guard: None,
+                });
+            }
+            // 使用可能被 extension 修改的 body 继续转发
+            let body_for_forward = ext_ctx.body.clone();
+            // 同步到 provider_body 以便整流器基于 extension 输出继续工作
+            provider_body = body_for_forward;
 
             attempted_providers += 1;
 
@@ -2400,6 +2450,7 @@ mod tests {
             non_streaming_timeout,
             streaming_first_byte_timeout,
             max_attempts: 1,
+            extension_registry: Arc::new(ExtensionRegistry::empty()),
         }
     }
 

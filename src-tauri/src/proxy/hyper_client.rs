@@ -89,6 +89,12 @@ pub enum ProxyResponse {
         headers: http::HeaderMap,
         stream: std::pin::Pin<Box<dyn Stream<Item = Result<Bytes, std::io::Error>> + Send>>,
     },
+    /// Extension 拦截返回的合成响应（不经过上游网络）。
+    Synthetic {
+        status: u16,
+        headers: http::HeaderMap,
+        body: Vec<u8>,
+    },
 }
 
 impl ProxyResponse {
@@ -117,6 +123,9 @@ impl ProxyResponse {
             Self::Hyper(r) => r.status(),
             Self::Reqwest(r) => r.status(),
             Self::Buffered { status, .. } | Self::Streamed { status, .. } => *status,
+            Self::Synthetic { status, .. } => {
+                http::StatusCode::from_u16(*status).unwrap_or(http::StatusCode::OK)
+            }
         }
     }
 
@@ -124,7 +133,9 @@ impl ProxyResponse {
         match self {
             Self::Hyper(r) => r.headers(),
             Self::Reqwest(r) => r.headers(),
-            Self::Buffered { headers, .. } | Self::Streamed { headers, .. } => headers,
+            Self::Buffered { headers, .. }
+            | Self::Streamed { headers, .. }
+            | Self::Synthetic { headers, .. } => headers,
         }
     }
 
@@ -155,6 +166,7 @@ impl ProxyResponse {
                 ProxyError::ForwardFailed(format!("Failed to read response body: {e}"))
             }),
             Self::Buffered { body, .. } => Ok(body),
+            Self::Synthetic { body, .. } => Ok(Bytes::from(body)),
             Self::Streamed { mut stream, .. } => {
                 let mut body = bytes::BytesMut::new();
                 while let Some(chunk) = stream.next().await {
@@ -206,6 +218,11 @@ impl ProxyResponse {
             }
             Self::Buffered { body, .. } => Box::pin(futures::stream::once(async move { Ok(body) }))
                 as std::pin::Pin<Box<dyn Stream<Item = Result<Bytes, std::io::Error>> + Send>>,
+            Self::Synthetic { body, .. } => {
+                let bytes = Bytes::from(body);
+                Box::pin(futures::stream::once(async move { Ok(bytes) }))
+                    as std::pin::Pin<Box<dyn Stream<Item = Result<Bytes, std::io::Error>> + Send>>
+            }
             Self::Streamed { stream, .. } => stream,
         }
     }
