@@ -773,11 +773,23 @@ pub struct OpenCodeModelLimit {
     pub output: Option<u64>,
 }
 
+/// Extension 过滤器配置 — 控制哪些 extension 在当前 provider 下启用。
+/// 从 provider meta 中反序列化。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExtensionFilterConfig {
+    /// 全局开关：`Some(false)` 表示完全禁用 extension 系统。
+    pub enabled: Option<bool>,
+    /// 按 extension 名称映射的启用状态。缺失 key 使用 default_enabled。
+    pub extensions: HashMap<String, bool>,
+    /// 预设名称（可选）。
+    pub preset: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        ClaudeModelConfig, CodexModelConfig, GeminiModelConfig, OpenCodeProviderConfig, Provider,
-        ProviderManager, ProviderMeta, UniversalProvider,
+        ClaudeModelConfig, CodexModelConfig, ExtensionFilterConfig, GeminiModelConfig,
+        OpenCodeProviderConfig, Provider, ProviderManager, ProviderMeta, UniversalProvider,
     };
     use serde_json::json;
 
