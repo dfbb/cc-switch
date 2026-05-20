@@ -776,12 +776,18 @@ pub struct OpenCodeModelLimit {
 /// Extension 过滤器配置 — 控制哪些 extension 在当前 provider 下启用。
 /// 从 provider meta 中反序列化。
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ExtensionFilterConfig {
     /// 全局开关：`Some(false)` 表示完全禁用 extension 系统。
+    /// `None` 表示未配置 → 默认关闭（已有 provider 不受影响）。
+    #[serde(default)]
     pub enabled: Option<bool>,
     /// 按 extension 名称映射的启用状态。缺失 key 使用 default_enabled。
+    #[serde(default)]
     pub extensions: HashMap<String, bool>,
-    /// 预设名称（可选）。
+    /// 预设名称：`"full"` | `"cache-only"` | `"minimal"` | `null`（自定义）。
+    /// 仅 UI 记录用途，后端不依赖此字段做启用判定。
+    #[serde(default)]
     pub preset: Option<String>,
 }
 
