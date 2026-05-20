@@ -135,7 +135,7 @@ pub trait StreamExtension: Extension {
 | `RequestContext` | 请求前 | body, headers, meta |
 | `ResponseStartContext` | 响应 headers | status, headers（最终客户端 headers，只读）, upstream_headers（原始上游 headers，只读）, meta |
 | `ResponseContext` | 响应体 | body, headers, meta |
-| `StreamEventContext` | SSE 事件 | data, drop, meta, telemetry |
+| `StreamEventContext` | SSE 事件 | data, response_headers（只读）, drop, meta, telemetry |
 
 Extension 只实现需要的 trait。例如 `fingerprint-strip` 只需 `RequestExtension`。
 
@@ -164,10 +164,11 @@ pub struct ResponseContext {
 
 pub struct StreamEventContext {
     pub event_type: String,               // "message_start", "content_block_delta", ...
-    pub data: serde_json::Value,
+    pub data: serde_json::Value,          // 当前 SSE 事件的完整 JSON
+    pub response_headers: HeaderMap,      // 原始上游响应 headers（只读）
     pub drop: bool,
     pub meta: ExtensionMeta,
-    pub telemetry: TelemetryCollector,
+    pub telemetry: TelemetryCollector,    // 累计 token/model 等遥测数据
 }
 ```
 
@@ -318,14 +319,14 @@ extension 实际执行 = config.enabled.unwrap_or(false)          // 总开关�
 | upstream-change-detection | 50 | Request | `true` | 上游请求结构指纹变更检测（env var `CACHE_FIX_UPSTREAM_DETECTION=1` 激活） |
 | output-efficiency-rewrite | 90 | Request | `false` | 重写系统 prompt 的效率章节 |
 | microcompact-stability | 350 | Request | `true` | 微压缩 sentinel 检测和标准化（env var `CACHE_FIX_NORMALIZE_MICROCOMPACT=1` 激活） |
-| rate-limit-log | 660 | Request + ResponseStart | `false` | Request 提取 model → ResponseStart 检测 429 并记录 |
+| rate-limit-log | 660 | Request + Response | `false` | Request 提取 model → Response 从 body 判断 `error.type==\"rate_limit_error\"` 并记录 |
 | usage-log | 650 | Stream | `false` | 从 SSE 流事件提取 token 用量，写入 `~/.claude/usage.jsonl`（MeterRowSchema v:1） |
 | request-log | 700 | Request + ResponseStart + Stream | `false` | Request 记录开始时间 → ResponseStart 记 status → Stream 记 usage 事件 |
-| prefix-diff | 680 | Request | `false` | 请求前缀差异诊断（需在所有修改后 snapshot） |
+| prefix-diff | 680 | Request | `true` | 请求前缀差异诊断（env var `CACHE_FIX_PREFIXDIFF=1` 激活） |
 
-> `upstream-change-detection` 和 `microcompact-stability` 的 `default_enabled=true`
+> `upstream-change-detection`、`microcompact-stability`、`prefix-diff` 的 `default_enabled=true`
 > 匹配上游加载行为——它们始终注册在 pipeline 中，但内部通过 env var 门控是否实际执行。
-> 用户只需设置对应 env var 即可激活，无需在 UI 中额外启用。其他 5 个为 `default_enabled=false`。
+> 用户只需设置对应 env var 即可激活，无需在 UI 中额外启用。其他 4 个为 `default_enabled=false`。
 
 ## 6. 与 DeepSeek Disguise 的兼容
 
@@ -373,7 +374,7 @@ src-tauri/src/proxy/
 │   ├── messages_cache_breakpoint.rs  # order 410
 │   ├── cache_telemetry.rs            # order 600
 │   ├── overage_warning.rs            # order 610
-│   └── (诊断 extensions 默认禁用)
+│   └── (诊断 extensions: 3 个 env var 门控默认启用, 4 个默认禁用)
 │
 ├── providers/deepseek_anthropic/     # 已有，不变
 └── forwarder.rs, response_processor.rs  # 集成管道调用
