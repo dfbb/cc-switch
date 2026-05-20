@@ -9,6 +9,7 @@
 
 use super::{
     error_mapper::{get_error_message, map_proxy_error_to_status},
+    extensions::ExtensionMeta,
     forwarder::ActiveConnectionGuard,
     handler_config::{
         claude_stream_usage_event_filter, codex_stream_usage_event_filter, CLAUDE_PARSER_CONFIG,
@@ -23,9 +24,9 @@ use super::{
         transform_codex_chat, transform_gemini, transform_responses,
     },
     response_processor::{
-        create_logged_passthrough_stream, process_response, read_decoded_body,
-        strip_entity_headers_for_rebuilt_body, strip_hop_by_hop_response_headers,
-        usage_logging_enabled, SseUsageCollector,
+        build_ext_response_ctx, build_ext_response_start_ctx, create_logged_passthrough_stream,
+        process_response, read_decoded_body, strip_entity_headers_for_rebuilt_body,
+        strip_hop_by_hop_response_headers, usage_logging_enabled, SseUsageCollector,
     },
     server::ProxyState,
     sse::{strip_sse_field, take_sse_block},
@@ -35,6 +36,7 @@ use super::{
 };
 use crate::app_config::AppType;
 use crate::database::PRICING_SOURCE_REQUEST;
+use crate::provider::ExtensionFilterConfig;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use bytes::Bytes;
 use http_body_util::BodyExt;
@@ -267,6 +269,7 @@ async fn handle_claude_transform(
     connection_guard: Option<ActiveConnectionGuard>,
 ) -> Result<axum::response::Response, ProxyError> {
     let status = response.status();
+    let upstream_headers_snapshot = response.headers().clone();
     let is_codex_oauth = ctx
         .provider
         .meta
@@ -378,6 +381,29 @@ async fn handle_claude_transform(
             axum::http::HeaderValue::from_static("no-cache"),
         );
 
+        // Extension response_start 管道（流式转换路径）
+        let ext_config = ctx
+            .provider
+            .meta
+            .as_ref()
+            .map(|m| m.get_extension_filter_config())
+            .unwrap_or_else(|| ExtensionFilterConfig {
+                enabled: None,
+                extensions: Default::default(),
+                preset: None,
+            });
+        let ext_meta = ExtensionMeta::default();
+        let mut resp_start_ctx = build_ext_response_start_ctx(
+            status.as_u16(),
+            &headers,
+            &upstream_headers_snapshot,
+            ext_meta,
+        );
+        let _ = state
+            .extension_registry
+            .run_response_start_pipeline(&mut resp_start_ctx, &ext_config);
+        let headers = resp_start_ctx.headers;
+
         let body = axum::body::Body::from_stream(logged_stream);
         return Ok((headers, body).into_response());
     }
@@ -389,7 +415,7 @@ async fn handle_claude_transform(
         } else {
             std::time::Duration::ZERO
         };
-    let (mut response_headers, _status, body_bytes) =
+    let (response_headers, _status, body_bytes) =
         read_decoded_body(response, ctx.tag, body_timeout).await?;
 
     let body_str = String::from_utf8_lossy(&body_bytes);
@@ -455,21 +481,65 @@ async fn handle_claude_transform(
         });
     }
 
-    // 构建响应
-    let mut builder = axum::response::Response::builder().status(status);
+    // 序列化 Anthropic 响应为字节（供 extension 管道处理）
+    let response_body = serde_json::to_vec(&anthropic_response).map_err(|e| {
+        log::error!("[Claude] 序列化响应失败: {e}");
+        ProxyError::TransformError(format!("Failed to serialize response: {e}"))
+    })?;
+
+    // 捕获上游原始 headers，供 extension response 管道使用
+    let upstream_headers = response_headers.clone();
+
+    // Extension response 管道（非流式转换路径：在 Anthropic 格式 body 上运行）
+    let ext_config = ctx
+        .provider
+        .meta
+        .as_ref()
+        .map(|m| m.get_extension_filter_config())
+        .unwrap_or_else(|| ExtensionFilterConfig {
+            enabled: None,
+            extensions: Default::default(),
+            preset: None,
+        });
+    let ext_meta = ExtensionMeta::default();
+
+    let _ = state.extension_registry.run_response_start_pipeline(
+        &mut build_ext_response_start_ctx(
+            status.as_u16(),
+            &response_headers,
+            &upstream_headers,
+            ext_meta.clone(),
+        ),
+        &ext_config,
+    );
+
+    let mut ext_resp_ctx = build_ext_response_ctx(
+        status.as_u16(),
+        &response_headers,
+        response_body,
+        ext_meta,
+    );
+    let _ = state
+        .extension_registry
+        .run_response_pipeline(&mut ext_resp_ctx, &ext_config);
+
+    // 使用 extension 可能修改后的值
+    let mut response_headers = ext_resp_ctx.headers;
+    let response_status =
+        axum::http::StatusCode::from_u16(ext_resp_ctx.status)
+            .unwrap_or(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    let response_body = ext_resp_ctx.body;
+
+    // 构建响应（body 可能已被 extension 修改，需重建实体头）
     strip_entity_headers_for_rebuilt_body(&mut response_headers);
     strip_hop_by_hop_response_headers(&mut response_headers);
 
+    let mut builder = axum::response::Response::builder().status(response_status);
     for (key, value) in response_headers.iter() {
         builder = builder.header(key, value);
     }
 
     builder = builder.header("content-type", "application/json");
-
-    let response_body = serde_json::to_vec(&anthropic_response).map_err(|e| {
-        log::error!("[Claude] 序列化响应失败: {e}");
-        ProxyError::TransformError(format!("Failed to serialize response: {e}"))
-    })?;
 
     let body = axum::body::Body::from(response_body);
     builder.body(body).map_err(|e| {

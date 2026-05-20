@@ -3,6 +3,10 @@
 //! 统一处理流式和非流式 API 响应
 
 use super::{
+    extensions::{
+        ExtensionMeta, ResponseContext as ExtResponseContext,
+        ResponseStartContext as ExtResponseStartContext,
+    },
     forwarder::ActiveConnectionGuard,
     handler_config::{StreamUsageEventFilter, UsageParserConfig},
     handler_context::{RequestContext, StreamingTimeoutConfig},
@@ -13,6 +17,7 @@ use super::{
     ProxyError,
 };
 use crate::database::PRICING_SOURCE_REQUEST;
+use crate::provider::ExtensionFilterConfig;
 use axum::http::{header::HeaderMap, HeaderName};
 use axum::response::{IntoResponse, Response};
 use bytes::Bytes;
@@ -112,6 +117,36 @@ pub(crate) fn strip_entity_headers_for_rebuilt_body(headers: &mut HeaderMap) {
     headers.remove(axum::http::header::TRANSFER_ENCODING);
 }
 
+/// 构建 extension response_start 管道上下文。
+pub(crate) fn build_ext_response_start_ctx(
+    status: u16,
+    headers: &HeaderMap,
+    upstream_headers: &HeaderMap,
+    meta: ExtensionMeta,
+) -> ExtResponseStartContext {
+    ExtResponseStartContext {
+        status,
+        headers: headers.clone(),
+        upstream_headers: upstream_headers.clone(),
+        meta,
+    }
+}
+
+/// 构建 extension response 管道上下文（非流式）。
+pub(crate) fn build_ext_response_ctx(
+    status: u16,
+    headers: &HeaderMap,
+    body: Vec<u8>,
+    meta: ExtensionMeta,
+) -> ExtResponseContext {
+    ExtResponseContext {
+        status,
+        headers: headers.clone(),
+        body,
+        meta,
+    }
+}
+
 /// 读取响应体并在需要时解压，确保 headers 与返回 body 一致。
 ///
 /// `body_timeout`: 整包超时。当非零时用 `tokio::time::timeout` 包住 `.bytes()` 调用，
@@ -186,6 +221,7 @@ pub async fn handle_streaming(
     connection_guard: Option<ActiveConnectionGuard>,
 ) -> Response {
     let status = response.status();
+    let upstream_headers_snapshot = response.headers().clone();
     log::debug!(
         "[{}] 已接收上游流式响应: status={}, headers={}",
         ctx.tag,
@@ -203,6 +239,30 @@ pub async fn handle_streaming(
 
     let mut response_headers = response.headers().clone();
     strip_hop_by_hop_response_headers(&mut response_headers);
+
+    // Extension response_start 管道（流式路径：仅 headers 阶段）
+    let ext_config = ctx
+        .provider
+        .meta
+        .as_ref()
+        .map(|m| m.get_extension_filter_config())
+        .unwrap_or_else(|| ExtensionFilterConfig {
+            enabled: None,
+            extensions: Default::default(),
+            preset: None,
+        });
+    let ext_meta = ExtensionMeta::default();
+    let mut resp_start_ctx = build_ext_response_start_ctx(
+        status.as_u16(),
+        &response_headers,
+        &upstream_headers_snapshot,
+        ext_meta,
+    );
+    let _ = state
+        .extension_registry
+        .run_response_start_pipeline(&mut resp_start_ctx, &ext_config);
+    // 使用 extension 可能修改后的 headers
+    let response_headers = resp_start_ctx.headers;
 
     let mut builder = axum::response::Response::builder().status(status);
 
@@ -257,7 +317,52 @@ pub async fn handle_non_streaming(
         };
     let (mut response_headers, status, body_bytes) =
         read_decoded_body(response, ctx.tag, body_timeout).await?;
+
+    // 捕获上游原始 headers，供 extension response 管道使用
+    let upstream_headers = response_headers.clone();
     strip_hop_by_hop_response_headers(&mut response_headers);
+
+    // Extension response 管道（非流式完整路径）
+    let ext_config = ctx
+        .provider
+        .meta
+        .as_ref()
+        .map(|m| m.get_extension_filter_config())
+        .unwrap_or_else(|| ExtensionFilterConfig {
+            enabled: None,
+            extensions: Default::default(),
+            preset: None,
+        });
+    let ext_meta = ExtensionMeta::default();
+
+    let _ = state.extension_registry.run_response_start_pipeline(
+        &mut build_ext_response_start_ctx(
+            status.as_u16(),
+            &response_headers,
+            &upstream_headers,
+            ext_meta.clone(),
+        ),
+        &ext_config,
+    );
+
+    let mut ext_resp_ctx = build_ext_response_ctx(
+        status.as_u16(),
+        &response_headers,
+        body_bytes.to_vec(),
+        ext_meta,
+    );
+    let _ = state
+        .extension_registry
+        .run_response_pipeline(&mut ext_resp_ctx, &ext_config);
+
+    // 使用 extension 可能修改后的值
+    let mut response_headers = ext_resp_ctx.headers;
+    let status = axum::http::StatusCode::from_u16(ext_resp_ctx.status)
+        .unwrap_or(axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    let body_bytes = Bytes::from(ext_resp_ctx.body);
+
+    // 实体头在 body 可能被 extension 修改后需要重建
+    strip_entity_headers_for_rebuilt_body(&mut response_headers);
 
     log::debug!(
         "[{}] 上游响应体内容: {}",
